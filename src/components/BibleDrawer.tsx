@@ -15,11 +15,13 @@ import {
 } from "react-native";
 
 import { useTheme } from "../context/ThemeContext";
+import type {
+  ThemeColors,
+  GetFontSize,
+} from "../context/ThemeContext";
 
 const DRAWER_WIDTH = 280;
 const ANIMATION_DURATION = 220;
-
-type ThemeColors = ReturnType<typeof useTheme>["colors"];
 
 export type DrawerBook<T> = {
   id: string;
@@ -47,8 +49,11 @@ export function BibleDrawer<T>({
   onSelectBook,
   selectedBookId,
 }: Props<T>) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { colors, getFontSize } = useTheme();
+  const styles = useMemo(
+    () => createStyles(colors, getFontSize),
+    [colors, getFontSize]
+  );
   const [renderDrawer, setRenderDrawer] = useState(visible);
   const drawerTranslate = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -152,7 +157,7 @@ export function BibleDrawer<T>({
   );
 }
 
-const createStyles = (colors: ThemeColors) =>
+const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
   StyleSheet.create({
     backdrop: {
       ...StyleSheet.absoluteFillObject,
@@ -178,7 +183,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     sectionTitle: {
       fontWeight: "600",
-      fontSize: 16,
+      fontSize: getFontSize(16),
       marginBottom: 12,
       color: colors.headerText,
     },
@@ -192,7 +197,7 @@ const createStyles = (colors: ThemeColors) =>
       backgroundColor: colors.accentSubtle,
     },
     bookName: {
-      fontSize: 14,
+      fontSize: getFontSize(14),
       color: colors.bodyText,
     },
     bookNameActive: {

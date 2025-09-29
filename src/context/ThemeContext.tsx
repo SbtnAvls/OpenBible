@@ -1,5 +1,12 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import type { StatusBarStyle } from "react-native";
+import { RFValue } from "react-native-responsive-fontsize";
 
 export type ThemeName = "Claro" | "Oscuro";
 
@@ -19,14 +26,24 @@ export type ThemeColors = {
   menuIcon: string;
 };
 
-type ThemePreset = {
-  colors: ThemeColors;
-  statusBarStyle: StatusBarStyle;
-};
+export type GetFontSize = (size: number) => number;
 
-type ThemeContextValue = {
+export type ThemeContextValue = {
   theme: ThemeName;
   setTheme: (theme: ThemeName) => void;
+  colors: ThemeColors;
+  statusBarStyle: StatusBarStyle;
+  fontScale: number;
+  setFontScale: (scale: number) => void;
+  getFontSize: GetFontSize;
+};
+
+export const FONT_SCALE_MIN = 0.85;
+export const FONT_SCALE_MAX = 1.25;
+export const FONT_SCALE_STEP = 0.05;
+const DEFAULT_SCREEN_HEIGHT = 812;
+
+type ThemePreset = {
   colors: ThemeColors;
   statusBarStyle: StatusBarStyle;
 };
@@ -72,8 +89,20 @@ const THEME_PRESETS: Record<ThemeName, ThemePreset> = {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<ThemeName>("Claro");
+  const [fontScaleState, setFontScaleState] = useState(1);
+
+  const handleSetFontScale = useCallback((scale: number) => {
+    setFontScaleState((prev) => {
+      const next = clamp(Number(scale.toFixed(2)), FONT_SCALE_MIN, FONT_SCALE_MAX);
+      return prev === next ? prev : next;
+    });
+  }, []);
 
   const value = useMemo<ThemeContextValue>(() => {
     const preset = THEME_PRESETS[theme];
@@ -82,8 +111,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setTheme,
       colors: preset.colors,
       statusBarStyle: preset.statusBarStyle,
+      fontScale: fontScaleState,
+      setFontScale: handleSetFontScale,
+      getFontSize: (size: number) =>
+        RFValue(size * fontScaleState, DEFAULT_SCREEN_HEIGHT),
     };
-  }, [theme]);
+  }, [fontScaleState, handleSetFontScale, theme]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
