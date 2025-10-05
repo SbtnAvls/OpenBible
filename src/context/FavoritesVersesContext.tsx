@@ -2,9 +2,12 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
+import { getDataFromStorage, saveDataOnStorage } from "../helpers/storageData";
 
 export type FavoriteBlockVerse = {
   verseNumber: string;
@@ -23,6 +26,48 @@ export type FavoriteBlock = {
 };
 
 export type FavoriteBlockInput = Omit<FavoriteBlock, "savedAt">;
+
+const FAVORITES_STORAGE_FILE = "favorites-verses.json";
+
+function isFavoriteBlockVerse(value: unknown): value is FavoriteBlockVerse {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.verseNumber === "string" &&
+    typeof candidate.text === "string"
+  );
+}
+
+function isFavoriteBlock(value: unknown): value is FavoriteBlock {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.id === "string" &&
+    typeof candidate.bookId === "string" &&
+    typeof candidate.bookName === "string" &&
+    typeof candidate.chapterName === "string" &&
+    Array.isArray(candidate.verseNumbers) &&
+    (candidate.verseNumbers as unknown[]).every((item) => typeof item === "string") &&
+    Array.isArray(candidate.verses) &&
+    (candidate.verses as unknown[]).every(isFavoriteBlockVerse) &&
+    typeof candidate.savedAt === "number" &&
+    (
+      candidate.comment === undefined ||
+      typeof candidate.comment === "string"
+    )
+  );
+}
+
+function parseStoredFavorites(value: unknown): FavoriteBlock[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter(isFavoriteBlock);
+}
 
 type FavoritesVersesContextValue = {
   favorites: FavoriteBlock[];
@@ -45,6 +90,42 @@ export function FavoritesVersesProvider({
   children: React.ReactNode;
 }) {
   const [favorites, setFavorites] = useState<FavoriteBlock[]>([]);
+
+  const hydrationRef = useRef(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    (async () => {
+      const stored = await getDataFromStorage(FAVORITES_STORAGE_FILE);
+      if (!isMounted) {
+        return;
+      }
+      const parsed = parseStoredFavorites(stored);
+      if (parsed.length > 0) {
+        setFavorites(parsed);
+      }
+      hydrationRef.current = true;
+    })().catch(() => {
+      if (isMounted) {
+        hydrationRef.current = true;
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hydrationRef.current) {
+      return;
+    }
+    void saveDataOnStorage(
+      FAVORITES_STORAGE_FILE,
+      JSON.stringify(favorites)
+    );
+  }, [favorites]);
 
   const addFavorite = useCallback((entry: FavoriteBlockInput) => {
     setFavorites((prev) => [{ ...entry, savedAt: Date.now() }, ...prev]);

@@ -2,11 +2,14 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import type { StatusBarStyle } from "react-native";
 import { RFValue } from "react-native-responsive-fontsize";
+import { getDataFromStorage, saveDataOnStorage } from "../helpers/storageData";
 
 export type ThemeName = "Claro" | "Oscuro";
 
@@ -89,6 +92,17 @@ const THEME_PRESETS: Record<ThemeName, ThemePreset> = {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
+const THEME_STORAGE_FILE = "theme-settings.json";
+
+type StoredThemeSettings = {
+  theme?: unknown;
+  fontScale?: unknown;
+};
+
+function isThemeName(value: unknown): value is ThemeName {
+  return value === "Claro" || value === "Oscuro";
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -103,6 +117,47 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       return prev === next ? prev : next;
     });
   }, []);
+
+  const hydrationRef = useRef(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    (async () => {
+      const stored = await getDataFromStorage(THEME_STORAGE_FILE);
+      if (!isMounted) {
+        return;
+      }
+      if (stored && typeof stored === "object") {
+        const { theme: storedTheme, fontScale } = stored as StoredThemeSettings;
+        if (isThemeName(storedTheme)) {
+          setTheme(storedTheme);
+        }
+        if (typeof fontScale === "number") {
+          handleSetFontScale(fontScale);
+        }
+      }
+      hydrationRef.current = true;
+    })().catch(() => {
+      if (isMounted) {
+        hydrationRef.current = true;
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [handleSetFontScale]);
+
+  useEffect(() => {
+    if (!hydrationRef.current) {
+      return;
+    }
+    void saveDataOnStorage(
+      THEME_STORAGE_FILE,
+      JSON.stringify({ theme, fontScale: fontScaleState })
+    );
+  }, [fontScaleState, theme]);
 
   const value = useMemo<ThemeContextValue>(() => {
     const preset = THEME_PRESETS[theme];

@@ -8,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  PanResponder,
   Pressable,
   ScrollView,
   StatusBar,
@@ -145,11 +146,73 @@ function AppContent() {
     setSelectedVerses([]);
   };
 
-  const handleSelectChapter = (index: number) => {
+  const handleSelectChapter = useCallback((index: number) => {
     setSelectedChapterIndex(index);
     setActiveScreen("reader");
     setSelectedVerses([]);
-  };
+  }, []);
+
+  const handleGoToPreviousChapter = useCallback(() => {
+    if (selectedChapterIndex <= 0) {
+      return;
+    }
+    handleSelectChapter(selectedChapterIndex - 1);
+  }, [handleSelectChapter, selectedChapterIndex]);
+
+  const handleGoToNextChapter = useCallback(() => {
+    if (selectedChapterIndex >= chapters.length - 1) {
+      return;
+    }
+    handleSelectChapter(selectedChapterIndex + 1);
+  }, [chapters.length, handleSelectChapter, selectedChapterIndex]);
+
+  const handleHorizontalSwipe = useCallback(
+    (deltaX: number) => {
+      const swipeThreshold = 60;
+      if (Math.abs(deltaX) < swipeThreshold) {
+        return;
+      }
+      if (deltaX > 0) {
+        handleGoToPreviousChapter();
+      } else {
+        handleGoToNextChapter();
+      }
+    },
+    [handleGoToNextChapter, handleGoToPreviousChapter]
+  );
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gestureState) => {
+          if (isSelecting) {
+            return false;
+          }
+          const { dx, dy } = gestureState;
+          if (Math.abs(dx) <= Math.abs(dy)) {
+            return false;
+          }
+          return Math.abs(dx) > 20;
+        },
+        onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+          if (isSelecting) {
+            return false;
+          }
+          const { dx, dy } = gestureState;
+          if (Math.abs(dx) <= Math.abs(dy)) {
+            return false;
+          }
+          return Math.abs(dx) > 20;
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          handleHorizontalSwipe(gestureState.dx);
+        },
+        onPanResponderTerminate: (_, gestureState) => {
+          handleHorizontalSwipe(gestureState.dx);
+        },
+      }),
+    [handleHorizontalSwipe, isSelecting]
+  );
 
   const handleToggleMenu = () => {
     if (!isReaderScreen) {
@@ -259,7 +322,8 @@ function AppContent() {
       chapterName: pendingFavorite.chapterName,
       verseNumbers,
       verses: pendingFavorite.verses,
-      comment: comment ? comment : undefined,
+      comment: comment ? comment : "",
+      bookId: pendingFavorite.bookId,
     });
 
     setSelectedVerses([]);
@@ -393,72 +457,77 @@ function AppContent() {
             </ScrollView>
           </View>
 
-          <ScrollView
-            style={[styles.chapterContent, { backgroundColor: colors.backgroundPrimary }]}
-            contentContainerStyle={styles.chapterContentContainer}
-            showsVerticalScrollIndicator={false}
+          <View
+            style={styles.chapterContentWrapper}
+            {...panResponder.panHandlers}
           >
-            <Text style={styles.chapterHeading}>
-              {selectedBook.label} {selectedChapter.name}
-            </Text>
-            {selectedChapter.verses.map((verse) => {
-              const verseId = buildVerseId(
-                selectedBook.id,
-                selectedChapter.name,
-                verse.name
-              );
-              const verseFavorites = getVerseFavorites(
-                selectedBook.id,
-                selectedChapter.name,
-                verse.name
-              );
-              const hasFavorite = verseFavorites.length > 0;
-              const favoriteComments = verseFavorites
-                .map((favorite) => favorite.comment)
-                .filter(Boolean) as string[];
-              const isSelected = selectedVerses.includes(verseId);
-              return (
-                <Pressable
-                  key={verseId}
-                  accessibilityLabel={`Versiculo ${verse.name}`}
-                  onLongPress={() => handleLongPressVerse(verseId)}
-                  delayLongPress={180}
-                  onPress={() => handlePressVerse(verseId)}
-                  style={[
-                    styles.verseRow,
-                    isSelected && styles.verseRowSelected,
-                    !isSelected && hasFavorite && styles.verseRowFavorite,
-                  ]}
-                >
-                  <Text
+            <ScrollView
+              style={[styles.chapterContent, { backgroundColor: colors.backgroundPrimary }]}
+              contentContainerStyle={styles.chapterContentContainer}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.chapterHeading}>
+                {selectedBook.label} {selectedChapter.name}
+              </Text>
+              {selectedChapter.verses.map((verse) => {
+                const verseId = buildVerseId(
+                  selectedBook.id,
+                  selectedChapter.name,
+                  verse.name
+                );
+                const verseFavorites = getVerseFavorites(
+                  selectedBook.id,
+                  selectedChapter.name,
+                  verse.name
+                );
+                const hasFavorite = verseFavorites.length > 0;
+                const favoriteComments = verseFavorites
+                  .map((favorite) => favorite.comment)
+                  .filter(Boolean) as string[];
+                const isSelected = selectedVerses.includes(verseId);
+                return (
+                  <Pressable
+                    key={verseId}
+                    accessibilityLabel={`Versiculo ${verse.name}`}
+                    onLongPress={() => handleLongPressVerse(verseId)}
+                    delayLongPress={180}
+                    onPress={() => handlePressVerse(verseId)}
                     style={[
-                      styles.verseNumber,
-                      isSelected && styles.verseNumberSelected,
+                      styles.verseRow,
+                      isSelected && styles.verseRowSelected,
+                      !isSelected && hasFavorite && styles.verseRowFavorite,
                     ]}
                   >
-                    {verse.name}
-                  </Text>
-                  <View style={styles.verseBody}>
                     <Text
                       style={[
-                        styles.verseText,
-                        isSelected && styles.verseTextSelected,
+                        styles.verseNumber,
+                        isSelected && styles.verseNumberSelected,
                       ]}
                     >
-                      {verse.text}
+                      {verse.name}
                     </Text>
-                    {!isSelected && hasFavorite && favoriteComments.length ? (
-                      <View style={styles.favoriteTag}>
-                        <Text style={styles.favoriteTagText}>
-                          {favoriteComments.join(" / ")}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+                    <View style={styles.verseBody}>
+                      <Text
+                        style={[
+                          styles.verseText,
+                          isSelected && styles.verseTextSelected,
+                        ]}
+                      >
+                        {verse.text}
+                      </Text>
+                      {!isSelected && hasFavorite && favoriteComments.length ? (
+                        <View style={styles.favoriteTag}>
+                          <Text style={styles.favoriteTagText}>
+                            {favoriteComments.join(" / ")}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
         </View>
       ) : (
         <View style={styles.placeholder}>
@@ -699,6 +768,9 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     chapterPillText: {
       fontSize: getFontSize(14),
       color: colors.bodyText,
+    },
+    chapterContentWrapper: {
+      flex: 1,
     },
     chapterContent: {
       flex: 1,
