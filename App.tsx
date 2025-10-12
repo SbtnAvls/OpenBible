@@ -23,6 +23,8 @@ import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import Share from "react-native-share";
+import ViewShot from "react-native-view-shot";
 
 import bibleContent from "./src/textContent/rv1909.json";
 import {
@@ -115,6 +117,10 @@ function AppContent() {
   const [isSearchDrawerExpanded, setIsSearchDrawerExpanded] = useState(false);
   const searchDrawerHeight = useRef(new Animated.Value(0)).current;
   const chapterScrollViewRef = useRef<ScrollView>(null);
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [isCapturingImage, setIsCapturingImage] = useState(false);
+  const viewShotRef = useRef<ViewShot>(null);
+  const selectedVersesViewShotRef = useRef<ViewShot>(null);
   const COLLAPSED_HEIGHT = 0;
   const EXPANDED_HEIGHT = 400; // Altura del drawer expandido
 
@@ -430,6 +436,101 @@ function AppContent() {
     );
   };
 
+  const handleOpenShareDialog = () => {
+    setShareModalVisible(true);
+  };
+
+  const handleCloseShareDialog = () => {
+    setShareModalVisible(false);
+  };
+
+  const getSelectedVersesText = useCallback(() => {
+    if (!selectedBook || !selectedChapter || !selectedVerses.length) {
+      return "";
+    }
+
+    const versesToShare = selectedChapter.verses
+      .filter((verse) =>
+        selectedVerses.includes(
+          buildVerseId(selectedBook.id, selectedChapter.name, verse.name)
+        )
+      )
+      .map((verse) => `${verse.name}. ${verse.text}`)
+      .join("\n");
+
+    return `${selectedBook.label} ${selectedChapter.name}\n\n${versesToShare}\n\n📖 Biblia Reina-Valera 1909`;
+  }, [selectedBook, selectedChapter, selectedVerses, buildVerseId]);
+
+  const handleShareAsText = async () => {
+    try {
+      const text = getSelectedVersesText();
+      
+      await Share.open({
+        message: text,
+        title: "Compartir versículos",
+      });
+      
+      handleCloseShareDialog();
+      setSelectedVerses([]);
+    } catch (error: any) {
+      if (error?.message !== "User did not share") {
+        Alert.alert("Error", "No se pudo compartir el texto");
+      }
+      handleCloseShareDialog();
+    }
+  };
+
+  const handleShareAsImage = async () => {
+    try {
+      if (!selectedBook || !selectedChapter || !selectedVerses.length) {
+        Alert.alert("Error", "No hay versículos seleccionados");
+        return;
+      }
+
+      // Activar modo de captura temporalmente
+      setIsCapturingImage(true);
+      
+      // Esperar un momento para que se renderice la vista
+      setTimeout(async () => {
+        try {
+          if (!selectedVersesViewShotRef.current) {
+            throw new Error("ViewShot reference not available");
+          }
+
+          // Capturar la vista como imagen
+          const uri = await selectedVersesViewShotRef.current.capture();
+          
+          if (!uri) {
+            throw new Error("Failed to capture image");
+          }
+          
+          await Share.open({
+            url: `file://${uri}`,
+            title: "Compartir versículos",
+          });
+          
+          handleCloseShareDialog();
+          setSelectedVerses([]);
+        } catch (captureError: any) {
+          console.error("Error capturing image:", captureError);
+          if (captureError?.message !== "User did not share") {
+            Alert.alert("Error", "No se pudo capturar la imagen. Intenta compartir como texto.");
+          }
+          handleCloseShareDialog();
+        } finally {
+          setIsCapturingImage(false);
+        }
+      }, 300);
+    } catch (error: any) {
+      console.error("Error in handleShareAsImage:", error);
+      if (error?.message !== "User did not share") {
+        Alert.alert("Error", "No se pudo compartir la imagen");
+      }
+      handleCloseShareDialog();
+      setIsCapturingImage(false);
+    }
+  };
+
   const headerTitle = isSettingsScreen
     ? "Configuraciones"
     : isFavoritesScreen
@@ -461,7 +562,7 @@ function AppContent() {
       >
         {!isReaderScreen ? (
           <Pressable
-            accessibilityLabel="Volver"
+            accessibilityLabel="Volver al buscador"
             onPress={handleBackToReader}
             style={styles.actionButton}
           >
@@ -492,15 +593,30 @@ function AppContent() {
         {!isReaderScreen || isSelecting ? (
           <View style={styles.actionPlaceholder} />
         ) : (
-          <Pressable
-            accessibilityLabel="Abrir menu de opciones"
-            onPress={handleToggleMenu}
-            style={styles.menuTrigger}
-          >
-            <View style={[styles.menuDot, { backgroundColor: colors.menuIcon }]} />
-            <View style={[styles.menuDot, { backgroundColor: colors.menuIcon }]} />
-            <View style={[styles.menuDot, { backgroundColor: colors.menuIcon }]} />
-          </Pressable>
+          <View style={styles.rightActionsContainer}>
+            {selectedBook && (
+              <Pressable
+                accessibilityLabel="Volver al buscador principal"
+                onPress={() => {
+                  setSelectedBook(null);
+                  setSelectedChapterIndex(0);
+                  setSelectedVerses([]);
+                }}
+                style={styles.homeButton}
+              >
+                <Text style={styles.homeButtonText}>🏠</Text>
+              </Pressable>
+            )}
+            <Pressable
+              accessibilityLabel="Abrir menu de opciones"
+              onPress={handleToggleMenu}
+              style={styles.menuTrigger}
+            >
+              <View style={[styles.menuDot, { backgroundColor: colors.menuIcon }]} />
+              <View style={[styles.menuDot, { backgroundColor: colors.menuIcon }]} />
+              <View style={[styles.menuDot, { backgroundColor: colors.menuIcon }]} />
+            </Pressable>
+          </View>
         )}
       </View>
 
@@ -568,66 +684,71 @@ function AppContent() {
               contentContainerStyle={styles.chapterContentContainer}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.chapterHeading}>
-                {selectedBook.label} {selectedChapter.name}
-              </Text>
-              {selectedChapter.verses.map((verse, verseIndex) => {
-                const verseId = buildVerseId(
-                  selectedBook.id,
-                  selectedChapter.name,
-                  verse.name
-                );
-                const verseFavorites = getVerseFavorites(
-                  selectedBook.id,
-                  selectedChapter.name,
-                  verse.name
-                );
-                const hasFavorite = verseFavorites.length > 0;
-                const favoriteComments = verseFavorites
-                  .map((favorite) => favorite.comment)
-                  .filter(Boolean) as string[];
-                const isSelected = selectedVerses.includes(verseId);
-                return (
-                  <Pressable
-                    key={verseId}
-                    accessibilityLabel={`Versiculo ${verse.name}`}
-                    onLongPress={() => handleLongPressVerse(verseId)}
-                    delayLongPress={180}
-                    onPress={() => handlePressVerse(verseId)}
-                    style={[
-                      styles.verseRow,
-                      isSelected && styles.verseRowSelected,
-                      !isSelected && hasFavorite && styles.verseRowFavorite,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.verseNumber,
-                        isSelected && styles.verseNumberSelected,
-                      ]}
-                    >
-                      {verse.name}
-                    </Text>
-                    <View style={styles.verseBody}>
-                      <Text
+              <ViewShot ref={viewShotRef} options={{ format: "jpg", quality: 0.9 }}>
+                <View style={[styles.shareableContent, { backgroundColor: colors.backgroundPrimary }]}>
+                  <Text style={styles.chapterHeading}>
+                    {selectedBook.label} {selectedChapter.name}
+                  </Text>
+                  {selectedChapter.verses.map((verse, verseIndex) => {
+                    const verseId = buildVerseId(
+                      selectedBook.id,
+                      selectedChapter.name,
+                      verse.name
+                    );
+                    const verseFavorites = getVerseFavorites(
+                      selectedBook.id,
+                      selectedChapter.name,
+                      verse.name
+                    );
+                    const hasFavorite = verseFavorites.length > 0;
+                    const favoriteComments = verseFavorites
+                      .map((favorite) => favorite.comment)
+                      .filter(Boolean) as string[];
+                    const isSelected = selectedVerses.includes(verseId);
+                    
+                    return (
+                      <Pressable
+                        key={verseId}
+                        accessibilityLabel={`Versiculo ${verse.name}`}
+                        onLongPress={() => handleLongPressVerse(verseId)}
+                        delayLongPress={180}
+                        onPress={() => handlePressVerse(verseId)}
                         style={[
-                          styles.verseText,
-                          isSelected && styles.verseTextSelected,
+                          styles.verseRow,
+                          isSelected && styles.verseRowSelected,
+                          !isSelected && hasFavorite && styles.verseRowFavorite,
                         ]}
                       >
-                        {verse.text}
-                      </Text>
-                      {!isSelected && hasFavorite && favoriteComments.length ? (
-                        <View style={styles.favoriteTag}>
-                          <Text style={styles.favoriteTagText}>
-                            {favoriteComments.join(" / ")}
+                        <Text
+                          style={[
+                            styles.verseNumber,
+                            isSelected && styles.verseNumberSelected,
+                          ]}
+                        >
+                          {verse.name}
+                        </Text>
+                        <View style={styles.verseBody}>
+                          <Text
+                            style={[
+                              styles.verseText,
+                              isSelected && styles.verseTextSelected,
+                            ]}
+                          >
+                            {verse.text}
                           </Text>
+                          {!isSelected && hasFavorite && favoriteComments.length ? (
+                            <View style={styles.favoriteTag}>
+                              <Text style={styles.favoriteTagText}>
+                                {favoriteComments.join(" / ")}
+                              </Text>
+                            </View>
+                          ) : null}
                         </View>
-                      ) : null}
-                    </View>
-                  </Pressable>
-                );
-              })}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </ViewShot>
             </ScrollView>
           </View>
         </View>
@@ -698,14 +819,24 @@ function AppContent() {
                 {selectedVerses.length} seleccionado(s)
               </Text>
             </Pressable>
-            <Pressable
-              accessibilityLabel="Guardar versiculos seleccionados"
-              onPress={handleOpenSaveDialog}
-              style={styles.selectionAction}
-            >
-              <Text style={styles.selectionActionIcon}>{"\u2661"}</Text>
-              <Text style={styles.selectionActionText}>Guardar</Text>
-            </Pressable>
+            <View style={styles.selectionActions}>
+              <Pressable
+                accessibilityLabel="Compartir versiculos seleccionados"
+                onPress={handleOpenShareDialog}
+                style={styles.selectionAction}
+              >
+                <Text style={styles.selectionActionIcon}>↗️</Text>
+                <Text style={styles.selectionActionText}>Compartir</Text>
+              </Pressable>
+              <Pressable
+                accessibilityLabel="Guardar versiculos seleccionados"
+                onPress={handleOpenSaveDialog}
+                style={styles.selectionAction}
+              >
+                <Text style={styles.selectionActionIcon}>{"\u2661"}</Text>
+                <Text style={styles.selectionActionText}>Guardar</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       ) : null}
@@ -777,6 +908,73 @@ function AppContent() {
         </View>
       ) : null}
 
+      {shareModalVisible ? (
+        <View style={styles.modalWrapper} pointerEvents="box-none">
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={handleCloseShareDialog}
+          />
+          <View style={styles.modalContainer}>
+            <View
+              style={[
+                styles.modalCard,
+                {
+                  backgroundColor: colors.backgroundSecondary,
+                  borderColor: colors.divider,
+                },
+              ]}
+            >
+              <Text style={styles.modalTitle}>Compartir versículos</Text>
+              <Text style={styles.modalSubtitle}>
+                ¿Cómo deseas compartir los versículos?
+              </Text>
+              
+              <Pressable
+                accessibilityLabel="Compartir como texto"
+                onPress={handleShareAsText}
+                style={[
+                  styles.shareOptionButton,
+                  { backgroundColor: colors.surfaceMuted }
+                ]}
+              >
+                <Text style={styles.shareOptionIcon}>📝</Text>
+                <View style={styles.shareOptionContent}>
+                  <Text style={styles.shareOptionTitle}>Compartir como texto</Text>
+                  <Text style={styles.shareOptionDescription}>
+                    Comparte los versículos en formato de texto plano
+                  </Text>
+                </View>
+              </Pressable>
+
+              <Pressable
+                accessibilityLabel="Compartir como imagen"
+                onPress={handleShareAsImage}
+                style={[
+                  styles.shareOptionButton,
+                  { backgroundColor: colors.surfaceMuted }
+                ]}
+              >
+                <Text style={styles.shareOptionIcon}>🖼️</Text>
+                <View style={styles.shareOptionContent}>
+                  <Text style={styles.shareOptionTitle}>Compartir como imagen</Text>
+                  <Text style={styles.shareOptionDescription}>
+                    Comparte los versículos como una imagen
+                  </Text>
+                </View>
+              </Pressable>
+
+              <Pressable
+                accessibilityLabel="Cancelar compartir"
+                onPress={handleCloseShareDialog}
+                style={styles.modalButtonSecondary}
+              >
+                <Text style={styles.modalButtonSecondaryText}>Cancelar</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      ) : null}
+
       {/* Pestaña flotante y drawer de búsqueda - Solo visible en modo lectura con libro seleccionado */}
       {isReaderScreen && selectedBook && !isSelecting && (
         <>
@@ -843,6 +1041,69 @@ function AppContent() {
           </Animated.View>
         </>
       )}
+
+      {/* ViewShot oculto para capturar solo los versículos seleccionados */}
+      {isCapturingImage && selectedBook && selectedChapter && selectedVerses.length > 0 ? (
+        <View style={{ position: 'absolute', left: -9999, top: -9999, opacity: 0 }}>
+          <ViewShot 
+            ref={selectedVersesViewShotRef} 
+            options={{ format: "jpg", quality: 0.9, result: 'tmpfile' }}
+            style={{ width: 400, backgroundColor: colors.backgroundPrimary }}
+          >
+            <View style={[styles.shareableContent, { backgroundColor: colors.backgroundPrimary, width: 400 }]}>
+              <Text style={styles.chapterHeading}>
+                {selectedBook.label} {selectedChapter.name}
+              </Text>
+              {selectedChapter.verses.map((verse, verseIndex) => {
+                const verseId = buildVerseId(
+                  selectedBook.id,
+                  selectedChapter.name,
+                  verse.name
+                );
+                const isSelected = selectedVerses.includes(verseId);
+                
+                // Solo mostrar versículos seleccionados
+                if (!isSelected) {
+                  return null;
+                }
+                
+                return (
+                  <View
+                    key={verseId}
+                    style={[
+                      styles.verseRow,
+                      styles.verseRowSelected,
+                      { marginBottom: 8 }
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.verseNumber,
+                        styles.verseNumberSelected,
+                      ]}
+                    >
+                      {verse.name}
+                    </Text>
+                    <View style={styles.verseBody}>
+                      <Text
+                        style={[
+                          styles.verseText,
+                          styles.verseTextSelected,
+                        ]}
+                      >
+                        {verse.text}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+              <Text style={[styles.shareFooter, { marginTop: 20 }]}>
+                📖 Biblia Reina-Valera 1909
+              </Text>
+            </View>
+          </ViewShot>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -884,6 +1145,20 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       width: 44,
       height: 44,
       marginLeft: 12,
+    },
+    rightActionsContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    homeButton: {
+      width: 44,
+      height: 44,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: 8,
+    },
+    homeButtonText: {
+      fontSize: getFontSize(20),
     },
     menuTrigger: {
       width: 44,
@@ -1066,6 +1341,11 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       color: colors.bodyText,
       fontWeight: "600",
     },
+    selectionActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 16,
+    },
     selectionAction: {
       flexDirection: "row",
       alignItems: "center",
@@ -1212,6 +1492,41 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.1)',
       zIndex: 1,
+    },
+    shareableContent: {
+      paddingHorizontal: 20,
+      paddingVertical: 24,
+    },
+    shareFooter: {
+      fontSize: getFontSize(14),
+      color: colors.placeholderText,
+      textAlign: "center",
+      marginTop: 16,
+      fontWeight: "600",
+    },
+    shareOptionButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 16,
+      borderRadius: 12,
+      marginVertical: 8,
+    },
+    shareOptionIcon: {
+      fontSize: getFontSize(32),
+      marginRight: 12,
+    },
+    shareOptionContent: {
+      flex: 1,
+    },
+    shareOptionTitle: {
+      fontSize: getFontSize(16),
+      fontWeight: "600",
+      color: colors.bodyText,
+      marginBottom: 4,
+    },
+    shareOptionDescription: {
+      fontSize: getFontSize(13),
+      color: colors.placeholderText,
     },
   });
 
