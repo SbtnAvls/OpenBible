@@ -2,10 +2,12 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
   Alert,
+  Animated,
   KeyboardAvoidingView,
   Platform,
   PanResponder,
@@ -28,6 +30,7 @@ import {
   DrawerBook,
   DrawerSection,
 } from "./src/components/BibleDrawer";
+import { BookSearchView } from "./src/components/BookSearchView";
 import {
   FavoritesVersesProvider,
   useFavoritesVerses,
@@ -42,6 +45,7 @@ import type {
 } from "./src/context/ThemeContext";
 import { FavoritesScreen } from "./src/screens/FavoritesScreen";
 import { SettingsScreen } from "./src/screens/SettingsScreen";
+import { SearchScreen, SearchResult, BookMatch } from "./src/screens/SearchScreen";
 import { formatVerseNumbersRange } from "./src/utils/verseRange";
 
 type VerseData = {
@@ -107,6 +111,12 @@ function AppContent() {
     useState<PendingFavorite | null>(null);
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [commentInput, setCommentInput] = useState("");
+  const [bookSearchQuery, setBookSearchQuery] = useState("");
+  const [isSearchDrawerExpanded, setIsSearchDrawerExpanded] = useState(false);
+  const searchDrawerHeight = useRef(new Animated.Value(0)).current;
+  const chapterScrollViewRef = useRef<ScrollView>(null);
+  const COLLAPSED_HEIGHT = 0;
+  const EXPANDED_HEIGHT = 400; // Altura del drawer expandido
 
   const styles = useMemo(
     () => createStyles(colors, getFontSize),
@@ -145,6 +155,36 @@ function AppContent() {
     setActiveScreen("reader");
     setSelectedVerses([]);
   };
+
+  const handleSearchResultSelect = useCallback((result: SearchResult) => {
+    // Encontrar el libro correcto en las secciones
+    const section = sections.find(s => s.title === result.testamentName);
+    if (!section) return;
+
+    const book = section.books.find(b => b.label === result.bookName);
+    if (!book) return;
+
+    // Seleccionar el libro y capítulo
+    setSelectedBook(book);
+    setSelectedChapterIndex(result.chapterIndex);
+    setActiveScreen("reader");
+    setSelectedVerses([]);
+  }, [sections]);
+
+  const handleBookMatchSelect = useCallback((bookMatch: BookMatch) => {
+    // Encontrar el libro correcto en las secciones
+    const section = sections.find(s => s.title === bookMatch.testamentName);
+    if (!section) return;
+
+    const book = section.books.find(b => b.label === bookMatch.bookName);
+    if (!book) return;
+
+    // Seleccionar el libro y abrir en el capítulo 1
+    setSelectedBook(book);
+    setSelectedChapterIndex(0);
+    setActiveScreen("reader");
+    setSelectedVerses([]);
+  }, [sections]);
 
   const handleSelectChapter = useCallback((index: number) => {
     setSelectedChapterIndex(index);
@@ -231,6 +271,15 @@ function AppContent() {
     }
   }, [isReaderScreen, isSelecting]);
 
+  // Cerrar drawer cuando cambias de pantalla
+  useEffect(() => {
+    if (!isReaderScreen || !selectedBook) {
+      setIsSearchDrawerExpanded(false);
+      searchDrawerHeight.setValue(COLLAPSED_HEIGHT);
+      setBookSearchQuery("");
+    }
+  }, [isReaderScreen, selectedBook, searchDrawerHeight]);
+
   const handleOpenSettings = () => {
     setActiveScreen("settings");
     setDrawerVisible(false);
@@ -248,6 +297,50 @@ function AppContent() {
     setSelectedVerses([]);
     setMenuVisible(false);
   };
+
+  const toggleSearchDrawer = useCallback(() => {
+    const toValue = isSearchDrawerExpanded ? COLLAPSED_HEIGHT : EXPANDED_HEIGHT;
+    setIsSearchDrawerExpanded(!isSearchDrawerExpanded);
+    
+    Animated.spring(searchDrawerHeight, {
+      toValue,
+      useNativeDriver: false,
+      tension: 50,
+      friction: 8,
+    }).start();
+
+    if (isSearchDrawerExpanded) {
+      // Limpiar búsqueda al cerrar
+      setBookSearchQuery("");
+    }
+  }, [isSearchDrawerExpanded, searchDrawerHeight]);
+
+  const handleBookSearchResultSelect = useCallback((chapterIndex: number, verseIndex?: number) => {
+    if (chapterIndex === selectedChapterIndex && verseIndex !== undefined) {
+      // Mismo capítulo: hacer scroll al versículo
+      toggleSearchDrawer(); // Cerrar el drawer primero
+      
+      // Esperar a que se cierre el drawer antes de hacer scroll
+      setTimeout(() => {
+        if (chapterScrollViewRef.current) {
+          // Calcular posición aproximada basada en el índice del versículo
+          // Cada versículo tiene aproximadamente 80-100px de altura
+          const estimatedVerseHeight = 90; // Altura promedio por versículo
+          const headerHeight = 50; // Altura del header del capítulo
+          const targetY = headerHeight + (verseIndex * estimatedVerseHeight);
+          
+          chapterScrollViewRef.current.scrollTo({
+            y: Math.max(0, targetY - 100), // Offset de 100px para mejor visualización
+            animated: true,
+          });
+        }
+      }, 350); // Esperar a que termine la animación del drawer
+    } else {
+      // Diferente capítulo: cambiar de capítulo
+      setSelectedChapterIndex(chapterIndex);
+      toggleSearchDrawer(); // Cerrar el drawer
+    }
+  }, [selectedChapterIndex, toggleSearchDrawer]);
 
   const handleClearSelection = () => {
     setSelectedVerses([]);
@@ -341,6 +434,8 @@ function AppContent() {
     ? "Configuraciones"
     : isFavoritesScreen
     ? "Citas guardas"
+    : !selectedBook
+    ? "Buscar en la Biblia"
     : "Biblia Reina-Valera 1909";
 
   return (
@@ -413,6 +508,12 @@ function AppContent() {
         <SettingsScreen />
       ) : isFavoritesScreen ? (
         <FavoritesScreen />
+      ) : !selectedBook ? (
+        <SearchScreen
+          bibleData={bibleContent as BibleData}
+          onSelectResult={handleSearchResultSelect}
+          onSelectBook={handleBookMatchSelect}
+        />
       ) : selectedBook && selectedChapter ? (
         <View style={styles.content}>
           <View
@@ -462,6 +563,7 @@ function AppContent() {
             {...panResponder.panHandlers}
           >
             <ScrollView
+              ref={chapterScrollViewRef}
               style={[styles.chapterContent, { backgroundColor: colors.backgroundPrimary }]}
               contentContainerStyle={styles.chapterContentContainer}
               showsVerticalScrollIndicator={false}
@@ -469,7 +571,7 @@ function AppContent() {
               <Text style={styles.chapterHeading}>
                 {selectedBook.label} {selectedChapter.name}
               </Text>
-              {selectedChapter.verses.map((verse) => {
+              {selectedChapter.verses.map((verse, verseIndex) => {
                 const verseId = buildVerseId(
                   selectedBook.id,
                   selectedChapter.name,
@@ -529,13 +631,7 @@ function AppContent() {
             </ScrollView>
           </View>
         </View>
-      ) : (
-        <View style={styles.placeholder}>
-          <Text style={styles.placeholderText}>
-            Selecciona un libro desde el menu.
-          </Text>
-        </View>
-      )}
+      ) : null}
 
       <BibleDrawer
         visible={drawerVisible && isReaderScreen}
@@ -680,6 +776,73 @@ function AppContent() {
           </KeyboardAvoidingView>
         </View>
       ) : null}
+
+      {/* Pestaña flotante y drawer de búsqueda - Solo visible en modo lectura con libro seleccionado */}
+      {isReaderScreen && selectedBook && !isSelecting && (
+        <>
+          {/* Pestaña flotante en la esquina inferior derecha */}
+          {!isSearchDrawerExpanded && (
+            <Pressable
+              accessibilityLabel="Abrir búsqueda en libro"
+              onPress={toggleSearchDrawer}
+              style={[
+                styles.searchTab,
+                {
+                  bottom: insets.bottom + 20,
+                  backgroundColor: colors.accent,
+                  shadowColor: colors.accent,
+                },
+              ]}
+            >
+              <Text style={styles.searchTabIcon}>🔍</Text>
+              <Text style={styles.searchTabText}>Buscar</Text>
+            </Pressable>
+          )}
+
+          {/* Backdrop invisible para cerrar al hacer click fuera */}
+          {isSearchDrawerExpanded && (
+            <Pressable
+              style={styles.searchBackdrop}
+              onPress={toggleSearchDrawer}
+              pointerEvents="auto"
+            />
+          )}
+
+          {/* Drawer de búsqueda inferior */}
+          <Animated.View
+            style={[
+              styles.searchDrawer,
+              {
+                height: searchDrawerHeight,
+                bottom: insets.bottom,
+                backgroundColor: colors.backgroundSecondary,
+                borderTopColor: colors.divider,
+              },
+            ]}
+            pointerEvents={isSearchDrawerExpanded ? "auto" : "none"}
+          >
+            {/* Handle para arrastrar */}
+            <Pressable
+              onPress={toggleSearchDrawer}
+              style={styles.drawerHandle}
+            >
+              <View style={[styles.handleBar, { backgroundColor: colors.divider }]} />
+            </Pressable>
+
+            {/* Contenido del drawer */}
+            {isSearchDrawerExpanded && (
+              <BookSearchView
+                selectedBook={selectedBook}
+                chapters={chapters}
+                selectedChapterIndex={selectedChapterIndex}
+                searchQuery={bookSearchQuery}
+                onSearchQueryChange={setBookSearchQuery}
+                onSelectResult={handleBookSearchResultSelect}
+              />
+            )}
+          </Animated.View>
+        </>
+      )}
     </View>
   );
 }
@@ -996,6 +1159,59 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       fontSize: getFontSize(14),
       color: colors.accentText,
       fontWeight: "600",
+    },
+    searchTab: {
+      position: "absolute",
+      right: 20,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 24,
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 6,
+    },
+    searchTabIcon: {
+      fontSize: getFontSize(18),
+      marginRight: 6,
+    },
+    searchTabText: {
+      fontSize: getFontSize(14),
+      color: colors.accentText,
+      fontWeight: "600",
+    },
+    searchDrawer: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      shadowColor: "#000",
+      shadowOpacity: 0.2,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: -4 },
+      elevation: 8,
+      zIndex: 2,
+      overflow: "hidden",
+    },
+    drawerHandle: {
+      alignItems: "center",
+      paddingVertical: 12,
+    },
+    handleBar: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+    },
+    searchBackdrop: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.1)',
+      zIndex: 1,
     },
   });
 
