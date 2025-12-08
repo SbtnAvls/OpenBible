@@ -1,13 +1,16 @@
 import React, { useCallback, useMemo, useState } from "react";
 import {
+  Alert,
   GestureResponderEvent,
   LayoutChangeEvent,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
+import { Check, Upload, Download, Trash2, Lightbulb } from "lucide-react-native";
 
 import {
   FONT_SCALE_MAX,
@@ -20,6 +23,7 @@ import type {
   ThemeColors,
   GetFontSize,
 } from "../context/ThemeContext";
+import { useVerseOfTheDay } from "../context/VerseOfTheDayContext";
 
 const TRACK_HEIGHT = 6;
 const THUMB_SIZE = 22;
@@ -31,14 +35,26 @@ function clamp(value: number, min: number, max: number) {
 export function SettingsScreen() {
   const { theme, setTheme, colors, fontScale, setFontScale, getFontSize } =
     useTheme();
+  const {
+    curatedVerses,
+    isAdmin,
+    checkAdminCode,
+    exportCuratedList,
+    importCuratedList,
+    clearCuratedList,
+  } = useVerseOfTheDay();
   const styles = useMemo(
     () => createStyles(colors, getFontSize),
     [colors, getFontSize]
   );
   const [trackWidth, setTrackWidth] = useState(0);
+  const [adminCodeInput, setAdminCodeInput] = useState("");
+  const [tempFontScale, setTempFontScale] = useState(fontScale);
+
+  const hasUnsavedFontChanges = tempFontScale !== fontScale;
 
   const sliderPercent = clamp(
-    (fontScale - FONT_SCALE_MIN) / (FONT_SCALE_MAX - FONT_SCALE_MIN),
+    (tempFontScale - FONT_SCALE_MIN) / (FONT_SCALE_MAX - FONT_SCALE_MIN),
     0,
     1
   );
@@ -55,9 +71,9 @@ export function SettingsScreen() {
       const ratio = clamp(positionX / trackWidth, 0, 1);
       const nextScale =
         FONT_SCALE_MIN + ratio * (FONT_SCALE_MAX - FONT_SCALE_MIN);
-      setFontScale(nextScale);
+      setTempFontScale(nextScale);
     },
-    [setFontScale, trackWidth]
+    [trackWidth]
   );
 
   const handleSliderEvent = useCallback(
@@ -72,12 +88,54 @@ export function SettingsScreen() {
   }, []);
 
   const handleDecrease = useCallback(() => {
-    setFontScale(fontScale - FONT_SCALE_STEP);
-  }, [fontScale, setFontScale]);
+    setTempFontScale((prev) => Math.max(FONT_SCALE_MIN, prev - FONT_SCALE_STEP));
+  }, []);
 
   const handleIncrease = useCallback(() => {
-    setFontScale(fontScale + FONT_SCALE_STEP);
-  }, [fontScale, setFontScale]);
+    setTempFontScale((prev) => Math.min(FONT_SCALE_MAX, prev + FONT_SCALE_STEP));
+  }, []);
+
+  const handleApplyFontScale = useCallback(() => {
+    setFontScale(tempFontScale);
+  }, [setFontScale, tempFontScale]);
+
+  const handleCancelFontScale = useCallback(() => {
+    setTempFontScale(fontScale);
+  }, [fontScale]);
+
+  const handleCheckAdminCode = useCallback(async () => {
+    const isValid = await checkAdminCode(adminCodeInput);
+    if (isValid) {
+      Alert.alert('Modo Admin Activado', 'Ahora puedes agregar versículos a la lista curada');
+      setAdminCodeInput('');
+    } else {
+      Alert.alert('Código Incorrecto', 'El código de administrador no es válido');
+    }
+  }, [adminCodeInput, checkAdminCode]);
+
+  const handleImport = useCallback(() => {
+    Alert.prompt(
+      'Importar Lista',
+      'Pega el JSON exportado:',
+      async (text) => {
+        if (text) {
+          await importCuratedList(text);
+        }
+      },
+      'plain-text'
+    );
+  }, [importCuratedList]);
+
+  const handleClearList = useCallback(() => {
+    Alert.alert(
+      'Confirmar',
+      `¿Estás seguro de eliminar los ${curatedVerses.length} versículos curados?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Eliminar', style: 'destructive', onPress: clearCuratedList },
+      ]
+    );
+  }, [clearCuratedList, curatedVerses.length]);
 
   return (
     <ScrollView
@@ -127,7 +185,7 @@ export function SettingsScreen() {
         <View style={styles.sliderContainer}>
           <View style={styles.sliderHeader}>
             <Text style={styles.sliderLabel}>Tamano de fuente</Text>
-            <Text style={styles.sliderValue}>{Math.round(fontScale * 100)}%</Text>
+            <Text style={styles.sliderValue}>{Math.round(tempFontScale * 100)}%</Text>
           </View>
           <View style={styles.sliderRow}>
             <Pressable
@@ -173,15 +231,147 @@ export function SettingsScreen() {
             </Pressable>
           </View>
           <View style={styles.previewBox}>
-            <Text style={styles.previewTitle}>Vista previa</Text>
+            <Text style={styles.previewTitleStatic}>Vista previa</Text>
             <View style={styles.previewRow}>
-              <Text style={styles.previewVerseNumber}>1</Text>
-              <Text style={styles.previewText}>
+              <Text style={[styles.previewVerseNumberStatic, { fontSize: Math.round(14 * tempFontScale) }]}>1</Text>
+              <Text style={[styles.previewTextStatic, {
+                fontSize: Math.round(15 * tempFontScale),
+                lineHeight: Math.round(15 * tempFontScale * 1.46),
+              }]}>
                 Asi se mostrara el texto de los versiculos con el tamano
                 seleccionado.
               </Text>
             </View>
           </View>
+          {hasUnsavedFontChanges && (
+            <View style={styles.fontScaleActions}>
+              <Pressable
+                onPress={handleCancelFontScale}
+                style={[styles.fontScaleButton, styles.fontScaleButtonCancel]}
+              >
+                <Text style={styles.fontScaleButtonCancelText}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleApplyFontScale}
+                style={[styles.fontScaleButton, styles.fontScaleButtonApply]}
+              >
+                <Text style={styles.fontScaleButtonApplyText}>Aplicar</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Administración</Text>
+        <Text style={styles.sectionSubtitle}>
+          Gestiona la lista de versículos del día
+        </Text>
+
+        {isAdmin && (
+          <View style={[styles.adminBadge, { backgroundColor: colors.accentSubtle }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Check size={16} color={colors.accent} style={{ marginRight: 6 }} />
+              <Text style={[styles.adminBadgeText, { color: colors.accent }]}>
+                Modo Admin Activo
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {!isAdmin && (
+          <View style={styles.adminCodeContainer}>
+            <TextInput
+              style={[
+                styles.adminCodeInput,
+                {
+                  color: colors.bodyText,
+                  borderColor: colors.divider,
+                  backgroundColor: colors.backgroundSecondary,
+                },
+              ]}
+              placeholder="Código de administrador"
+              placeholderTextColor={colors.placeholderText}
+              value={adminCodeInput}
+              onChangeText={setAdminCodeInput}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <Pressable
+              onPress={handleCheckAdminCode}
+              style={[styles.adminCodeButton, { backgroundColor: colors.accent }]}
+              disabled={!adminCodeInput.trim()}
+            >
+              <Text style={[styles.adminCodeButtonText, { color: colors.accentText }]}>
+                Activar
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
+        <View style={styles.statsContainer}>
+          <Text style={styles.statsText}>
+            Versículos curados: <Text style={styles.statsValue}>{curatedVerses.length}</Text>
+          </Text>
+        </View>
+
+        <View style={styles.adminActions}>
+          <Pressable
+            onPress={exportCuratedList}
+            style={[
+              styles.adminButton,
+              {
+                backgroundColor: colors.surfaceMuted,
+                borderColor: colors.divider,
+              },
+            ]}
+            disabled={curatedVerses.length === 0}
+          >
+            <Upload size={20} color={colors.bodyText} style={{ opacity: curatedVerses.length === 0 ? 0.3 : 1, marginRight: 12 }} />
+            <Text style={[styles.adminButtonText, { opacity: curatedVerses.length === 0 ? 0.3 : 1 }]}>
+              Exportar Lista
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleImport}
+            style={[
+              styles.adminButton,
+              {
+                backgroundColor: colors.surfaceMuted,
+                borderColor: colors.divider,
+              },
+            ]}
+          >
+            <Download size={20} color={colors.bodyText} style={{ marginRight: 12 }} />
+            <Text style={styles.adminButtonText}>Importar Lista</Text>
+          </Pressable>
+
+          {isAdmin && curatedVerses.length > 0 && (
+            <Pressable
+              onPress={handleClearList}
+              style={[
+                styles.adminButton,
+                styles.adminButtonDanger,
+                {
+                  borderColor: '#ff4444',
+                },
+              ]}
+            >
+              <Trash2 size={20} color="#ff4444" style={{ marginRight: 12 }} />
+              <Text style={[styles.adminButtonText, { color: '#ff4444' }]}>
+                Limpiar Lista
+              </Text>
+            </Pressable>
+          )}
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <Lightbulb size={16} color={colors.placeholderText} style={{ marginRight: 6, marginTop: 2 }} />
+          <Text style={[styles.adminHint, { flex: 1 }]}>
+            En modo admin, al leer un versículo aparecerá un botón para agregarlo a la lista curada del "Versículo del Día"
+          </Text>
         </View>
       </View>
     </ScrollView>
@@ -335,8 +525,8 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       borderColor: colors.divider,
       gap: 12,
     },
-    previewTitle: {
-      fontSize: getFontSize(14),
+    previewTitleStatic: {
+      fontSize: 14,
       fontWeight: "600",
       color: colors.headerText,
     },
@@ -345,16 +535,122 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       alignItems: "flex-start",
       gap: 12,
     },
-    previewVerseNumber: {
+    previewVerseNumberStatic: {
       width: 24,
-      fontSize: getFontSize(14),
       fontWeight: "600",
       color: colors.verseNumber,
     },
-    previewText: {
+    previewTextStatic: {
       flex: 1,
-      fontSize: getFontSize(15),
       color: colors.bodyText,
-      lineHeight: Math.round(getFontSize(15) * 1.46),
+    },
+    fontScaleActions: {
+      flexDirection: "row",
+      gap: 12,
+      marginTop: 4,
+    },
+    fontScaleButton: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    fontScaleButtonCancel: {
+      backgroundColor: colors.surfaceMuted,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.divider,
+    },
+    fontScaleButtonApply: {
+      backgroundColor: colors.accent,
+    },
+    fontScaleButtonCancelText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.bodyText,
+    },
+    fontScaleButtonApplyText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.accentText,
+    },
+    adminBadge: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      alignSelf: 'flex-start',
+      marginBottom: 16,
+    },
+    adminBadgeText: {
+      fontSize: getFontSize(13),
+      fontWeight: '700',
+    },
+    adminCodeContainer: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 16,
+    },
+    adminCodeInput: {
+      flex: 1,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: getFontSize(14),
+    },
+    adminCodeButton: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    adminCodeButtonText: {
+      fontSize: getFontSize(14),
+      fontWeight: '600',
+    },
+    statsContainer: {
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      backgroundColor: colors.backgroundSecondary,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.divider,
+      marginBottom: 16,
+    },
+    statsText: {
+      fontSize: getFontSize(14),
+      color: colors.bodyText,
+    },
+    statsValue: {
+      fontWeight: '700',
+      color: colors.accent,
+    },
+    adminActions: {
+      gap: 12,
+      marginBottom: 16,
+    },
+    adminButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      gap: 12,
+    },
+    adminButtonDanger: {
+      backgroundColor: 'rgba(255, 68, 68, 0.1)',
+    },
+    adminButtonText: {
+      fontSize: getFontSize(14),
+      fontWeight: '600',
+      color: colors.bodyText,
+    },
+    adminHint: {
+      fontSize: getFontSize(12),
+      color: colors.placeholderText,
+      lineHeight: Math.round(getFontSize(12) * 1.5),
+      fontStyle: 'italic',
     },
   });

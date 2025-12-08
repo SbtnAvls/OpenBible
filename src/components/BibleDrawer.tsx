@@ -55,6 +55,7 @@ export function BibleDrawer<T>({
     [colors, getFontSize]
   );
   const [renderDrawer, setRenderDrawer] = useState(visible);
+  const [activeTab, setActiveTab] = useState<'old' | 'new'>('old');
   const drawerTranslate = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
 
@@ -102,9 +103,23 @@ export function BibleDrawer<T>({
     [onClose, onSelectBook]
   );
 
+  // Separar secciones por testamento
+  const { oldTestamentSections, newTestamentSections } = useMemo(() => {
+    return {
+      oldTestamentSections: sections.filter(s =>
+        s.title.toLowerCase().includes('antiguo')
+      ),
+      newTestamentSections: sections.filter(s =>
+        s.title.toLowerCase().includes('nuevo')
+      ),
+    };
+  }, [sections]);
+
+  const activeSections = activeTab === 'old' ? oldTestamentSections : newTestamentSections;
+
   const content = useMemo(
     () =>
-      sections.map((section) => (
+      activeSections.map((section) => (
         <View key={section.title} style={styles.section}>
           <Text style={styles.sectionTitle}>{section.title}</Text>
           {section.books.map((book) => {
@@ -128,7 +143,7 @@ export function BibleDrawer<T>({
           })}
         </View>
       )),
-    [handleSelect, sections, selectedBookId, styles]
+    [handleSelect, activeSections, selectedBookId, styles]
   );
 
   if (!renderDrawer) {
@@ -151,6 +166,40 @@ export function BibleDrawer<T>({
           },
         ]}
       >
+        <View style={styles.tabContainer}>
+          <Pressable
+            style={[
+              styles.tab,
+              activeTab === 'old' && styles.tabActive,
+            ]}
+            onPress={() => setActiveTab('old')}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'old' && styles.tabTextActive,
+              ]}
+            >
+              Antiguo Testamento
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[
+              styles.tab,
+              activeTab === 'new' && styles.tabActive,
+            ]}
+            onPress={() => setActiveTab('new')}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'new' && styles.tabTextActive,
+              ]}
+            >
+              Nuevo Testamento
+            </Text>
+          </Pressable>
+        </View>
         <ScrollView>{content}</ScrollView>
       </Animated.View>
     </View>
@@ -177,6 +226,34 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       shadowOpacity: 0.15,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 4 },
+    },
+    tabContainer: {
+      flexDirection: "row",
+      marginBottom: 20,
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: 8,
+      padding: 4,
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: 10,
+      paddingHorizontal: 8,
+      borderRadius: 6,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    tabActive: {
+      backgroundColor: colors.accent,
+    },
+    tabText: {
+      fontSize: getFontSize(13),
+      color: colors.bodyText,
+      fontWeight: "500",
+      textAlign: "center",
+    },
+    tabTextActive: {
+      color: "#FFF",
+      fontWeight: "600",
     },
     section: {
       marginBottom: 24,

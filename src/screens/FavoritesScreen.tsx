@@ -15,7 +15,11 @@ import type {
 } from "../context/ThemeContext";
 import { formatVerseNumbersRange } from "../utils/verseRange";
 
-export function FavoritesScreen() {
+type FavoritesScreenProps = {
+  onNavigateToVerse: (bookId: string, chapterName: string) => void;
+};
+
+export function FavoritesScreen({ onNavigateToVerse }: FavoritesScreenProps) {
   const { favorites, removeFavorite, clearFavorites } = useFavoritesVerses();
   const { colors, getFontSize } = useTheme();
 
@@ -53,7 +57,12 @@ export function FavoritesScreen() {
         </Pressable>
       </View>
       {favorites.map((item) => (
-        <View key={item.id} style={styles.card}>
+        <Pressable
+          key={item.id}
+          onPress={() => onNavigateToVerse(item.bookId, item.chapterName)}
+          style={styles.card}
+          accessibilityLabel={`Ir a ${item.bookName} capitulo ${item.chapterName}`}
+        >
           <View style={styles.cardHeader}>
             <View style={styles.cardHeaderText}>
               <Text style={styles.cardReference}>
@@ -68,7 +77,10 @@ export function FavoritesScreen() {
             </View>
             <Pressable
               accessibilityLabel={`Eliminar cita ${item.bookName} ${item.chapterName}`}
-              onPress={() => removeFavorite(item.id)}
+              onPress={(e) => {
+                e.stopPropagation();
+                removeFavorite(item.id);
+              }}
               style={styles.deleteButton}
             >
               <Text style={styles.deleteButtonText}>Quitar</Text>
@@ -83,7 +95,7 @@ export function FavoritesScreen() {
               </View>
             ))}
           </View>
-        </View>
+        </Pressable>
       ))}
     </ScrollView>
   );

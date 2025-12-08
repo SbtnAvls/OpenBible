@@ -6,7 +6,6 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
-  Dimensions,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 import type { ThemeColors, GetFontSize } from "../context/ThemeContext";
@@ -68,7 +67,6 @@ export function BookSearchView({
   const [displayedOtherChaptersResults, setDisplayedOtherChaptersResults] = useState(10);
   const [activeTab, setActiveTab] = useState<'current' | 'other'>('current');
   const RESULTS_PER_PAGE = 10;
-  const screenWidth = Dimensions.get('window').width;
 
   // Función para normalizar texto
   const normalizeText = useCallback((text: string) => {
@@ -91,7 +89,6 @@ export function BookSearchView({
 
     try {
       chapters.forEach((chapter, chapterIndex) => {
-        let chapterResultsCount = 0;
         chapter.verses.forEach((verse, verseIndex) => {
           if (currentChapterResults.length + otherChaptersResults.length >= maxResults) {
             return;
