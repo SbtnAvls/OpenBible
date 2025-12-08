@@ -26,7 +26,7 @@ import {
 } from "react-native-safe-area-context";
 import Share from "react-native-share";
 import ViewShot from "react-native-view-shot";
-import { Home, Search, Share2, Heart, Sparkles, FileText, Image, BookOpen, ChevronLeft, X, ChevronDown, Flame, Gem, Shield } from "lucide-react-native";
+import { Home, Search, Share2, Heart, Sparkles, FileText, Image, BookOpen, ChevronLeft, X, ChevronDown, Flame, Shield, Bug } from "lucide-react-native";
 
 import bibleContent from "./src/textContent/rv1909.json";
 import {
@@ -199,6 +199,13 @@ function AppContent() {
   // Estados para selector de versiones
   const [bibleVersionPickerVisible, setBibleVersionPickerVisible] = useState(false);
   const [selectedBibleVersion, setSelectedBibleVersion] = useState("Reina-Valera 1909");
+
+  // Estados para debug menu (solo desarrollo)
+  const [debugMenuVisible, setDebugMenuVisible] = useState(false);
+  const [debugStreakOnboarding, setDebugStreakOnboarding] = useState(false);
+  const [debugStreakSummary, setDebugStreakSummary] = useState(false);
+  const [debugDailyCompletion, setDebugDailyCompletion] = useState(false);
+  const [debugEndOfBook, setDebugEndOfBook] = useState(false);
 
   const styles = useMemo(
     () => createStyles(colors, getFontSize),
@@ -1775,6 +1782,151 @@ function AppContent() {
           borderColor="#87CEEB"
         />
       )}
+
+      {/* DEBUG: Botón flotante para probar modales */}
+      {__DEV__ && (
+        <>
+          <Pressable
+            style={[
+              styles.debugButton,
+              { bottom: insets.bottom + 80, backgroundColor: colors.accent }
+            ]}
+            onPress={() => setDebugMenuVisible(true)}
+          >
+            <Bug size={20} color={colors.accentText} />
+          </Pressable>
+
+          {debugMenuVisible && (
+            <View style={styles.modalWrapper} pointerEvents="box-none">
+              <Pressable
+                style={styles.modalBackdrop}
+                onPress={() => setDebugMenuVisible(false)}
+              />
+              <View style={styles.modalContainer}>
+                <View
+                  style={[
+                    styles.modalCard,
+                    {
+                      backgroundColor: colors.backgroundSecondary,
+                      borderColor: colors.divider,
+                    },
+                  ]}
+                >
+                  <Text style={styles.modalTitle}>Debug: Probar Modales</Text>
+
+                  <Pressable
+                    style={[styles.debugMenuItem, { backgroundColor: colors.surfaceMuted }]}
+                    onPress={() => {
+                      setDebugMenuVisible(false);
+                      setDebugStreakOnboarding(true);
+                    }}
+                  >
+                    <Text style={styles.debugMenuItemText}>StreakOnboardingModal</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={[styles.debugMenuItem, { backgroundColor: colors.surfaceMuted }]}
+                    onPress={() => {
+                      setDebugMenuVisible(false);
+                      setDebugStreakSummary(true);
+                    }}
+                  >
+                    <Text style={styles.debugMenuItemText}>StreakSummaryModal</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={[styles.debugMenuItem, { backgroundColor: colors.surfaceMuted }]}
+                    onPress={() => {
+                      setDebugMenuVisible(false);
+                      setDebugDailyCompletion(true);
+                    }}
+                  >
+                    <Text style={styles.debugMenuItemText}>DailyCompletionModal</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={[styles.debugMenuItem, { backgroundColor: colors.surfaceMuted }]}
+                    onPress={() => {
+                      setDebugMenuVisible(false);
+                      setDebugEndOfBook(true);
+                    }}
+                  >
+                    <Text style={styles.debugMenuItemText}>EndOfBookModal</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={[styles.debugMenuItem, { backgroundColor: colors.surfaceMuted }]}
+                    onPress={() => {
+                      setDebugMenuVisible(false);
+                      setShareModalVisible(true);
+                    }}
+                  >
+                    <Text style={styles.debugMenuItemText}>ShareModal</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={[styles.debugMenuItem, { backgroundColor: colors.surfaceMuted }]}
+                    onPress={() => {
+                      setDebugMenuVisible(false);
+                      setBibleVersionPickerVisible(true);
+                    }}
+                  >
+                    <Text style={styles.debugMenuItemText}>VersionPickerModal</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={styles.modalButtonSecondary}
+                    onPress={() => setDebugMenuVisible(false)}
+                  >
+                    <Text style={styles.modalButtonSecondaryText}>Cerrar</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Debug modals */}
+          <StreakOnboardingModal
+            visible={debugStreakOnboarding}
+            onComplete={() => setDebugStreakOnboarding(false)}
+          />
+
+          <StreakSummaryModal
+            visible={debugStreakSummary}
+            onClose={() => setDebugStreakSummary(false)}
+            currentStreak={7}
+            longestStreak={15}
+            todayProgress={65}
+            remainingMinutes={3}
+            streakStatus="active"
+            availableFreezes={2}
+            currentGems={150}
+          />
+
+          {debugDailyCompletion && (
+            <DailyCompletionModal
+              visible={true}
+              onClose={() => setDebugDailyCompletion(false)}
+              reward={{
+                newStreak: 7,
+                baseGems: 5,
+                bonusGems: 10,
+                totalGemsEarned: 15,
+                isIntervalBonus: true,
+                daysToNextInterval: 0,
+              }}
+            />
+          )}
+
+          <EndOfBookModal
+            visible={debugEndOfBook}
+            bookName="Génesis"
+            nextBookName="Éxodo"
+            onContinue={() => setDebugEndOfBook(false)}
+            onRemovePin={() => setDebugEndOfBook(false)}
+          />
+        </>
+      )}
     </View>
   );
 }
@@ -2222,6 +2374,31 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       fontSize: getFontSize(13),
       color: colors.placeholderText,
       lineHeight: Math.round(getFontSize(13) * 1.4),
+    },
+    // Debug styles
+    debugButton: {
+      position: "absolute",
+      left: 20,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.2,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 4,
+    },
+    debugMenuItem: {
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderRadius: 10,
+    },
+    debugMenuItemText: {
+      fontSize: getFontSize(14),
+      color: colors.bodyText,
+      fontWeight: "500",
     },
   });
 

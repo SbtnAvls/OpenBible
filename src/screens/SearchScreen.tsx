@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import Share from "react-native-share";
 import ViewShot from "react-native-view-shot";
-import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { useTheme } from "../context/ThemeContext";
 import type { ThemeColors, GetFontSize } from "../context/ThemeContext";
 import { useVerseOfTheDay } from "../context/VerseOfTheDayContext";
@@ -90,30 +89,6 @@ function AnimatedCard({
   );
 }
 
-// Gradient background component using SVG
-function GradientBackground({
-  colors,
-  style,
-  borderRadius = 0,
-}: {
-  colors: [string, string];
-  style?: any;
-  borderRadius?: number;
-}) {
-  return (
-    <View style={[StyleSheet.absoluteFill, style, { borderRadius, overflow: "hidden" }]}>
-      <Svg height="100%" width="100%">
-        <Defs>
-          <LinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <Stop offset="0%" stopColor={colors[0]} />
-            <Stop offset="100%" stopColor={colors[1]} />
-          </LinearGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill="url(#grad)" />
-      </Svg>
-    </View>
-  );
-}
 
 type VerseData = {
   name: string;
@@ -234,7 +209,7 @@ function getVerseOfTheDay(bibleData: BibleData): SearchResult | null {
 }
 
 export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenReadingHistory, onOpenDevotionals, onOpenStudyPlans, onOpenStreak }: SearchScreenProps) {
-  const { colors, getFontSize } = useTheme();
+  const { colors, getFontSize, theme } = useTheme();
   const { getCuratedVerseForDate } = useVerseOfTheDay();
   const {
     streakData,
@@ -242,8 +217,8 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
     getRemainingMinutes,
   } = useStreak();
   const styles = useMemo(
-    () => createStyles(colors, getFontSize),
-    [colors, getFontSize]
+    () => createStyles(colors, getFontSize, theme),
+    [colors, getFontSize, theme]
   );
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -1132,7 +1107,7 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
   );
 }
 
-const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
+const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Claro" | "Oscuro") =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -1339,14 +1314,9 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       marginBottom: 16,
       letterSpacing: -0.5,
     },
-    // Glass Card Base Style
+    // Glass Card Base Style - sin sombras para evitar artefactos en animaciones fade
     glassCard: {
-      borderWidth: 1,
-      shadowColor: "#000",
-      shadowOpacity: 0.08,
-      shadowRadius: 20,
-      shadowOffset: { width: 0, height: 8 },
-      elevation: 4,
+      borderWidth: theme === "Claro" ? 1.5 : 1,
     },
     cardPressed: {
       transform: [{ scale: 0.98 }],
