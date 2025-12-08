@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -18,6 +19,7 @@ import {
   FONT_SCALE_STEP,
   themeOptions,
   useTheme,
+  ACCENT_PRESETS,
 } from "../context/ThemeContext";
 import type {
   ThemeColors,
@@ -33,7 +35,7 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function SettingsScreen() {
-  const { theme, setTheme, colors, fontScale, setFontScale, getFontSize } =
+  const { theme, setTheme, accentColor, setAccentColor, tintedBackground, setTintedBackground, colors, fontScale, setFontScale, getFontSize } =
     useTheme();
   const {
     curatedVerses,
@@ -174,6 +176,55 @@ export function SettingsScreen() {
               </Pressable>
             );
           })}
+        </View>
+
+        <View style={styles.colorSelectorContainer}>
+          <Text style={styles.colorSelectorLabel}>Color de acento</Text>
+          <View style={styles.colorOptionsRow}>
+            {ACCENT_PRESETS.map((preset) => {
+              const isActive = preset.name === accentColor;
+              return (
+                <Pressable
+                  key={preset.name}
+                  accessibilityLabel={`Color ${preset.label}`}
+                  accessibilityState={{ selected: isActive }}
+                  onPress={() => setAccentColor(preset.name)}
+                  style={[
+                    styles.colorOption,
+                    isActive && styles.colorOptionActive,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.colorCircle,
+                      { backgroundColor: preset.preview },
+                      isActive && styles.colorCircleActive,
+                    ]}
+                  >
+                    {isActive && <Check size={14} color="#FFFFFF" />}
+                  </View>
+                  <Text style={[styles.colorLabel, isActive && styles.colorLabelActive]}>
+                    {preset.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <View style={styles.tintedToggleContainer}>
+            <View style={styles.tintedToggleText}>
+              <Text style={styles.tintedToggleLabel}>Fondo con tinte</Text>
+              <Text style={styles.tintedToggleDescription}>
+                Aplica un sutil tinte del color al fondo
+              </Text>
+            </View>
+            <Switch
+              value={tintedBackground}
+              onValueChange={setTintedBackground}
+              trackColor={{ false: colors.divider, true: colors.accentSubtle }}
+              thumbColor={tintedBackground ? colors.accent : colors.placeholderText}
+            />
+          </View>
         </View>
       </View>
 
@@ -444,6 +495,80 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       fontSize: getFontSize(15),
       color: colors.bodyText,
       fontWeight: "500",
+    },
+    colorSelectorContainer: {
+      marginTop: 8,
+      paddingTop: 16,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.divider,
+    },
+    colorSelectorLabel: {
+      fontSize: getFontSize(14),
+      color: colors.bodyText,
+      fontWeight: "500",
+      marginBottom: 14,
+    },
+    colorOptionsRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    colorOption: {
+      alignItems: "center",
+      padding: 8,
+      borderRadius: 12,
+    },
+    colorOptionActive: {
+      backgroundColor: colors.accentSubtle,
+    },
+    colorCircle: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      marginBottom: 6,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 2,
+      borderColor: "transparent",
+    },
+    colorCircleActive: {
+      borderColor: colors.backgroundPrimary,
+      shadowColor: "#000",
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 3,
+    },
+    colorLabel: {
+      fontSize: getFontSize(11),
+      color: colors.placeholderText,
+      fontWeight: "500",
+    },
+    colorLabelActive: {
+      color: colors.accent,
+      fontWeight: "600",
+    },
+    tintedToggleContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: 16,
+      paddingTop: 16,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.divider,
+    },
+    tintedToggleText: {
+      flex: 1,
+      marginRight: 12,
+    },
+    tintedToggleLabel: {
+      fontSize: getFontSize(14),
+      color: colors.bodyText,
+      fontWeight: "500",
+      marginBottom: 2,
+    },
+    tintedToggleDescription: {
+      fontSize: getFontSize(12),
+      color: colors.placeholderText,
     },
     sliderContainer: {
       gap: 16,

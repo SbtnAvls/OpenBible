@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,9 +8,12 @@ import {
   Pressable,
   ScrollView,
   Alert,
+  Animated,
+  Dimensions,
 } from "react-native";
 import Share from "react-native-share";
 import ViewShot from "react-native-view-shot";
+import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import { useTheme } from "../context/ThemeContext";
 import type { ThemeColors, GetFontSize } from "../context/ThemeContext";
 import { useVerseOfTheDay } from "../context/VerseOfTheDayContext";
@@ -34,7 +37,83 @@ import {
   Gem,
   Shield,
   ChevronRight,
+  Sun,
 } from "lucide-react-native";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+// Animated card component with fade + scale entrance
+function AnimatedCard({
+  children,
+  delay = 0,
+  style,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  style?: any;
+}) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+
+  useEffect(() => {
+    const animation = Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 40,
+        delay,
+        useNativeDriver: true,
+      }),
+    ]);
+    animation.start();
+    return () => animation.stop();
+  }, [fadeAnim, scaleAnim, delay]);
+
+  return (
+    <Animated.View
+      style={[
+        style,
+        {
+          opacity: fadeAnim,
+          transform: [{ scale: scaleAnim }],
+        },
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
+// Gradient background component using SVG
+function GradientBackground({
+  colors,
+  style,
+  borderRadius = 0,
+}: {
+  colors: [string, string];
+  style?: any;
+  borderRadius?: number;
+}) {
+  return (
+    <View style={[StyleSheet.absoluteFill, style, { borderRadius, overflow: "hidden" }]}>
+      <Svg height="100%" width="100%">
+        <Defs>
+          <LinearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <Stop offset="0%" stopColor={colors[0]} />
+            <Stop offset="100%" stopColor={colors[1]} />
+          </LinearGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill="url(#grad)" />
+      </Svg>
+    </View>
+  );
+}
 
 type VerseData = {
   name: string;
@@ -507,245 +586,303 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
           contentContainerStyle={styles.homeContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Acceso Rápido */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Acceso Rápido</Text>
-            <View style={styles.quickAccessGrid}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.quickAccessButton,
-                  { backgroundColor: colors.accent },
-                  pressed && { opacity: 0.8 },
-                ]}
-                onPress={() => {
-                  if (onOpenDevotionals) {
-                    onOpenDevotionals();
-                  }
-                }}
-              >
-                <Heart size={40} color={colors.accentText} style={{ marginBottom: 12 }} />
-                <Text style={styles.quickAccessTitle}>Devocionales</Text>
-                <Text style={styles.quickAccessSubtitle}>Reflexiones diarias</Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [
-                  styles.quickAccessButton,
-                  { backgroundColor: colors.accent },
-                  pressed && { opacity: 0.8 },
-                ]}
-                onPress={() => {
-                  if (onOpenStudyPlans) {
-                    onOpenStudyPlans();
-                  }
-                }}
-              >
-                <LibraryBig size={40} color={colors.accentText} style={{ marginBottom: 12 }} />
-                <Text style={styles.quickAccessTitle}>Planes</Text>
-                <Text style={styles.quickAccessSubtitle}>de Estudio</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Cita Bíblica del Día */}
+          {/* Hero Section - Versículo del Día */}
           {verseOfTheDay && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Versículo del Día</Text>
-                <Text style={styles.sectionDate}>
-                  {new Date().toLocaleDateString('es-ES', {
-                    day: 'numeric',
-                    month: 'long'
-                  })}
-                </Text>
-              </View>
+            <AnimatedCard delay={0} style={styles.heroSection}>
               <View
                 style={[
                   styles.verseOfDayCard,
+                  styles.glassCard,
                   {
-                    backgroundColor: colors.accentSubtle,
-                    borderColor: colors.accent,
+                    backgroundColor: colors.glassBackground,
+                    borderColor: colors.glassBorder,
                   },
                 ]}
               >
-                <Sparkles size={32} color={colors.accent} style={{ marginBottom: 16 }} />
-                <Text style={styles.verseOfDayText}>
-                  "{verseOfTheDay.verseText}"
-                </Text>
-                <Text style={styles.verseOfDayReference}>
-                  {verseOfTheDay.bookName} {verseOfTheDay.chapterName}:{verseOfTheDay.verseName}
-                </Text>
-                <View style={styles.verseOfDayActions}>
-                  <Pressable
-                    style={[
-                      styles.verseOfDayButton,
-                      styles.verseOfDayButtonSecondary,
-                      { borderColor: colors.accent },
-                    ]}
-                    onPress={handleOpenShareDialog}
-                  >
-                    <Share2 size={16} color={colors.accent} style={{ marginRight: 6 }} />
-                    <Text style={[styles.verseOfDayButtonTextSecondary, { color: colors.accent }]}>
-                      Compartir
+                <View style={styles.verseOfDayHeader}>
+                  <View style={[styles.verseOfDayBadge, { backgroundColor: colors.accentSubtle }]}>
+                    <Sun size={14} color={colors.accent} />
+                    <Text style={[styles.verseOfDayBadgeText, { color: colors.accent }]}>
+                      Versículo del Día
                     </Text>
-                  </Pressable>
-                  <Pressable
-                    style={[
-                      styles.verseOfDayButton,
-                      { backgroundColor: colors.accent },
-                    ]}
-                    onPress={() => {
-                      onSelectResult(verseOfTheDay);
-                    }}
-                  >
-                    <Text style={styles.verseOfDayButtonText}>Leer capítulo</Text>
-                  </Pressable>
-                </View>
-              </View>
-            </View>
-          )}
-
-          {/* Utilidades */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Más Opciones</Text>
-            <View style={styles.utilitiesGrid}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.utilityCard,
-                  {
-                    backgroundColor: colors.surfaceMuted,
-                    borderColor: colors.divider,
-                  },
-                  pressed && { opacity: 0.7 },
-                ]}
-                onPress={() => {
-                  const randomVerse = getRandomVerse();
-                  if (randomVerse) {
-                    onSelectResult(randomVerse);
-                  } else {
-                    Alert.alert("Error", "No se pudo obtener un versículo aleatorio");
-                  }
-                }}
-              >
-                <Shuffle size={28} color={colors.headerText} style={{ marginBottom: 8 }} />
-                <Text style={styles.utilityTitle}>Versículo Aleatorio</Text>
-                <Text style={styles.utilitySubtitle}>Descubre nuevos pasajes</Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [
-                  styles.utilityCard,
-                  {
-                    backgroundColor: colors.surfaceMuted,
-                    borderColor: colors.divider,
-                  },
-                  pressed && { opacity: 0.7 },
-                ]}
-                onPress={() => {
-                  if (onOpenReadingHistory) {
-                    onOpenReadingHistory();
-                  }
-                }}
-              >
-                <Clock size={28} color={colors.headerText} style={{ marginBottom: 8 }} />
-                <Text style={styles.utilityTitle}>Lectura Reciente</Text>
-                <Text style={styles.utilitySubtitle}>Continúa donde lo dejaste</Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [
-                  styles.streakCard,
-                  {
-                    backgroundColor: colors.surfaceMuted,
-                    borderColor: streakData.currentStreak > 0 ? STREAK_COLORS.fire : colors.divider,
-                  },
-                  pressed && { opacity: 0.7 },
-                ]}
-                onPress={() => {
-                  if (onOpenStreak) {
-                    onOpenStreak();
-                  }
-                }}
-              >
-                <View style={styles.streakCardHeader}>
-                  <View style={styles.streakInfo}>
-                    <Flame
-                      size={28}
-                      color={streakData.currentStreak > 0 ? STREAK_COLORS.fire : colors.placeholderText}
-                      fill={streakData.currentStreak > 0 ? STREAK_COLORS.fire : "transparent"}
-                    />
-                    <View style={styles.streakTextContainer}>
-                      <Text style={styles.streakNumber}>{streakData.currentStreak}</Text>
-                      <Text style={styles.streakLabel}>
-                        {streakData.currentStreak === 1 ? "día" : "días"}
-                      </Text>
-                    </View>
                   </View>
-                  <ChevronRight size={18} color={colors.placeholderText} />
-                </View>
-
-                <View style={styles.streakProgressContainer}>
-                  <View style={styles.streakProgressBar}>
-                    <View
-                      style={[
-                        styles.streakProgressFill,
-                        {
-                          width: `${Math.min(100, getTodayProgress())}%`,
-                          backgroundColor: streakData.todayCompleted
-                            ? STREAK_COLORS.completed
-                            : colors.accent,
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text style={styles.streakProgressText}>
-                    {streakData.todayCompleted
-                      ? "Meta cumplida"
-                      : `${getRemainingMinutes()} min`}
+                  <Text style={[styles.verseOfDayDate, { color: colors.placeholderText }]}>
+                    {new Date().toLocaleDateString('es-ES', {
+                      day: 'numeric',
+                      month: 'short'
+                    })}
                   </Text>
                 </View>
 
-                <View style={styles.streakStats}>
-                  <View style={styles.streakStatItem}>
-                    <Gem size={14} color={STREAK_COLORS.gems} />
-                    <Text style={styles.streakStatText}>{streakData.currentGems}</Text>
-                  </View>
-                  <View style={styles.streakStatDivider} />
-                  <View style={styles.streakStatItem}>
-                    <Shield size={14} color={STREAK_COLORS.frozen} />
-                    <Text style={styles.streakStatText}>{streakData.availableFreezes}</Text>
-                  </View>
-                </View>
-              </Pressable>
+                <Text style={[styles.verseOfDayText, { color: colors.bodyText }]}>
+                  "{verseOfTheDay.verseText}"
+                </Text>
+                <Text style={[styles.verseOfDayReference, { color: colors.accent }]}>
+                  — {verseOfTheDay.bookName} {verseOfTheDay.chapterName}:{verseOfTheDay.verseName}
+                </Text>
 
-              <Pressable
-                style={({ pressed }) => [
-                  styles.utilityCard,
-                  {
-                    backgroundColor: colors.surfaceMuted,
-                    borderColor: colors.divider,
-                  },
-                  pressed && { opacity: 0.7 },
-                ]}
-                onPress={() => {
-                  // TODO: Plan de lectura anual
-                  console.log("Plan de lectura anual");
-                }}
-              >
-                <Calendar size={28} color={colors.headerText} style={{ marginBottom: 8 }} />
-                <Text style={styles.utilityTitle}>Lectura Anual</Text>
-                <Text style={styles.utilitySubtitle}>Lee la Biblia en un año</Text>
-              </Pressable>
+                <View style={styles.verseOfDayActions}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.verseOfDayButton,
+                      styles.verseOfDayButtonSecondary,
+                      { backgroundColor: colors.surfaceMuted },
+                      pressed && { opacity: 0.8 },
+                    ]}
+                    onPress={handleOpenShareDialog}
+                  >
+                    <Share2 size={18} color={colors.accent} />
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.verseOfDayButton,
+                      styles.verseOfDayButtonPrimary,
+                      { backgroundColor: colors.accent },
+                      pressed && { opacity: 0.9 },
+                    ]}
+                    onPress={() => onSelectResult(verseOfTheDay)}
+                  >
+                    <Text style={[styles.verseOfDayButtonText, { color: colors.accentText }]}>
+                      Leer capítulo
+                    </Text>
+                    <ChevronRight size={16} color={colors.accentText} />
+                  </Pressable>
+                </View>
+              </View>
+            </AnimatedCard>
+          )}
+
+          {/* Quick Access Section */}
+          <View style={styles.section}>
+            <AnimatedCard delay={100}>
+              <Text style={styles.sectionTitle}>Acceso Rápido</Text>
+            </AnimatedCard>
+            <View style={styles.quickAccessGrid}>
+              <AnimatedCard delay={150} style={styles.quickAccessCardWrapper}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.quickAccessCard,
+                    styles.glassCard,
+                    {
+                      backgroundColor: colors.glassBackground,
+                      borderColor: colors.glassBorder,
+                    },
+                    pressed && styles.cardPressed,
+                  ]}
+                  onPress={() => onOpenDevotionals?.()}
+                >
+                  <View style={[styles.quickAccessIcon, { backgroundColor: colors.accentSubtle }]}>
+                    <Heart size={24} color={colors.accent} fill={colors.accent} />
+                  </View>
+                  <Text style={styles.quickAccessTitle}>Devocionales</Text>
+                  <Text style={styles.quickAccessSubtitle}>Reflexiones diarias</Text>
+                </Pressable>
+              </AnimatedCard>
+
+              <AnimatedCard delay={200} style={styles.quickAccessCardWrapper}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.quickAccessCard,
+                    styles.glassCard,
+                    {
+                      backgroundColor: colors.glassBackground,
+                      borderColor: colors.glassBorder,
+                    },
+                    pressed && styles.cardPressed,
+                  ]}
+                  onPress={() => onOpenStudyPlans?.()}
+                >
+                  <View style={[styles.quickAccessIcon, { backgroundColor: colors.accentSubtle }]}>
+                    <LibraryBig size={24} color={colors.accent} />
+                  </View>
+                  <Text style={styles.quickAccessTitle}>Planes de Estudio</Text>
+                  <Text style={styles.quickAccessSubtitle}>Guías estructuradas</Text>
+                </Pressable>
+              </AnimatedCard>
             </View>
           </View>
 
-          {/* Footer con tips */}
-          <View style={styles.footer}>
-            <Lightbulb size={24} color={colors.placeholderText} style={{ marginBottom: 8 }} />
-            <Text style={styles.footerText}>
-              Usa el buscador arriba para encontrar cualquier palabra o frase en toda la Biblia
-            </Text>
+          {/* Streak Card - Featured */}
+          <AnimatedCard delay={250} style={styles.section}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.streakCardNew,
+                styles.glassCard,
+                {
+                  backgroundColor: colors.glassBackground,
+                  borderColor: streakData.currentStreak > 0 ? STREAK_COLORS.fire : colors.glassBorder,
+                },
+                pressed && styles.cardPressed,
+              ]}
+              onPress={() => onOpenStreak?.()}
+            >
+              <View style={styles.streakCardContent}>
+                <View style={styles.streakLeft}>
+                  <View style={[
+                    styles.streakIconContainer,
+                    { backgroundColor: streakData.currentStreak > 0 ? `${STREAK_COLORS.fire}20` : colors.surfaceMuted }
+                  ]}>
+                    <Flame
+                      size={32}
+                      color={streakData.currentStreak > 0 ? STREAK_COLORS.fire : colors.placeholderText}
+                      fill={streakData.currentStreak > 0 ? STREAK_COLORS.fire : "transparent"}
+                    />
+                  </View>
+                  <View style={styles.streakTextContent}>
+                    <Text style={styles.streakTitle}>
+                      {streakData.currentStreak > 0 ? `${streakData.currentStreak} días de racha` : "Comienza tu racha"}
+                    </Text>
+                    <Text style={styles.streakSubtitle}>
+                      {streakData.todayCompleted
+                        ? "¡Meta de hoy completada!"
+                        : `${getRemainingMinutes()} min restantes`}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.streakRight}>
+                  <View style={styles.streakMiniStats}>
+                    <View style={styles.streakMiniStat}>
+                      <Gem size={12} color={STREAK_COLORS.gems} />
+                      <Text style={styles.streakMiniStatText}>{streakData.currentGems}</Text>
+                    </View>
+                    <View style={styles.streakMiniStat}>
+                      <Shield size={12} color={STREAK_COLORS.frozen} />
+                      <Text style={styles.streakMiniStatText}>{streakData.availableFreezes}</Text>
+                    </View>
+                  </View>
+                  <ChevronRight size={20} color={colors.placeholderText} />
+                </View>
+              </View>
+
+              <View style={styles.streakProgressNew}>
+                <View style={[styles.streakProgressBarNew, { backgroundColor: colors.divider }]}>
+                  <View
+                    style={[
+                      styles.streakProgressFillNew,
+                      {
+                        width: `${Math.min(100, getTodayProgress())}%`,
+                        backgroundColor: streakData.todayCompleted
+                          ? STREAK_COLORS.completed
+                          : STREAK_COLORS.fire,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            </Pressable>
+          </AnimatedCard>
+
+          {/* Utilities Grid */}
+          <View style={styles.section}>
+            <AnimatedCard delay={300}>
+              <Text style={styles.sectionTitle}>Explorar</Text>
+            </AnimatedCard>
+            <View style={styles.utilitiesGrid}>
+              <AnimatedCard delay={350} style={styles.utilityCardWrapper}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.utilityCard,
+                    styles.glassCard,
+                    {
+                      backgroundColor: colors.glassBackground,
+                      borderColor: colors.glassBorder,
+                    },
+                    pressed && styles.cardPressed,
+                  ]}
+                  onPress={() => {
+                    const randomVerse = getRandomVerse();
+                    if (randomVerse) {
+                      onSelectResult(randomVerse);
+                    } else {
+                      Alert.alert("Error", "No se pudo obtener un versículo aleatorio");
+                    }
+                  }}
+                >
+                  <View style={[styles.utilityIcon, { backgroundColor: `${colors.gradientAccent}20` }]}>
+                    <Shuffle size={22} color={colors.gradientAccent} />
+                  </View>
+                  <Text style={styles.utilityTitle}>Aleatorio</Text>
+                  <Text style={styles.utilitySubtitle}>Sorpréndete</Text>
+                </Pressable>
+              </AnimatedCard>
+
+              <AnimatedCard delay={400} style={styles.utilityCardWrapper}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.utilityCard,
+                    styles.glassCard,
+                    {
+                      backgroundColor: colors.glassBackground,
+                      borderColor: colors.glassBorder,
+                    },
+                    pressed && styles.cardPressed,
+                  ]}
+                  onPress={() => onOpenReadingHistory?.()}
+                >
+                  <View style={[styles.utilityIcon, { backgroundColor: colors.accentSubtle }]}>
+                    <Clock size={22} color={colors.accent} />
+                  </View>
+                  <Text style={styles.utilityTitle}>Historial</Text>
+                  <Text style={styles.utilitySubtitle}>Continúa leyendo</Text>
+                </Pressable>
+              </AnimatedCard>
+
+              <AnimatedCard delay={450} style={styles.utilityCardWrapper}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.utilityCard,
+                    styles.glassCard,
+                    {
+                      backgroundColor: colors.glassBackground,
+                      borderColor: colors.glassBorder,
+                    },
+                    pressed && styles.cardPressed,
+                  ]}
+                  onPress={() => console.log("Plan de lectura anual")}
+                >
+                  <View style={[styles.utilityIcon, { backgroundColor: `${colors.gradientEnd}20` }]}>
+                    <Calendar size={22} color={colors.gradientEnd} />
+                  </View>
+                  <Text style={styles.utilityTitle}>Anual</Text>
+                  <Text style={styles.utilitySubtitle}>Biblia en 1 año</Text>
+                </Pressable>
+              </AnimatedCard>
+
+              <AnimatedCard delay={500} style={styles.utilityCardWrapper}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.utilityCard,
+                    styles.glassCard,
+                    {
+                      backgroundColor: colors.glassBackground,
+                      borderColor: colors.glassBorder,
+                    },
+                    pressed && styles.cardPressed,
+                  ]}
+                  onPress={() => {
+                    // TODO: Bookmarks
+                  }}
+                >
+                  <View style={[styles.utilityIcon, { backgroundColor: colors.surfaceMuted }]}>
+                    <BookOpen size={22} color={colors.headerText} />
+                  </View>
+                  <Text style={styles.utilityTitle}>Guardados</Text>
+                  <Text style={styles.utilitySubtitle}>Tus favoritos</Text>
+                </Pressable>
+              </AnimatedCard>
+            </View>
           </View>
+
+          {/* Footer tip */}
+          <AnimatedCard delay={550} style={styles.footer}>
+            <View style={[styles.footerCard, { backgroundColor: colors.surfaceMuted }]}>
+              <Lightbulb size={20} color={colors.accent} />
+              <Text style={styles.footerText}>
+                Usa el buscador para encontrar cualquier palabra en la Biblia
+              </Text>
+            </View>
+          </AnimatedCard>
         </ScrollView>
       ) : searchQuery.length < 3 ? (
         <View style={styles.emptyStateContainer} />
@@ -1181,7 +1318,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       textAlign: "center",
       lineHeight: Math.round(getFontSize(15) * 1.5),
     },
-    // Home Screen Styles
+    // Home Screen Styles - Modern Glassmorphism Design
     homeContainer: {
       flex: 1,
     },
@@ -1189,153 +1326,252 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       padding: 20,
       paddingBottom: 40,
     },
-    section: {
-      marginBottom: 32,
+    heroSection: {
+      marginBottom: 28,
     },
-    sectionHeader: {
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: getFontSize(20),
+      fontWeight: "800",
+      color: colors.headerText,
+      marginBottom: 16,
+      letterSpacing: -0.5,
+    },
+    // Glass Card Base Style
+    glassCard: {
+      borderWidth: 1,
+      shadowColor: "#000",
+      shadowOpacity: 0.08,
+      shadowRadius: 20,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 4,
+    },
+    cardPressed: {
+      transform: [{ scale: 0.98 }],
+      opacity: 0.9,
+    },
+    // Verse of the Day - Hero Card (Glassmorphism style - compact)
+    verseOfDayCard: {
+      borderRadius: 20,
+      padding: 18,
+    },
+    verseOfDayHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: 16,
+      marginBottom: 14,
     },
-    sectionTitle: {
-      fontSize: getFontSize(18),
+    verseOfDayBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 16,
+      gap: 5,
+    },
+    verseOfDayBadgeText: {
+      fontSize: getFontSize(11),
       fontWeight: "700",
-      color: colors.headerText,
-      marginBottom: 16,
     },
-    sectionDate: {
-      fontSize: getFontSize(13),
-      color: colors.placeholderText,
+    verseOfDayDate: {
+      fontSize: getFontSize(12),
       fontWeight: "600",
     },
+    verseOfDayText: {
+      fontSize: getFontSize(15),
+      lineHeight: Math.round(getFontSize(15) * 1.6),
+      fontWeight: "500",
+      marginBottom: 8,
+      fontStyle: "italic",
+      textAlign: "center",
+    },
+    verseOfDayReference: {
+      fontSize: getFontSize(13),
+      fontWeight: "700",
+      marginBottom: 16,
+      textAlign: "center",
+    },
+    verseOfDayActions: {
+      flexDirection: "row",
+      gap: 10,
+      alignItems: "center",
+    },
+    verseOfDayButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 12,
+      gap: 5,
+    },
+    verseOfDayButtonSecondary: {
+      width: 42,
+      height: 42,
+    },
+    verseOfDayButtonPrimary: {
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+    },
+    verseOfDayButtonText: {
+      fontSize: getFontSize(13),
+      fontWeight: "700",
+    },
+    // Quick Access Cards
     quickAccessGrid: {
       flexDirection: "row",
       gap: 12,
     },
-    quickAccessButton: {
+    quickAccessCardWrapper: {
       flex: 1,
-      borderRadius: 16,
+    },
+    quickAccessCard: {
+      borderRadius: 20,
       padding: 20,
       alignItems: "center",
-      justifyContent: "center",
       minHeight: 140,
-      shadowColor: "#000",
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 4 },
-      elevation: 4,
+    },
+    quickAccessIcon: {
+      width: 56,
+      height: 56,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 14,
     },
     quickAccessTitle: {
-      fontSize: getFontSize(16),
+      fontSize: getFontSize(15),
       fontWeight: "700",
-      color: colors.accentText,
+      color: colors.headerText,
       textAlign: "center",
       marginBottom: 4,
     },
     quickAccessSubtitle: {
-      fontSize: getFontSize(13),
-      color: colors.accentText,
+      fontSize: getFontSize(12),
+      color: colors.placeholderText,
       textAlign: "center",
-      opacity: 0.9,
     },
-    verseOfDayCard: {
-      borderRadius: 16,
-      padding: 24,
-      borderWidth: 2,
+    // Streak Card - New Design
+    streakCardNew: {
+      borderRadius: 20,
+      padding: 18,
+    },
+    streakCardContent: {
+      flexDirection: "row",
+      justifyContent: "space-between",
       alignItems: "center",
-      shadowColor: colors.accent,
-      shadowOpacity: 0.2,
-      shadowRadius: 12,
-      shadowOffset: { width: 0, height: 4 },
-      elevation: 6,
+      marginBottom: 14,
     },
-    verseOfDayText: {
-      fontSize: getFontSize(16),
-      lineHeight: Math.round(getFontSize(16) * 1.6),
-      color: colors.bodyText,
-      textAlign: "center",
-      fontWeight: "500",
-      marginBottom: 16,
-      fontStyle: "italic",
-    },
-    verseOfDayReference: {
-      fontSize: getFontSize(15),
-      fontWeight: "700",
-      color: colors.accent,
-      marginBottom: 20,
-    },
-    verseOfDayActions: {
+    streakLeft: {
       flexDirection: "row",
-      gap: 12,
-      width: "100%",
-    },
-    verseOfDayButton: {
+      alignItems: "center",
       flex: 1,
-      flexDirection: "row",
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      borderRadius: 12,
-      shadowColor: "#000",
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 2,
+    },
+    streakIconContainer: {
+      width: 52,
+      height: 52,
+      borderRadius: 14,
       alignItems: "center",
       justifyContent: "center",
+      marginRight: 14,
     },
-    verseOfDayButtonSecondary: {
-      backgroundColor: "transparent",
-      borderWidth: 2,
-      shadowOpacity: 0,
-      elevation: 0,
+    streakTextContent: {
+      flex: 1,
     },
-    verseOfDayButtonText: {
-      fontSize: getFontSize(14),
-      fontWeight: "600",
-      color: colors.accentText,
-      textAlign: "center",
+    streakTitle: {
+      fontSize: getFontSize(16),
+      fontWeight: "700",
+      color: colors.headerText,
+      marginBottom: 2,
     },
-    verseOfDayButtonTextSecondary: {
-      fontSize: getFontSize(14),
-      fontWeight: "600",
-      textAlign: "center",
+    streakSubtitle: {
+      fontSize: getFontSize(13),
+      color: colors.placeholderText,
     },
+    streakRight: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    streakMiniStats: {
+      flexDirection: "row",
+      gap: 10,
+    },
+    streakMiniStat: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      backgroundColor: colors.surfaceMuted,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    streakMiniStatText: {
+      fontSize: getFontSize(11),
+      fontWeight: "700",
+      color: colors.bodyText,
+    },
+    streakProgressNew: {
+      paddingTop: 4,
+    },
+    streakProgressBarNew: {
+      height: 6,
+      borderRadius: 3,
+      overflow: "hidden",
+    },
+    streakProgressFillNew: {
+      height: "100%",
+      borderRadius: 3,
+    },
+    // Utilities Grid
     utilitiesGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: 12,
     },
+    utilityCardWrapper: {
+      width: (SCREEN_WIDTH - 52) / 2,
+    },
     utilityCard: {
-      width: "48%",
+      borderRadius: 18,
+      padding: 18,
+      minHeight: 110,
+    },
+    utilityIcon: {
+      width: 44,
+      height: 44,
       borderRadius: 12,
-      padding: 16,
-      borderWidth: StyleSheet.hairlineWidth,
-      minHeight: 120,
+      alignItems: "center",
       justifyContent: "center",
+      marginBottom: 12,
     },
     utilityTitle: {
       fontSize: getFontSize(14),
       fontWeight: "700",
       color: colors.headerText,
-      marginBottom: 4,
+      marginBottom: 2,
     },
     utilitySubtitle: {
-      fontSize: getFontSize(12),
+      fontSize: getFontSize(11),
       color: colors.placeholderText,
-      lineHeight: Math.round(getFontSize(12) * 1.4),
     },
+    // Footer
     footer: {
+      marginTop: 8,
+    },
+    footerCard: {
+      flexDirection: "row",
       alignItems: "center",
-      paddingVertical: 20,
-      paddingHorizontal: 20,
-      marginTop: 12,
+      gap: 12,
+      padding: 16,
+      borderRadius: 14,
     },
     footerText: {
+      flex: 1,
       fontSize: getFontSize(13),
       color: colors.placeholderText,
-      textAlign: "center",
-      lineHeight: Math.round(getFontSize(13) * 1.5),
+      lineHeight: Math.round(getFontSize(13) * 1.4),
     },
     // Modal styles
     modalWrapper: {
@@ -1450,83 +1686,6 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       color: colors.placeholderText,
       textAlign: "center",
       fontWeight: "600",
-    },
-    // Streak card styles
-    streakCard: {
-      width: "48%",
-      borderRadius: 12,
-      padding: 14,
-      borderWidth: 1,
-      minHeight: 120,
-    },
-    streakCardHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      marginBottom: 10,
-    },
-    streakInfo: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    streakTextContainer: {
-      marginLeft: 8,
-    },
-    streakNumber: {
-      fontSize: getFontSize(22),
-      fontWeight: "800",
-      color: colors.headerText,
-      lineHeight: getFontSize(26),
-    },
-    streakLabel: {
-      fontSize: getFontSize(11),
-      color: colors.placeholderText,
-      marginTop: -3,
-    },
-    streakProgressContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      marginBottom: 10,
-    },
-    streakProgressBar: {
-      flex: 1,
-      height: 4,
-      backgroundColor: colors.divider,
-      borderRadius: 2,
-      overflow: "hidden",
-    },
-    streakProgressFill: {
-      height: "100%",
-      borderRadius: 2,
-    },
-    streakProgressText: {
-      fontSize: getFontSize(10),
-      color: colors.placeholderText,
-      fontWeight: "600",
-      minWidth: 50,
-      textAlign: "right",
-    },
-    streakStats: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 10,
-    },
-    streakStatItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-    },
-    streakStatText: {
-      fontSize: getFontSize(12),
-      fontWeight: "600",
-      color: colors.bodyText,
-    },
-    streakStatDivider: {
-      width: 1,
-      height: 12,
-      backgroundColor: colors.divider,
     },
   });
 

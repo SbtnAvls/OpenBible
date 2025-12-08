@@ -13,6 +13,224 @@ import { getDataFromStorage, saveDataOnStorage } from "../helpers/storageData";
 
 export type ThemeName = "Claro" | "Oscuro";
 
+export type AccentColorName = "Sunset" | "Ocean" | "Forest" | "Lavender" | "Rose";
+
+export type AccentColorPreset = {
+  name: AccentColorName;
+  label: string;
+  light: {
+    accent: string;
+    accentText: string;
+    accentSubtle: string;
+    verseNumber: string;
+    gradientStart: string;
+    gradientEnd: string;
+    gradientAccent: string;
+    glassBorder: string;
+    // Tinted backgrounds
+    backgroundPrimary: string;
+    backgroundSecondary: string;
+    surfaceMuted: string;
+    divider: string;
+    glassBackground: string;
+  };
+  dark: {
+    accent: string;
+    accentText: string;
+    accentSubtle: string;
+    verseNumber: string;
+    gradientStart: string;
+    gradientEnd: string;
+    gradientAccent: string;
+    glassBorder: string;
+    // Tinted backgrounds
+    backgroundPrimary: string;
+    backgroundSecondary: string;
+    surfaceMuted: string;
+    divider: string;
+    glassBackground: string;
+  };
+  preview: string; // Color for the selector preview
+};
+
+export const ACCENT_PRESETS: AccentColorPreset[] = [
+  {
+    name: "Sunset",
+    label: "Atardecer",
+    preview: "#FF6B6B",
+    light: {
+      accent: "#FF6B6B",
+      accentText: "#FFFFFF",
+      accentSubtle: "#FFE8E8",
+      verseNumber: "#FF8E53",
+      gradientStart: "#FF6B6B",
+      gradientEnd: "#FF8E53",
+      gradientAccent: "#9F7AEA",
+      glassBorder: "rgba(255, 107, 107, 0.2)",
+      backgroundPrimary: "#FFF8F5",
+      backgroundSecondary: "#FFFFFF",
+      surfaceMuted: "#FFF0EB",
+      divider: "#FFD6CC",
+      glassBackground: "rgba(255, 248, 245, 0.8)",
+    },
+    dark: {
+      accent: "#FF8E53",
+      accentText: "#1A1215",
+      accentSubtle: "#4D2D30",
+      verseNumber: "#FFB088",
+      gradientStart: "#FF8E53",
+      gradientEnd: "#FF6B6B",
+      gradientAccent: "#B794F4",
+      glassBorder: "rgba(255, 142, 83, 0.3)",
+      backgroundPrimary: "#1A1215",
+      backgroundSecondary: "#251A1D",
+      surfaceMuted: "#352428",
+      divider: "#4A3338",
+      glassBackground: "rgba(37, 26, 29, 0.85)",
+    },
+  },
+  {
+    name: "Ocean",
+    label: "Océano",
+    preview: "#0EA5E9",
+    light: {
+      accent: "#0EA5E9",
+      accentText: "#FFFFFF",
+      accentSubtle: "#E0F2FE",
+      verseNumber: "#0284C7",
+      gradientStart: "#0EA5E9",
+      gradientEnd: "#06B6D4",
+      gradientAccent: "#8B5CF6",
+      glassBorder: "rgba(14, 165, 233, 0.2)",
+      backgroundPrimary: "#F5FBFF",
+      backgroundSecondary: "#FFFFFF",
+      surfaceMuted: "#EBF7FF",
+      divider: "#C6E7FF",
+      glassBackground: "rgba(245, 251, 255, 0.8)",
+    },
+    dark: {
+      accent: "#38BDF8",
+      accentText: "#0C1222",
+      accentSubtle: "#1E3A5F",
+      verseNumber: "#7DD3FC",
+      gradientStart: "#38BDF8",
+      gradientEnd: "#22D3EE",
+      gradientAccent: "#A78BFA",
+      glassBorder: "rgba(56, 189, 248, 0.3)",
+      backgroundPrimary: "#0C1222",
+      backgroundSecondary: "#152238",
+      surfaceMuted: "#1E3348",
+      divider: "#2A4158",
+      glassBackground: "rgba(21, 34, 56, 0.85)",
+    },
+  },
+  {
+    name: "Forest",
+    label: "Bosque",
+    preview: "#10B981",
+    light: {
+      accent: "#10B981",
+      accentText: "#FFFFFF",
+      accentSubtle: "#D1FAE5",
+      verseNumber: "#059669",
+      gradientStart: "#10B981",
+      gradientEnd: "#34D399",
+      gradientAccent: "#F59E0B",
+      glassBorder: "rgba(16, 185, 129, 0.2)",
+      backgroundPrimary: "#F5FDF9",
+      backgroundSecondary: "#FFFFFF",
+      surfaceMuted: "#ECFDF3",
+      divider: "#C6F7D9",
+      glassBackground: "rgba(245, 253, 249, 0.8)",
+    },
+    dark: {
+      accent: "#34D399",
+      accentText: "#0D1512",
+      accentSubtle: "#1A3D2E",
+      verseNumber: "#6EE7B7",
+      gradientStart: "#34D399",
+      gradientEnd: "#10B981",
+      gradientAccent: "#FBBF24",
+      glassBorder: "rgba(52, 211, 153, 0.3)",
+      backgroundPrimary: "#0D1512",
+      backgroundSecondary: "#152B22",
+      surfaceMuted: "#1A3D2E",
+      divider: "#2A5240",
+      glassBackground: "rgba(21, 43, 34, 0.85)",
+    },
+  },
+  {
+    name: "Lavender",
+    label: "Lavanda",
+    preview: "#8B5CF6",
+    light: {
+      accent: "#8B5CF6",
+      accentText: "#FFFFFF",
+      accentSubtle: "#EDE9FE",
+      verseNumber: "#7C3AED",
+      gradientStart: "#8B5CF6",
+      gradientEnd: "#A78BFA",
+      gradientAccent: "#EC4899",
+      glassBorder: "rgba(139, 92, 246, 0.2)",
+      backgroundPrimary: "#FAF8FF",
+      backgroundSecondary: "#FFFFFF",
+      surfaceMuted: "#F3EEFF",
+      divider: "#DDD6FE",
+      glassBackground: "rgba(250, 248, 255, 0.8)",
+    },
+    dark: {
+      accent: "#A78BFA",
+      accentText: "#1A1625",
+      accentSubtle: "#2E2050",
+      verseNumber: "#C4B5FD",
+      gradientStart: "#A78BFA",
+      gradientEnd: "#8B5CF6",
+      gradientAccent: "#F472B6",
+      glassBorder: "rgba(167, 139, 250, 0.3)",
+      backgroundPrimary: "#1A1625",
+      backgroundSecondary: "#261E38",
+      surfaceMuted: "#352B50",
+      divider: "#453A65",
+      glassBackground: "rgba(38, 30, 56, 0.85)",
+    },
+  },
+  {
+    name: "Rose",
+    label: "Rosa",
+    preview: "#F43F5E",
+    light: {
+      accent: "#F43F5E",
+      accentText: "#FFFFFF",
+      accentSubtle: "#FFE4E6",
+      verseNumber: "#E11D48",
+      gradientStart: "#F43F5E",
+      gradientEnd: "#FB7185",
+      gradientAccent: "#8B5CF6",
+      glassBorder: "rgba(244, 63, 94, 0.2)",
+      backgroundPrimary: "#FFF5F6",
+      backgroundSecondary: "#FFFFFF",
+      surfaceMuted: "#FFECEE",
+      divider: "#FECDD3",
+      glassBackground: "rgba(255, 245, 246, 0.8)",
+    },
+    dark: {
+      accent: "#FB7185",
+      accentText: "#1A1215",
+      accentSubtle: "#4D2030",
+      verseNumber: "#FDA4AF",
+      gradientStart: "#FB7185",
+      gradientEnd: "#F43F5E",
+      gradientAccent: "#A78BFA",
+      glassBorder: "rgba(251, 113, 133, 0.3)",
+      backgroundPrimary: "#1A1215",
+      backgroundSecondary: "#2D1A20",
+      surfaceMuted: "#452530",
+      divider: "#5A3540",
+      glassBackground: "rgba(45, 26, 32, 0.85)",
+    },
+  },
+];
+
 export type ThemeColors = {
   backgroundPrimary: string;
   backgroundSecondary: string;
@@ -27,6 +245,13 @@ export type ThemeColors = {
   placeholderText: string;
   verseNumber: string;
   menuIcon: string;
+  // Gradient colors for modern UI
+  gradientStart: string;
+  gradientEnd: string;
+  gradientAccent: string;
+  // Glass effect colors
+  glassBackground: string;
+  glassBorder: string;
 };
 
 export type GetFontSize = (size: number) => number;
@@ -34,6 +259,10 @@ export type GetFontSize = (size: number) => number;
 export type ThemeContextValue = {
   theme: ThemeName;
   setTheme: (theme: ThemeName) => void;
+  accentColor: AccentColorName;
+  setAccentColor: (accent: AccentColorName) => void;
+  tintedBackground: boolean;
+  setTintedBackground: (value: boolean) => void;
   colors: ThemeColors;
   statusBarStyle: StatusBarStyle;
   fontScale: number;
@@ -46,45 +275,53 @@ export const FONT_SCALE_MAX = 1.25;
 export const FONT_SCALE_STEP = 0.05;
 const DEFAULT_SCREEN_HEIGHT = 812;
 
+// Base colors for themes (without accent - accent comes from ACCENT_PRESETS)
+type BaseThemeColors = {
+  backgroundPrimary: string;
+  backgroundSecondary: string;
+  surfaceMuted: string;
+  surfaceElevated: string;
+  divider: string;
+  headerText: string;
+  bodyText: string;
+  placeholderText: string;
+  menuIcon: string;
+  glassBackground: string;
+};
+
 type ThemePreset = {
-  colors: ThemeColors;
+  colors: BaseThemeColors;
   statusBarStyle: StatusBarStyle;
 };
 
 const THEME_PRESETS: Record<ThemeName, ThemePreset> = {
   Claro: {
     colors: {
-      backgroundPrimary: "#f8f9fb",
-      backgroundSecondary: "#ffffff",
-      surfaceMuted: "#f1f3f8",
-      surfaceElevated: "#ffffff",
-      divider: "#d0d4db",
-      headerText: "#111111",
-      bodyText: "#1d2333",
-      accent: "#2f3ec9",
-      accentText: "#ffffff",
-      accentSubtle: "#eef2ff",
-      placeholderText: "#555566",
-      verseNumber: "#2f3ec9",
-      menuIcon: "#111111",
+      backgroundPrimary: "#FAFAFA",
+      backgroundSecondary: "#FFFFFF",
+      surfaceMuted: "#F5F5F5",
+      surfaceElevated: "#FFFFFF",
+      divider: "#E5E5E5",
+      headerText: "#171717",
+      bodyText: "#262626",
+      placeholderText: "#737373",
+      menuIcon: "#171717",
+      glassBackground: "rgba(255, 255, 255, 0.75)",
     },
     statusBarStyle: "dark-content",
   },
   Oscuro: {
     colors: {
-      backgroundPrimary: "#11131a",
-      backgroundSecondary: "#1a1d27",
-      surfaceMuted: "#262b38",
-      surfaceElevated: "#1f2431",
-      divider: "#2a2e3a",
-      headerText: "#f4f5f9",
-      bodyText: "#e2e6f3",
-      accent: "#4a5cff",
-      accentText: "#ffffff",
-      accentSubtle: "#2c3350",
-      placeholderText: "#8a90a6",
-      verseNumber: "#99a2ff",
-      menuIcon: "#f4f5f9",
+      backgroundPrimary: "#0A0A0A",
+      backgroundSecondary: "#171717",
+      surfaceMuted: "#262626",
+      surfaceElevated: "#1C1C1C",
+      divider: "#303030",
+      headerText: "#FAFAFA",
+      bodyText: "#E5E5E5",
+      placeholderText: "#A3A3A3",
+      menuIcon: "#FAFAFA",
+      glassBackground: "rgba(23, 23, 23, 0.85)",
     },
     statusBarStyle: "light-content",
   },
@@ -97,10 +334,16 @@ const THEME_STORAGE_FILE = "theme-settings.json";
 type StoredThemeSettings = {
   theme?: unknown;
   fontScale?: unknown;
+  accentColor?: unknown;
+  tintedBackground?: unknown;
 };
 
 function isThemeName(value: unknown): value is ThemeName {
   return value === "Claro" || value === "Oscuro";
+}
+
+function isAccentColorName(value: unknown): value is AccentColorName {
+  return value === "Sunset" || value === "Ocean" || value === "Forest" || value === "Lavender" || value === "Rose";
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -109,6 +352,8 @@ function clamp(value: number, min: number, max: number) {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<ThemeName>("Claro");
+  const [accentColor, setAccentColor] = useState<AccentColorName>("Sunset");
+  const [tintedBackground, setTintedBackground] = useState(true); // Default ON
   const [fontScaleState, setFontScaleState] = useState(1);
 
   const handleSetFontScale = useCallback((scale: number) => {
@@ -129,12 +374,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       if (stored && typeof stored === "object") {
-        const { theme: storedTheme, fontScale } = stored as StoredThemeSettings;
+        const { theme: storedTheme, fontScale, accentColor: storedAccent, tintedBackground: storedTinted } = stored as StoredThemeSettings;
         if (isThemeName(storedTheme)) {
           setTheme(storedTheme);
         }
         if (typeof fontScale === "number") {
           handleSetFontScale(fontScale);
+        }
+        if (isAccentColorName(storedAccent)) {
+          setAccentColor(storedAccent);
+        }
+        if (typeof storedTinted === "boolean") {
+          setTintedBackground(storedTinted);
         }
       }
       hydrationRef.current = true;
@@ -155,23 +406,53 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
     void saveDataOnStorage(
       THEME_STORAGE_FILE,
-      JSON.stringify({ theme, fontScale: fontScaleState })
+      JSON.stringify({ theme, fontScale: fontScaleState, accentColor, tintedBackground })
     );
-  }, [fontScaleState, theme]);
+  }, [fontScaleState, theme, accentColor, tintedBackground]);
 
   const value = useMemo<ThemeContextValue>(() => {
-    const preset = THEME_PRESETS[theme];
+    const basePreset = THEME_PRESETS[theme];
+    const accentPreset = ACCENT_PRESETS.find(p => p.name === accentColor) ?? ACCENT_PRESETS[0];
+    const accentColors = theme === "Claro" ? accentPreset.light : accentPreset.dark;
+
+    // Combine base theme colors with accent colors
+    // If tintedBackground is ON, use tinted backgrounds from accent preset
+    const colors: ThemeColors = {
+      ...basePreset.colors,
+      // Apply tinted backgrounds if enabled
+      ...(tintedBackground ? {
+        backgroundPrimary: accentColors.backgroundPrimary,
+        backgroundSecondary: accentColors.backgroundSecondary,
+        surfaceMuted: accentColors.surfaceMuted,
+        divider: accentColors.divider,
+        glassBackground: accentColors.glassBackground,
+      } : {}),
+      // Always apply accent colors
+      accent: accentColors.accent,
+      accentText: accentColors.accentText,
+      accentSubtle: accentColors.accentSubtle,
+      verseNumber: accentColors.verseNumber,
+      gradientStart: accentColors.gradientStart,
+      gradientEnd: accentColors.gradientEnd,
+      gradientAccent: accentColors.gradientAccent,
+      glassBorder: accentColors.glassBorder,
+    };
+
     return {
       theme,
       setTheme,
-      colors: preset.colors,
-      statusBarStyle: preset.statusBarStyle,
+      accentColor,
+      setAccentColor,
+      tintedBackground,
+      setTintedBackground,
+      colors,
+      statusBarStyle: basePreset.statusBarStyle,
       fontScale: fontScaleState,
       setFontScale: handleSetFontScale,
       getFontSize: (size: number) =>
         RFValue(size * fontScaleState, DEFAULT_SCREEN_HEIGHT),
     };
-  }, [fontScaleState, handleSetFontScale, theme]);
+  }, [fontScaleState, handleSetFontScale, theme, accentColor, tintedBackground]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
@@ -185,3 +466,4 @@ export function useTheme() {
 }
 
 export const themeOptions: ThemeName[] = ["Claro", "Oscuro"];
+export const accentColorOptions: AccentColorName[] = ["Sunset", "Ocean", "Forest", "Lavender", "Rose"];
