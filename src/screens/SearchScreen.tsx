@@ -141,6 +141,7 @@ type SearchScreenProps = {
   onOpenDevotionals?: () => void;
   onOpenStudyPlans?: () => void;
   onOpenStreak?: () => void;
+  onOpenFavorites?: () => void;
 };
 
 // Función para obtener el versículo del día de manera determinística
@@ -208,7 +209,7 @@ function getVerseOfTheDay(bibleData: BibleData): SearchResult | null {
   }
 }
 
-export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenReadingHistory, onOpenDevotionals, onOpenStudyPlans, onOpenStreak }: SearchScreenProps) {
+export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenReadingHistory, onOpenDevotionals, onOpenStudyPlans, onOpenStreak, onOpenFavorites }: SearchScreenProps) {
   const { colors, getFontSize, theme } = useTheme();
   const { getCuratedVerseForDate } = useVerseOfTheDay();
   const {
@@ -835,9 +836,7 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                     },
                     pressed && styles.cardPressed,
                   ]}
-                  onPress={() => {
-                    // TODO: Bookmarks
-                  }}
+                  onPress={onOpenFavorites}
                 >
                   <View style={[styles.utilityIcon, { backgroundColor: colors.surfaceMuted }]}>
                     <BookOpen size={22} color={colors.headerText} />

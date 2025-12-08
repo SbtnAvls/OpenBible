@@ -110,7 +110,6 @@ export function BookSearchView({
             } else {
               otherChaptersResults.push(result);
             }
-            chapterResultsCount++;
           }
         });
       });

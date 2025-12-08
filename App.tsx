@@ -664,6 +664,12 @@ function AppContent() {
     setSelectedVerses([]);
   };
 
+  const handleOpenFavorites = () => {
+    setActiveScreen("favorites");
+    setDrawerVisible(false);
+    setSelectedVerses([]);
+  };
+
   const handleSelectPlan = useCallback((planId: string) => {
     setSelectedPlanId(planId);
     setActiveScreen("study-plan-detail");
@@ -1104,6 +1110,7 @@ function AppContent() {
           onOpenDevotionals={handleOpenDevotionals}
           onOpenStudyPlans={handleOpenStudyPlans}
           onOpenStreak={handleOpenStreak}
+          onOpenFavorites={handleOpenFavorites}
         />
       ) : selectedBook && selectedChapter ? (
         <View style={styles.content}>
