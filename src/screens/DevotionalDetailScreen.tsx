@@ -1,11 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import {
   BookOpen,
   MessageCircle,
@@ -28,7 +22,7 @@ export function DevotionalDetailScreen({
   const { colors, getFontSize } = useTheme();
   const styles = useMemo(
     () => createStyles(colors, getFontSize),
-    [colors, getFontSize]
+    [colors, getFontSize],
   );
 
   const formatDate = (date: Date) => {
@@ -71,13 +65,11 @@ export function DevotionalDetailScreen({
             Texto bíblico
           </Text>
         </View>
-        <Text style={styles.verseReference}>{devotional.bibleVerse.reference}</Text>
+        <Text style={styles.verseReference}>
+          {devotional.bibleVerse.reference}
+        </Text>
         <View style={styles.quoteContainer}>
-          <Quote
-            size={24}
-            color={colors.accent}
-            style={styles.quoteIcon}
-          />
+          <Quote size={24} color={colors.accent} style={styles.quoteIcon} />
           <Text style={styles.verseText}>"{devotional.bibleVerse.text}"</Text>
         </View>
       </View>

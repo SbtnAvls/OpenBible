@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from 'react';
 import {
   View,
   Text,
@@ -10,14 +16,14 @@ import {
   Alert,
   Animated,
   Dimensions,
-} from "react-native";
-import Share from "react-native-share";
-import ViewShot from "react-native-view-shot";
-import { useTheme } from "../context/ThemeContext";
-import type { ThemeColors, GetFontSize } from "../context/ThemeContext";
-import { useVerseOfTheDay } from "../context/VerseOfTheDayContext";
-import { useStreak } from "../context/StreakContext";
-import { STREAK_COLORS } from "../types/streak";
+} from 'react-native';
+import Share from 'react-native-share';
+import ViewShot from 'react-native-view-shot';
+import { useTheme } from '../context/ThemeContext';
+import type { ThemeColors, GetFontSize } from '../context/ThemeContext';
+import { useVerseOfTheDay } from '../context/VerseOfTheDayContext';
+import { useStreak } from '../context/StreakContext';
+import { STREAK_COLORS } from '../types/streak';
 import {
   Search,
   X,
@@ -37,9 +43,9 @@ import {
   Shield,
   ChevronRight,
   Sun,
-} from "lucide-react-native";
+} from 'lucide-react-native';
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Animated card component with fade + scale entrance
 function AnimatedCard({
@@ -88,7 +94,6 @@ function AnimatedCard({
     </Animated.View>
   );
 }
-
 
 type VerseData = {
   name: string;
@@ -140,6 +145,7 @@ type SearchScreenProps = {
   onOpenReadingHistory?: () => void;
   onOpenDevotionals?: () => void;
   onOpenStudyPlans?: () => void;
+  onOpenYearlyPlans?: () => void;
   onOpenStreak?: () => void;
   onOpenFavorites?: () => void;
 };
@@ -148,26 +154,32 @@ type SearchScreenProps = {
 function getVerseOfTheDay(bibleData: BibleData): SearchResult | null {
   try {
     // Validar que bibleData y testament existan
-    if (!bibleData || !bibleData.testament || !Array.isArray(bibleData.testament)) {
-      console.error("Invalid bible data structure");
+    if (
+      !bibleData ||
+      !bibleData.testament ||
+      !Array.isArray(bibleData.testament)
+    ) {
+      console.error('Invalid bible data structure');
       return null;
     }
 
     // Usar la fecha actual como seed (YYYY-MM-DD)
     const today = new Date();
-    const dateString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const dateString = `${today.getFullYear()}-${String(
+      today.getMonth() + 1,
+    ).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
     // Crear un hash simple de la fecha para usar como seed
     let hash = 0;
     for (let i = 0; i < dateString.length; i++) {
-      hash = ((hash << 5) - hash) + dateString.charCodeAt(i);
+      hash = (hash << 5) - hash + dateString.charCodeAt(i);
       hash = hash & hash; // Convertir a entero de 32 bits
     }
     hash = Math.abs(hash);
 
     // Recopilar todos los versículos
     const allVerses: SearchResult[] = [];
-    (bibleData.testament ?? []).forEach((testament) => {
+    (bibleData.testament ?? []).forEach(testament => {
       if (!testament || !testament.books) return;
 
       (testament.books ?? []).forEach((book, bookIndex) => {
@@ -176,7 +188,7 @@ function getVerseOfTheDay(bibleData: BibleData): SearchResult | null {
         (book.chapters ?? []).forEach((chapter, chapterIndex) => {
           if (!chapter || !chapter.verses) return;
 
-          (chapter.verses ?? []).forEach((verse) => {
+          (chapter.verses ?? []).forEach(verse => {
             if (!verse || !verse.text) return;
 
             allVerses.push({
@@ -196,7 +208,7 @@ function getVerseOfTheDay(bibleData: BibleData): SearchResult | null {
 
     // Verificar que hay versículos
     if (allVerses.length === 0) {
-      console.error("No verses found in bible data");
+      console.error('No verses found in bible data');
       return null;
     }
 
@@ -204,25 +216,31 @@ function getVerseOfTheDay(bibleData: BibleData): SearchResult | null {
     const verseIndex = hash % allVerses.length;
     return allVerses[verseIndex];
   } catch (error) {
-    console.error("Error getting verse of the day:", error);
+    console.error('Error getting verse of the day:', error);
     return null;
   }
 }
 
-export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenReadingHistory, onOpenDevotionals, onOpenStudyPlans, onOpenStreak, onOpenFavorites }: SearchScreenProps) {
+export function SearchScreen({
+  bibleData,
+  onSelectResult,
+  onSelectBook,
+  onOpenReadingHistory,
+  onOpenDevotionals,
+  onOpenStudyPlans,
+  onOpenYearlyPlans,
+  onOpenStreak,
+  onOpenFavorites,
+}: SearchScreenProps) {
   const { colors, getFontSize, theme } = useTheme();
   const { getCuratedVerseForDate } = useVerseOfTheDay();
-  const {
-    streakData,
-    getTodayProgress,
-    getRemainingMinutes,
-  } = useStreak();
+  const { streakData, getTodayProgress, getRemainingMinutes } = useStreak();
   const styles = useMemo(
     () => createStyles(colors, getFontSize, theme),
-    [colors, getFontSize, theme]
+    [colors, getFontSize, theme],
   );
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [displayedResults, setDisplayedResults] = useState(20); // Número inicial de resultados a mostrar
   const RESULTS_PER_PAGE = 20; // Resultados por página
   const [shareModalVisible, setShareModalVisible] = useState(false);
@@ -233,14 +251,18 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
   const getRandomVerse = useCallback((): SearchResult | null => {
     try {
       // Validar que bibleData y testament existan
-      if (!bibleData || !bibleData.testament || !Array.isArray(bibleData.testament)) {
-        console.error("Invalid bible data structure");
+      if (
+        !bibleData ||
+        !bibleData.testament ||
+        !Array.isArray(bibleData.testament)
+      ) {
+        console.error('Invalid bible data structure');
         return null;
       }
 
       // Recopilar todos los versículos
       const allVerses: SearchResult[] = [];
-      (bibleData.testament ?? []).forEach((testament) => {
+      (bibleData.testament ?? []).forEach(testament => {
         if (!testament || !testament.books) return;
 
         (testament.books ?? []).forEach((book, bookIndex) => {
@@ -249,7 +271,7 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
           (book.chapters ?? []).forEach((chapter, chapterIndex) => {
             if (!chapter || !chapter.verses) return;
 
-            (chapter.verses ?? []).forEach((verse) => {
+            (chapter.verses ?? []).forEach(verse => {
               if (!verse || !verse.text) return;
 
               allVerses.push({
@@ -269,7 +291,7 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
 
       // Verificar que hay versículos
       if (allVerses.length === 0) {
-        console.error("No verses found in bible data");
+        console.error('No verses found in bible data');
         return null;
       }
 
@@ -277,7 +299,7 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
       const randomIndex = Math.floor(Math.random() * allVerses.length);
       return allVerses[randomIndex];
     } catch (error) {
-      console.error("Error getting random verse:", error);
+      console.error('Error getting random verse:', error);
       return null;
     }
   }, [bibleData]);
@@ -297,8 +319,8 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
   const normalizeText = useCallback((text: string) => {
     return text
       .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
   }, []);
 
   // Buscar coincidencias de libros
@@ -311,10 +333,10 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
     const normalizedQuery = normalizeText(searchQuery.trim());
 
     try {
-      (bibleData.testament ?? []).forEach((testament) => {
+      (bibleData.testament ?? []).forEach(testament => {
         (testament.books ?? []).forEach((book, bookIndex) => {
           const normalizedBookName = normalizeText(book.name);
-          
+
           // Verificar si el nombre del libro contiene la búsqueda o viceversa
           if (
             normalizedBookName.includes(normalizedQuery) ||
@@ -331,7 +353,7 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
         });
       });
     } catch (error) {
-      console.error("Error searching books:", error);
+      console.error('Error searching books:', error);
     }
 
     return matches;
@@ -348,10 +370,10 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
     const maxResults = 100; // Limitar resultados para rendimiento
 
     try {
-      (bibleData.testament ?? []).forEach((testament) => {
+      (bibleData.testament ?? []).forEach(testament => {
         (testament.books ?? []).forEach((book, bookIndex) => {
           (book.chapters ?? []).forEach((chapter, chapterIndex) => {
-            (chapter.verses ?? []).forEach((verse) => {
+            (chapter.verses ?? []).forEach(verse => {
               if (results.length >= maxResults) {
                 return;
               }
@@ -374,7 +396,7 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
         });
       });
     } catch (error) {
-      console.error("Error during search:", error);
+      console.error('Error during search:', error);
     }
 
     return results;
@@ -402,7 +424,7 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
 
       return { beforeMatch, match, afterMatch };
     },
-    [normalizeText]
+    [normalizeText],
   );
 
   const handleSearch = useCallback((text: string) => {
@@ -414,18 +436,18 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
     (result: SearchResult) => {
       onSelectResult(result);
     },
-    [onSelectResult]
+    [onSelectResult],
   );
 
   const handleSelectBookMatch = useCallback(
     (bookMatch: BookMatch) => {
       onSelectBook(bookMatch);
     },
-    [onSelectBook]
+    [onSelectBook],
   );
 
   const handleLoadMore = useCallback(() => {
-    setDisplayedResults((prev) => prev + RESULTS_PER_PAGE);
+    setDisplayedResults(prev => prev + RESULTS_PER_PAGE);
   }, []);
 
   const handleOpenShareDialog = useCallback(() => {
@@ -437,7 +459,7 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
   }, []);
 
   const getVerseOfTheDayText = useCallback(() => {
-    if (!verseOfTheDay) return "";
+    if (!verseOfTheDay) return '';
 
     return `${verseOfTheDay.bookName} ${verseOfTheDay.chapterName}:${verseOfTheDay.verseName}\n\n"${verseOfTheDay.verseText}"\n\nVersículo del Día - Biblia Reina-Valera 1909`;
   }, [verseOfTheDay]);
@@ -448,13 +470,13 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
 
       await Share.open({
         message: text,
-        title: "Compartir Versículo del Día",
+        title: 'Compartir Versículo del Día',
       });
 
       handleCloseShareDialog();
     } catch (error: any) {
-      if (error?.message !== "User did not share") {
-        Alert.alert("Error", "No se pudo compartir el texto");
+      if (error?.message !== 'User did not share') {
+        Alert.alert('Error', 'No se pudo compartir el texto');
       }
       handleCloseShareDialog();
     }
@@ -463,7 +485,7 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
   const handleShareAsImage = useCallback(async () => {
     try {
       if (!verseOfTheDay) {
-        Alert.alert("Error", "No hay versículo del día disponible");
+        Alert.alert('Error', 'No hay versículo del día disponible');
         return;
       }
 
@@ -474,26 +496,29 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
       setTimeout(async () => {
         try {
           if (!verseViewShotRef.current) {
-            throw new Error("ViewShot reference not available");
+            throw new Error('ViewShot reference not available');
           }
 
           // Capturar la vista como imagen
           const uri = await verseViewShotRef.current.capture?.();
 
           if (!uri) {
-            throw new Error("Failed to capture image");
+            throw new Error('Failed to capture image');
           }
 
           await Share.open({
             url: `file://${uri}`,
-            title: "Compartir Versículo del Día",
+            title: 'Compartir Versículo del Día',
           });
 
           handleCloseShareDialog();
         } catch (captureError: any) {
-          console.error("Error capturing image:", captureError);
-          if (captureError?.message !== "User did not share") {
-            Alert.alert("Error", "No se pudo capturar la imagen. Intenta compartir como texto.");
+          console.error('Error capturing image:', captureError);
+          if (captureError?.message !== 'User did not share') {
+            Alert.alert(
+              'Error',
+              'No se pudo capturar la imagen. Intenta compartir como texto.',
+            );
           }
           handleCloseShareDialog();
         } finally {
@@ -501,9 +526,9 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
         }
       }, 300);
     } catch (error: any) {
-      console.error("Error in handleShareAsImage:", error);
-      if (error?.message !== "User did not share") {
-        Alert.alert("Error", "No se pudo compartir la imagen");
+      console.error('Error in handleShareAsImage:', error);
+      if (error?.message !== 'User did not share') {
+        Alert.alert('Error', 'No se pudo compartir la imagen');
       }
       handleCloseShareDialog();
       setIsCapturingImage(false);
@@ -530,7 +555,11 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
             },
           ]}
         >
-          <Search size={18} color={colors.placeholderText} style={{ marginRight: 8 }} />
+          <Search
+            size={18}
+            color={colors.placeholderText}
+            style={{ marginRight: 8 }}
+          />
           <TextInput
             style={[styles.searchInput, { color: colors.bodyText }]}
             placeholder="Buscar en la Biblia..."
@@ -542,7 +571,7 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
           />
           {searchQuery.length > 0 && (
             <Pressable
-              onPress={() => setSearchQuery("")}
+              onPress={() => setSearchQuery('')}
               style={styles.clearButton}
             >
               <X size={18} color={colors.placeholderText} />
@@ -576,25 +605,45 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                 ]}
               >
                 <View style={styles.verseOfDayHeader}>
-                  <View style={[styles.verseOfDayBadge, { backgroundColor: colors.accentSubtle }]}>
+                  <View
+                    style={[
+                      styles.verseOfDayBadge,
+                      { backgroundColor: colors.accentSubtle },
+                    ]}
+                  >
                     <Sun size={14} color={colors.accent} />
-                    <Text style={[styles.verseOfDayBadgeText, { color: colors.accent }]}>
+                    <Text
+                      style={[
+                        styles.verseOfDayBadgeText,
+                        { color: colors.accent },
+                      ]}
+                    >
                       Versículo del Día
                     </Text>
                   </View>
-                  <Text style={[styles.verseOfDayDate, { color: colors.placeholderText }]}>
+                  <Text
+                    style={[
+                      styles.verseOfDayDate,
+                      { color: colors.placeholderText },
+                    ]}
+                  >
                     {new Date().toLocaleDateString('es-ES', {
                       day: 'numeric',
-                      month: 'short'
+                      month: 'short',
                     })}
                   </Text>
                 </View>
 
-                <Text style={[styles.verseOfDayText, { color: colors.bodyText }]}>
+                <Text
+                  style={[styles.verseOfDayText, { color: colors.bodyText }]}
+                >
                   "{verseOfTheDay.verseText}"
                 </Text>
-                <Text style={[styles.verseOfDayReference, { color: colors.accent }]}>
-                  — {verseOfTheDay.bookName} {verseOfTheDay.chapterName}:{verseOfTheDay.verseName}
+                <Text
+                  style={[styles.verseOfDayReference, { color: colors.accent }]}
+                >
+                  — {verseOfTheDay.bookName} {verseOfTheDay.chapterName}:
+                  {verseOfTheDay.verseName}
                 </Text>
 
                 <View style={styles.verseOfDayActions}>
@@ -618,7 +667,12 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                     ]}
                     onPress={() => onSelectResult(verseOfTheDay)}
                   >
-                    <Text style={[styles.verseOfDayButtonText, { color: colors.accentText }]}>
+                    <Text
+                      style={[
+                        styles.verseOfDayButtonText,
+                        { color: colors.accentText },
+                      ]}
+                    >
                       Leer capítulo
                     </Text>
                     <ChevronRight size={16} color={colors.accentText} />
@@ -633,8 +687,12 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
             <AnimatedCard delay={100}>
               <Text style={styles.sectionTitle}>Acceso Rápido</Text>
             </AnimatedCard>
-            <View style={styles.quickAccessGrid}>
-              <AnimatedCard delay={150} style={styles.quickAccessCardWrapper}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.quickAccessScroll}
+            >
+              <AnimatedCard delay={150}>
                 <Pressable
                   style={({ pressed }) => [
                     styles.quickAccessCard,
@@ -647,15 +705,26 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                   ]}
                   onPress={() => onOpenDevotionals?.()}
                 >
-                  <View style={[styles.quickAccessIcon, { backgroundColor: colors.accentSubtle }]}>
-                    <Heart size={24} color={colors.accent} fill={colors.accent} />
+                  <View
+                    style={[
+                      styles.quickAccessIcon,
+                      { backgroundColor: colors.accentSubtle },
+                    ]}
+                  >
+                    <Heart
+                      size={24}
+                      color={colors.accent}
+                      fill={colors.accent}
+                    />
                   </View>
                   <Text style={styles.quickAccessTitle}>Devocionales</Text>
-                  <Text style={styles.quickAccessSubtitle}>Reflexiones diarias</Text>
+                  <Text style={styles.quickAccessSubtitle}>
+                    Reflexiones diarias
+                  </Text>
                 </Pressable>
               </AnimatedCard>
 
-              <AnimatedCard delay={200} style={styles.quickAccessCardWrapper}>
+              <AnimatedCard delay={200}>
                 <Pressable
                   style={({ pressed }) => [
                     styles.quickAccessCard,
@@ -668,14 +737,49 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                   ]}
                   onPress={() => onOpenStudyPlans?.()}
                 >
-                  <View style={[styles.quickAccessIcon, { backgroundColor: colors.accentSubtle }]}>
+                  <View
+                    style={[
+                      styles.quickAccessIcon,
+                      { backgroundColor: colors.accentSubtle },
+                    ]}
+                  >
                     <LibraryBig size={24} color={colors.accent} />
                   </View>
                   <Text style={styles.quickAccessTitle}>Planes de Estudio</Text>
-                  <Text style={styles.quickAccessSubtitle}>Guías estructuradas</Text>
+                  <Text style={styles.quickAccessSubtitle}>
+                    Guías estructuradas
+                  </Text>
                 </Pressable>
               </AnimatedCard>
-            </View>
+
+              <AnimatedCard delay={250}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.quickAccessCard,
+                    styles.glassCard,
+                    {
+                      backgroundColor: colors.glassBackground,
+                      borderColor: colors.glassBorder,
+                    },
+                    pressed && styles.cardPressed,
+                  ]}
+                  onPress={() => onOpenYearlyPlans?.()}
+                >
+                  <View
+                    style={[
+                      styles.quickAccessIcon,
+                      { backgroundColor: '#8B5CF620' },
+                    ]}
+                  >
+                    <Calendar size={24} color="#8B5CF6" />
+                  </View>
+                  <Text style={styles.quickAccessTitle}>Biblia en 1 Año</Text>
+                  <Text style={styles.quickAccessSubtitle}>
+                    Lectura completa
+                  </Text>
+                </Pressable>
+              </AnimatedCard>
+            </ScrollView>
           </View>
 
           {/* Streak Card - Featured */}
@@ -686,7 +790,10 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                 styles.glassCard,
                 {
                   backgroundColor: colors.glassBackground,
-                  borderColor: streakData.currentStreak > 0 ? STREAK_COLORS.fire : colors.glassBorder,
+                  borderColor:
+                    streakData.currentStreak > 0
+                      ? STREAK_COLORS.fire
+                      : colors.glassBorder,
                 },
                 pressed && styles.cardPressed,
               ]}
@@ -694,23 +801,40 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
             >
               <View style={styles.streakCardContent}>
                 <View style={styles.streakLeft}>
-                  <View style={[
-                    styles.streakIconContainer,
-                    { backgroundColor: streakData.currentStreak > 0 ? `${STREAK_COLORS.fire}20` : colors.surfaceMuted }
-                  ]}>
+                  <View
+                    style={[
+                      styles.streakIconContainer,
+                      {
+                        backgroundColor:
+                          streakData.currentStreak > 0
+                            ? `${STREAK_COLORS.fire}20`
+                            : colors.surfaceMuted,
+                      },
+                    ]}
+                  >
                     <Flame
                       size={32}
-                      color={streakData.currentStreak > 0 ? STREAK_COLORS.fire : colors.placeholderText}
-                      fill={streakData.currentStreak > 0 ? STREAK_COLORS.fire : "transparent"}
+                      color={
+                        streakData.currentStreak > 0
+                          ? STREAK_COLORS.fire
+                          : colors.placeholderText
+                      }
+                      fill={
+                        streakData.currentStreak > 0
+                          ? STREAK_COLORS.fire
+                          : 'transparent'
+                      }
                     />
                   </View>
                   <View style={styles.streakTextContent}>
                     <Text style={styles.streakTitle}>
-                      {streakData.currentStreak > 0 ? `${streakData.currentStreak} días de racha` : "Comienza tu racha"}
+                      {streakData.currentStreak > 0
+                        ? `${streakData.currentStreak} días de racha`
+                        : 'Comienza tu racha'}
                     </Text>
                     <Text style={styles.streakSubtitle}>
                       {streakData.todayCompleted
-                        ? "¡Meta de hoy completada!"
+                        ? '¡Meta de hoy completada!'
                         : `${getRemainingMinutes()} min restantes`}
                     </Text>
                   </View>
@@ -720,11 +844,15 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                   <View style={styles.streakMiniStats}>
                     <View style={styles.streakMiniStat}>
                       <Gem size={12} color={STREAK_COLORS.gems} />
-                      <Text style={styles.streakMiniStatText}>{streakData.currentGems}</Text>
+                      <Text style={styles.streakMiniStatText}>
+                        {streakData.currentGems}
+                      </Text>
                     </View>
                     <View style={styles.streakMiniStat}>
                       <Shield size={12} color={STREAK_COLORS.frozen} />
-                      <Text style={styles.streakMiniStatText}>{streakData.availableFreezes}</Text>
+                      <Text style={styles.streakMiniStatText}>
+                        {streakData.availableFreezes}
+                      </Text>
                     </View>
                   </View>
                   <ChevronRight size={20} color={colors.placeholderText} />
@@ -732,7 +860,12 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
               </View>
 
               <View style={styles.streakProgressNew}>
-                <View style={[styles.streakProgressBarNew, { backgroundColor: colors.divider }]}>
+                <View
+                  style={[
+                    styles.streakProgressBarNew,
+                    { backgroundColor: colors.divider },
+                  ]}
+                >
                   <View
                     style={[
                       styles.streakProgressFillNew,
@@ -771,11 +904,19 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                     if (randomVerse) {
                       onSelectResult(randomVerse);
                     } else {
-                      Alert.alert("Error", "No se pudo obtener un versículo aleatorio");
+                      Alert.alert(
+                        'Error',
+                        'No se pudo obtener un versículo aleatorio',
+                      );
                     }
                   }}
                 >
-                  <View style={[styles.utilityIcon, { backgroundColor: `${colors.gradientAccent}20` }]}>
+                  <View
+                    style={[
+                      styles.utilityIcon,
+                      { backgroundColor: `${colors.gradientAccent}20` },
+                    ]}
+                  >
                     <Shuffle size={22} color={colors.gradientAccent} />
                   </View>
                   <Text style={styles.utilityTitle}>Aleatorio</Text>
@@ -796,7 +937,12 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                   ]}
                   onPress={() => onOpenReadingHistory?.()}
                 >
-                  <View style={[styles.utilityIcon, { backgroundColor: colors.accentSubtle }]}>
+                  <View
+                    style={[
+                      styles.utilityIcon,
+                      { backgroundColor: colors.accentSubtle },
+                    ]}
+                  >
                     <Clock size={22} color={colors.accent} />
                   </View>
                   <Text style={styles.utilityTitle}>Historial</Text>
@@ -815,30 +961,14 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                     },
                     pressed && styles.cardPressed,
                   ]}
-                  onPress={() => console.log("Plan de lectura anual")}
-                >
-                  <View style={[styles.utilityIcon, { backgroundColor: `${colors.gradientEnd}20` }]}>
-                    <Calendar size={22} color={colors.gradientEnd} />
-                  </View>
-                  <Text style={styles.utilityTitle}>Anual</Text>
-                  <Text style={styles.utilitySubtitle}>Biblia en 1 año</Text>
-                </Pressable>
-              </AnimatedCard>
-
-              <AnimatedCard delay={500} style={styles.utilityCardWrapper}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.utilityCard,
-                    styles.glassCard,
-                    {
-                      backgroundColor: colors.glassBackground,
-                      borderColor: colors.glassBorder,
-                    },
-                    pressed && styles.cardPressed,
-                  ]}
                   onPress={onOpenFavorites}
                 >
-                  <View style={[styles.utilityIcon, { backgroundColor: colors.surfaceMuted }]}>
+                  <View
+                    style={[
+                      styles.utilityIcon,
+                      { backgroundColor: colors.surfaceMuted },
+                    ]}
+                  >
                     <BookOpen size={22} color={colors.headerText} />
                   </View>
                   <Text style={styles.utilityTitle}>Guardados</Text>
@@ -850,7 +980,12 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
 
           {/* Footer tip */}
           <AnimatedCard delay={550} style={styles.footer}>
-            <View style={[styles.footerCard, { backgroundColor: colors.surfaceMuted }]}>
+            <View
+              style={[
+                styles.footerCard,
+                { backgroundColor: colors.surfaceMuted },
+              ]}
+            >
               <Lightbulb size={20} color={colors.accent} />
               <Text style={styles.footerText}>
                 Usa el buscador para encontrar cualquier palabra en la Biblia
@@ -863,7 +998,11 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
       ) : searchResults.length === 0 ? (
         <View style={styles.emptyStateContainer}>
           <View style={styles.emptyState}>
-            <Search size={48} color={colors.placeholderText} style={{ marginBottom: 16 }} />
+            <Search
+              size={48}
+              color={colors.placeholderText}
+              style={{ marginBottom: 16 }}
+            />
             <Text style={styles.emptyTitle}>Sin resultados</Text>
             <Text style={styles.emptyText}>
               No se encontraron versículos con "{searchQuery}"
@@ -873,19 +1012,27 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
       ) : (
         <FlatList
           data={paginatedResults}
-          keyExtractor={(item, index) => `${item.bookId}-${item.chapterName}-${item.verseName}-${index}`}
+          keyExtractor={(item, index) =>
+            `${item.bookId}-${item.chapterName}-${item.verseName}-${index}`
+          }
           ListHeaderComponent={
             <>
               {/* Sección de libros coincidentes */}
               {bookMatches.length > 0 && (
                 <View style={styles.bookMatchesSection}>
                   <View style={styles.bookMatchesHeader}>
-                    <LibraryBig size={20} color={colors.headerText} style={{ marginRight: 8 }} />
+                    <LibraryBig
+                      size={20}
+                      color={colors.headerText}
+                      style={{ marginRight: 8 }}
+                    />
                     <Text style={styles.bookMatchesTitle}>
-                      {bookMatches.length === 1 ? "Libro encontrado" : "Libros encontrados"}
+                      {bookMatches.length === 1
+                        ? 'Libro encontrado'
+                        : 'Libros encontrados'}
                     </Text>
                   </View>
-                  {bookMatches.map((bookMatch) => (
+                  {bookMatches.map(bookMatch => (
                     <Pressable
                       key={bookMatch.bookId}
                       onPress={() => handleSelectBookMatch(bookMatch)}
@@ -903,7 +1050,8 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                           {bookMatch.bookName}
                         </Text>
                         <Text style={styles.bookMatchInfo}>
-                          {bookMatch.testamentName} • {bookMatch.chaptersCount} capítulo{bookMatch.chaptersCount !== 1 ? "s" : ""}
+                          {bookMatch.testamentName} • {bookMatch.chaptersCount}{' '}
+                          capítulo{bookMatch.chaptersCount !== 1 ? 's' : ''}
                         </Text>
                       </View>
                       <Text style={styles.bookMatchArrow}>→</Text>
@@ -921,8 +1069,11 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                   </Text>
                 )}
                 <Text style={styles.resultsCount}>
-                  {searchResults.length} resultado{searchResults.length !== 1 ? "s" : ""}{" "}
-                  {searchResults.length >= 100 ? "(mostrando los primeros 100)" : ""}
+                  {searchResults.length} resultado
+                  {searchResults.length !== 1 ? 's' : ''}{' '}
+                  {searchResults.length >= 100
+                    ? '(mostrando los primeros 100)'
+                    : ''}
                 </Text>
                 <Text style={styles.resultsShowing}>
                   Mostrando {paginatedResults.length} de {searchResults.length}
@@ -932,7 +1083,7 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
           }
           renderItem={({ item: result }) => {
             const highlighted = highlightText(result.verseText, searchQuery);
-            const isHighlighted = typeof highlighted === "object";
+            const isHighlighted = typeof highlighted === 'object';
 
             return (
               <Pressable
@@ -977,23 +1128,19 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                     { backgroundColor: colors.accent },
                   ]}
                 >
-                  <Text style={styles.loadMoreText}>
-                    Cargar más resultados
-                  </Text>
+                  <Text style={styles.loadMoreText}>Cargar más resultados</Text>
                 </Pressable>
               </View>
             ) : searchResults.length >= 100 ? (
               <View style={styles.endMessage}>
                 <Text style={styles.endMessageText}>
-                  Mostrando los primeros 100 resultados.{"\n"}
+                  Mostrando los primeros 100 resultados.{'\n'}
                   Refina tu búsqueda para ver más específicos.
                 </Text>
               </View>
             ) : paginatedResults.length > 10 ? (
               <View style={styles.endMessage}>
-                <Text style={styles.endMessageText}>
-                  Fin de los resultados
-                </Text>
+                <Text style={styles.endMessageText}>Fin de los resultados</Text>
               </View>
             ) : null
           }
@@ -1034,12 +1181,18 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                 onPress={handleShareAsText}
                 style={[
                   styles.shareOptionButton,
-                  { backgroundColor: colors.surfaceMuted }
+                  { backgroundColor: colors.surfaceMuted },
                 ]}
               >
-                <FileText size={32} color={colors.bodyText} style={{ marginRight: 12 }} />
+                <FileText
+                  size={32}
+                  color={colors.bodyText}
+                  style={{ marginRight: 12 }}
+                />
                 <View style={styles.shareOptionContent}>
-                  <Text style={styles.shareOptionTitle}>Compartir como texto</Text>
+                  <Text style={styles.shareOptionTitle}>
+                    Compartir como texto
+                  </Text>
                   <Text style={styles.shareOptionDescription}>
                     Comparte el versículo en formato de texto plano
                   </Text>
@@ -1051,12 +1204,18 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
                 onPress={handleShareAsImage}
                 style={[
                   styles.shareOptionButton,
-                  { backgroundColor: colors.surfaceMuted }
+                  { backgroundColor: colors.surfaceMuted },
                 ]}
               >
-                <Image size={32} color={colors.bodyText} style={{ marginRight: 12 }} />
+                <Image
+                  size={32}
+                  color={colors.bodyText}
+                  style={{ marginRight: 12 }}
+                />
                 <View style={styles.shareOptionContent}>
-                  <Text style={styles.shareOptionTitle}>Compartir como imagen</Text>
+                  <Text style={styles.shareOptionTitle}>
+                    Compartir como imagen
+                  </Text>
                   <Text style={styles.shareOptionDescription}>
                     Comparte el versículo como una imagen
                   </Text>
@@ -1077,23 +1236,39 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
 
       {/* ViewShot oculto para capturar el versículo del día como imagen */}
       {isCapturingImage && verseOfTheDay ? (
-        <View style={{ position: 'absolute', left: -9999, top: -9999, opacity: 0 }}>
+        <View
+          style={{ position: 'absolute', left: -9999, top: -9999, opacity: 0 }}
+        >
           <ViewShot
             ref={verseViewShotRef}
-            options={{ format: "jpg", quality: 0.9, result: 'tmpfile' }}
+            options={{ format: 'jpg', quality: 0.9, result: 'tmpfile' }}
             style={{ width: 400, backgroundColor: colors.backgroundPrimary }}
           >
-            <View style={[styles.shareableVerseCard, { backgroundColor: colors.backgroundPrimary, width: 400 }]}>
-              <Sparkles size={48} color={colors.accent} style={{ marginBottom: 20 }} />
+            <View
+              style={[
+                styles.shareableVerseCard,
+                { backgroundColor: colors.backgroundPrimary, width: 400 },
+              ]}
+            >
+              <Sparkles
+                size={48}
+                color={colors.accent}
+                style={{ marginBottom: 20 }}
+              />
               <Text style={styles.shareableVerseTitle}>Versículo del Día</Text>
               <Text style={styles.shareableVerseText}>
                 "{verseOfTheDay.verseText}"
               </Text>
               <Text style={styles.shareableVerseReference}>
-                {verseOfTheDay.bookName} {verseOfTheDay.chapterName}:{verseOfTheDay.verseName}
+                {verseOfTheDay.bookName} {verseOfTheDay.chapterName}:
+                {verseOfTheDay.verseName}
               </Text>
               <View style={styles.shareableVerseFooterContainer}>
-                <BookOpen size={14} color={colors.placeholderText} style={{ marginRight: 6 }} />
+                <BookOpen
+                  size={14}
+                  color={colors.placeholderText}
+                  style={{ marginRight: 6 }}
+                />
                 <Text style={styles.shareableVerseFooter}>
                   Biblia Reina-Valera 1909
                 </Text>
@@ -1106,7 +1281,11 @@ export function SearchScreen({ bibleData, onSelectResult, onSelectBook, onOpenRe
   );
 }
 
-const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Claro" | "Oscuro") =>
+const createStyles = (
+  colors: ThemeColors,
+  getFontSize: GetFontSize,
+  theme: 'Claro' | 'Oscuro',
+) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -1121,8 +1300,8 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
       borderBottomColor: colors.divider,
     },
     searchInputWrapper: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       borderRadius: 12,
       paddingHorizontal: 12,
       paddingVertical: 10,
@@ -1150,19 +1329,19 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
       marginBottom: 24,
     },
     bookMatchesHeader: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       marginBottom: 12,
     },
     bookMatchesTitle: {
       fontSize: getFontSize(16),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
     },
     bookMatchCard: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
       borderRadius: 12,
       padding: 16,
       marginBottom: 10,
@@ -1178,7 +1357,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     },
     bookMatchName: {
       fontSize: getFontSize(18),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.accentText,
       marginBottom: 4,
     },
@@ -1190,7 +1369,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     bookMatchArrow: {
       fontSize: getFontSize(24),
       color: colors.accentText,
-      fontWeight: "600",
+      fontWeight: '600',
       marginLeft: 12,
     },
     sectionDivider: {
@@ -1200,7 +1379,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     },
     sectionSubtitle: {
       fontSize: getFontSize(15),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.headerText,
       marginBottom: 8,
     },
@@ -1210,7 +1389,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     resultsCount: {
       fontSize: getFontSize(14),
       color: colors.placeholderText,
-      fontWeight: "600",
+      fontWeight: '600',
       marginBottom: 4,
     },
     resultsShowing: {
@@ -1228,7 +1407,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     },
     resultReference: {
       fontSize: getFontSize(14),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.accent,
     },
     resultText: {
@@ -1237,7 +1416,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
       lineHeight: Math.round(getFontSize(15) * 1.5),
     },
     highlightedText: {
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.accent,
       backgroundColor: colors.accentSubtle,
     },
@@ -1246,8 +1425,8 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     },
     emptyState: {
       flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
       paddingHorizontal: 40,
       paddingTop: 60,
       gap: 8,
@@ -1255,41 +1434,41 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     loadMoreContainer: {
       paddingVertical: 20,
       paddingHorizontal: 20,
-      alignItems: "center",
+      alignItems: 'center',
     },
     loadMoreButton: {
       paddingVertical: 12,
       paddingHorizontal: 24,
       borderRadius: 12,
       minWidth: 200,
-      alignItems: "center",
+      alignItems: 'center',
     },
     loadMoreText: {
       fontSize: getFontSize(15),
       color: colors.accentText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     endMessage: {
       paddingVertical: 20,
       paddingHorizontal: 40,
-      alignItems: "center",
+      alignItems: 'center',
     },
     endMessageText: {
       fontSize: getFontSize(13),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
       lineHeight: Math.round(getFontSize(13) * 1.5),
     },
     emptyTitle: {
       fontSize: getFontSize(20),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.headerText,
-      textAlign: "center",
+      textAlign: 'center',
     },
     emptyText: {
       fontSize: getFontSize(15),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
       lineHeight: Math.round(getFontSize(15) * 1.5),
     },
     // Home Screen Styles - Modern Glassmorphism Design
@@ -1308,14 +1487,14 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     },
     sectionTitle: {
       fontSize: getFontSize(20),
-      fontWeight: "800",
+      fontWeight: '800',
       color: colors.headerText,
       marginBottom: 16,
       letterSpacing: -0.5,
     },
     // Glass Card Base Style - sin sombras para evitar artefactos en animaciones fade
     glassCard: {
-      borderWidth: theme === "Claro" ? 1.5 : 1,
+      borderWidth: theme === 'Claro' ? 1.5 : 1,
     },
     cardPressed: {
       transform: [{ scale: 0.98 }],
@@ -1327,14 +1506,14 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
       padding: 18,
     },
     verseOfDayHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       marginBottom: 14,
     },
     verseOfDayBadge: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderRadius: 16,
@@ -1342,35 +1521,35 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     },
     verseOfDayBadgeText: {
       fontSize: getFontSize(11),
-      fontWeight: "700",
+      fontWeight: '700',
     },
     verseOfDayDate: {
       fontSize: getFontSize(12),
-      fontWeight: "600",
+      fontWeight: '600',
     },
     verseOfDayText: {
       fontSize: getFontSize(15),
       lineHeight: Math.round(getFontSize(15) * 1.6),
-      fontWeight: "500",
+      fontWeight: '500',
       marginBottom: 8,
-      fontStyle: "italic",
-      textAlign: "center",
+      fontStyle: 'italic',
+      textAlign: 'center',
     },
     verseOfDayReference: {
       fontSize: getFontSize(13),
-      fontWeight: "700",
+      fontWeight: '700',
       marginBottom: 16,
-      textAlign: "center",
+      textAlign: 'center',
     },
     verseOfDayActions: {
-      flexDirection: "row",
+      flexDirection: 'row',
       gap: 10,
-      alignItems: "center",
+      alignItems: 'center',
     },
     verseOfDayButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
       borderRadius: 12,
       gap: 5,
     },
@@ -1385,41 +1564,39 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     },
     verseOfDayButtonText: {
       fontSize: getFontSize(13),
-      fontWeight: "700",
+      fontWeight: '700',
     },
     // Quick Access Cards
-    quickAccessGrid: {
-      flexDirection: "row",
+    quickAccessScroll: {
+      paddingHorizontal: 20,
       gap: 12,
-    },
-    quickAccessCardWrapper: {
-      flex: 1,
     },
     quickAccessCard: {
       borderRadius: 20,
       padding: 20,
-      alignItems: "center",
+      alignItems: 'center',
       minHeight: 140,
+      width: 140,
     },
     quickAccessIcon: {
       width: 56,
       height: 56,
       borderRadius: 16,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
       marginBottom: 14,
     },
     quickAccessTitle: {
       fontSize: getFontSize(15),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
-      textAlign: "center",
+      textAlign: 'center',
       marginBottom: 4,
     },
     quickAccessSubtitle: {
       fontSize: getFontSize(12),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
     },
     // Streak Card - New Design
     streakCardNew: {
@@ -1427,22 +1604,22 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
       padding: 18,
     },
     streakCardContent: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       marginBottom: 14,
     },
     streakLeft: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       flex: 1,
     },
     streakIconContainer: {
       width: 52,
       height: 52,
       borderRadius: 14,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
       marginRight: 14,
     },
     streakTextContent: {
@@ -1450,7 +1627,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     },
     streakTitle: {
       fontSize: getFontSize(16),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
       marginBottom: 2,
     },
@@ -1459,17 +1636,17 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
       color: colors.placeholderText,
     },
     streakRight: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: 12,
     },
     streakMiniStats: {
-      flexDirection: "row",
+      flexDirection: 'row',
       gap: 10,
     },
     streakMiniStat: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: 4,
       backgroundColor: colors.surfaceMuted,
       paddingHorizontal: 8,
@@ -1478,7 +1655,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     },
     streakMiniStatText: {
       fontSize: getFontSize(11),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.bodyText,
     },
     streakProgressNew: {
@@ -1487,16 +1664,16 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     streakProgressBarNew: {
       height: 6,
       borderRadius: 3,
-      overflow: "hidden",
+      overflow: 'hidden',
     },
     streakProgressFillNew: {
-      height: "100%",
+      height: '100%',
       borderRadius: 3,
     },
     // Utilities Grid
     utilitiesGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
+      flexDirection: 'row',
+      flexWrap: 'wrap',
       gap: 12,
     },
     utilityCardWrapper: {
@@ -1511,13 +1688,13 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
       width: 44,
       height: 44,
       borderRadius: 12,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
       marginBottom: 12,
     },
     utilityTitle: {
       fontSize: getFontSize(14),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
       marginBottom: 2,
     },
@@ -1530,8 +1707,8 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
       marginTop: 8,
     },
     footerCard: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: 12,
       padding: 16,
       borderRadius: 14,
@@ -1545,26 +1722,26 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     // Modal styles
     modalWrapper: {
       ...StyleSheet.absoluteFillObject,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     modalBackdrop: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(0, 0, 0, 0.4)",
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
     },
     modalContainer: {
       ...StyleSheet.absoluteFillObject,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       paddingHorizontal: 24,
     },
     modalCard: {
-      width: "100%",
+      width: '100%',
       borderRadius: 20,
       padding: 20,
       borderWidth: StyleSheet.hairlineWidth,
       gap: 12,
-      shadowColor: "#000",
+      shadowColor: '#000',
       shadowOpacity: 0.18,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 6 },
@@ -1573,7 +1750,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     modalTitle: {
       fontSize: getFontSize(18),
       color: colors.headerText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     modalSubtitle: {
       fontSize: getFontSize(13),
@@ -1592,12 +1769,12 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     modalButtonSecondaryText: {
       fontSize: getFontSize(14),
       color: colors.bodyText,
-      fontWeight: "600",
-      textAlign: "center",
+      fontWeight: '600',
+      textAlign: 'center',
     },
     shareOptionButton: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       padding: 16,
       borderRadius: 12,
       marginVertical: 4,
@@ -1607,7 +1784,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     },
     shareOptionTitle: {
       fontSize: getFontSize(16),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.bodyText,
       marginBottom: 4,
     },
@@ -1618,43 +1795,42 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize, theme: "Cla
     // Shareable verse card styles (for image capture)
     shareableVerseCard: {
       padding: 32,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     shareableVerseTitle: {
       fontSize: getFontSize(20),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
       marginBottom: 24,
-      textAlign: "center",
+      textAlign: 'center',
     },
     shareableVerseText: {
       fontSize: getFontSize(18),
       lineHeight: Math.round(getFontSize(18) * 1.6),
       color: colors.bodyText,
-      textAlign: "center",
-      fontWeight: "500",
+      textAlign: 'center',
+      fontWeight: '500',
       marginBottom: 24,
-      fontStyle: "italic",
+      fontStyle: 'italic',
       paddingHorizontal: 20,
     },
     shareableVerseReference: {
       fontSize: getFontSize(17),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.accent,
       marginBottom: 32,
-      textAlign: "center",
+      textAlign: 'center',
     },
     shareableVerseFooterContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     shareableVerseFooter: {
       fontSize: getFontSize(14),
       color: colors.placeholderText,
-      textAlign: "center",
-      fontWeight: "600",
+      textAlign: 'center',
+      fontWeight: '600',
     },
   });
-

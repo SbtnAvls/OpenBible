@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -7,23 +7,23 @@ import {
   View,
   ScrollView,
   Dimensions,
-} from "react-native";
-import { Flame, Clock, Target, ChevronRight, Check } from "lucide-react-native";
-import { useTheme, type ThemeColors } from "../context/ThemeContext";
+} from 'react-native';
+import { Flame, Clock, Target, ChevronRight, Check } from 'lucide-react-native';
+import { useTheme, type ThemeColors } from '../context/ThemeContext';
 import {
   DAILY_GOAL_OPTIONS,
   STREAK_GOALS,
   STREAK_COLORS,
-} from "../types/streak";
+} from '../types/streak';
 
 interface StreakOnboardingModalProps {
   visible: boolean;
   onComplete: (dailyGoal: number, streakGoal: number) => void;
 }
 
-type OnboardingStep = "intro" | "daily-goal" | "streak-goal";
+type OnboardingStep = 'intro' | 'daily-goal' | 'streak-goal';
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export function StreakOnboardingModal({
   visible,
@@ -32,19 +32,19 @@ export function StreakOnboardingModal({
   const { colors, getFontSize } = useTheme();
   const styles = getStyles(colors, getFontSize);
 
-  const [step, setStep] = useState<OnboardingStep>("intro");
+  const [step, setStep] = useState<OnboardingStep>('intro');
   const [selectedDailyGoal, setSelectedDailyGoal] = useState<number>(5);
   const [selectedStreakGoal, setSelectedStreakGoal] = useState<number>(10);
 
   const handleNext = () => {
-    if (step === "intro") {
-      setStep("daily-goal");
-    } else if (step === "daily-goal") {
-      setStep("streak-goal");
+    if (step === 'intro') {
+      setStep('daily-goal');
+    } else if (step === 'daily-goal') {
+      setStep('streak-goal');
     } else {
       onComplete(selectedDailyGoal, selectedStreakGoal);
       // Reset for next time
-      setStep("intro");
+      setStep('intro');
     }
   };
 
@@ -58,15 +58,13 @@ export function StreakOnboardingModal({
       <View style={styles.overlay}>
         <View style={styles.container}>
           {/* Pantalla 1: Introducción */}
-          {step === "intro" && (
+          {step === 'intro' && (
             <View style={styles.stepContainer}>
               <View style={styles.iconContainer}>
                 <Flame size={64} color={STREAK_COLORS.fire} />
               </View>
 
-              <Text style={styles.title}>
-                ¡Comienza tu Racha de Lectura!
-              </Text>
+              <Text style={styles.title}>¡Comienza tu Racha de Lectura!</Text>
 
               <Text style={styles.description}>
                 Mantén una racha leyendo la Biblia todos los días. Gana gemas
@@ -113,7 +111,7 @@ export function StreakOnboardingModal({
           )}
 
           {/* Pantalla 2: Meta Diaria */}
-          {step === "daily-goal" && (
+          {step === 'daily-goal' && (
             <View style={styles.stepContainer}>
               <View style={styles.iconContainer}>
                 <Clock size={48} color={colors.accent} />
@@ -132,12 +130,13 @@ export function StreakOnboardingModal({
                 contentContainerStyle={styles.optionsGrid}
                 showsVerticalScrollIndicator={false}
               >
-                {DAILY_GOAL_OPTIONS.map((minutes) => (
+                {DAILY_GOAL_OPTIONS.map(minutes => (
                   <Pressable
                     key={minutes}
                     style={({ pressed }) => [
                       styles.optionCard,
-                      selectedDailyGoal === minutes && styles.optionCardSelected,
+                      selectedDailyGoal === minutes &&
+                        styles.optionCardSelected,
                       pressed && { opacity: 0.8 },
                     ]}
                     onPress={() => setSelectedDailyGoal(minutes)}
@@ -145,7 +144,8 @@ export function StreakOnboardingModal({
                     <Text
                       style={[
                         styles.optionValue,
-                        selectedDailyGoal === minutes && styles.optionValueSelected,
+                        selectedDailyGoal === minutes &&
+                          styles.optionValueSelected,
                       ]}
                     >
                       {minutes}
@@ -153,7 +153,8 @@ export function StreakOnboardingModal({
                     <Text
                       style={[
                         styles.optionLabel,
-                        selectedDailyGoal === minutes && styles.optionLabelSelected,
+                        selectedDailyGoal === minutes &&
+                          styles.optionLabelSelected,
                       ]}
                     >
                       minutos
@@ -181,22 +182,22 @@ export function StreakOnboardingModal({
           )}
 
           {/* Pantalla 3: Meta de Racha */}
-          {step === "streak-goal" && (
+          {step === 'streak-goal' && (
             <View style={styles.stepContainer}>
               <View style={styles.iconContainer}>
                 <Target size={48} color={colors.accent} />
               </View>
 
-              <Text style={styles.title}>
-                ¿Cuál es tu primera meta?
-              </Text>
+              <Text style={styles.title}>¿Cuál es tu primera meta?</Text>
 
               <Text style={styles.subtitle}>
-                Al completarla ganarás gemas gratis como recompensa por tu dedicación
+                Al completarla ganarás gemas gratis como recompensa por tu
+                dedicación
               </Text>
 
               <Text style={styles.freeNote}>
-                Las gemas se obtienen únicamente leyendo, sin compras ni micro transacciones.
+                Las gemas se obtienen únicamente leyendo, sin compras ni micro
+                transacciones.
               </Text>
 
               <ScrollView
@@ -205,12 +206,13 @@ export function StreakOnboardingModal({
                 showsVerticalScrollIndicator={true}
                 persistentScrollbar={true}
               >
-                {STREAK_GOALS.map((goal) => (
+                {STREAK_GOALS.map(goal => (
                   <Pressable
                     key={goal.id}
                     style={({ pressed }) => [
                       styles.goalCard,
-                      selectedStreakGoal === goal.targetDays && styles.goalCardSelected,
+                      selectedStreakGoal === goal.targetDays &&
+                        styles.goalCardSelected,
                       pressed && { opacity: 0.8 },
                     ]}
                     onPress={() => setSelectedStreakGoal(goal.targetDays)}
@@ -219,7 +221,8 @@ export function StreakOnboardingModal({
                       <Text
                         style={[
                           styles.goalDays,
-                          selectedStreakGoal === goal.targetDays && styles.goalDaysSelected,
+                          selectedStreakGoal === goal.targetDays &&
+                            styles.goalDaysSelected,
                         ]}
                       >
                         {goal.targetDays} días
@@ -227,7 +230,8 @@ export function StreakOnboardingModal({
                       <Text
                         style={[
                           styles.goalTitle,
-                          selectedStreakGoal === goal.targetDays && styles.goalTitleSelected,
+                          selectedStreakGoal === goal.targetDays &&
+                            styles.goalTitleSelected,
                         ]}
                       >
                         {goal.title}
@@ -263,21 +267,18 @@ export function StreakOnboardingModal({
           {/* Indicadores de paso */}
           <View style={styles.stepIndicators}>
             <View
+              style={[styles.stepDot, step === 'intro' && styles.stepDotActive]}
+            />
+            <View
               style={[
                 styles.stepDot,
-                step === "intro" && styles.stepDotActive,
+                step === 'daily-goal' && styles.stepDotActive,
               ]}
             />
             <View
               style={[
                 styles.stepDot,
-                step === "daily-goal" && styles.stepDotActive,
-              ]}
-            />
-            <View
-              style={[
-                styles.stepDot,
-                step === "streak-goal" && styles.stepDotActive,
+                step === 'streak-goal' && styles.stepDotActive,
               ]}
             />
           </View>
@@ -287,76 +288,79 @@ export function StreakOnboardingModal({
   );
 }
 
-const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =>
+const getStyles = (
+  colors: ThemeColors,
+  getFontSize: (size: number) => number,
+) =>
   StyleSheet.create({
     overlay: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.7)",
-      justifyContent: "center",
-      alignItems: "center",
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      justifyContent: 'center',
+      alignItems: 'center',
       padding: 20,
     },
     container: {
       backgroundColor: colors.backgroundSecondary,
       borderRadius: 24,
-      width: "100%",
+      width: '100%',
       maxWidth: 400,
-      maxHeight: "85%",
-      overflow: "hidden",
+      maxHeight: '85%',
+      overflow: 'hidden',
     },
     stepContainer: {
       padding: 24,
-      alignItems: "center",
+      alignItems: 'center',
     },
     iconContainer: {
       width: 100,
       height: 100,
       borderRadius: 50,
       backgroundColor: colors.surfaceMuted,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       marginBottom: 20,
     },
     title: {
       fontSize: getFontSize(22),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
-      textAlign: "center",
+      textAlign: 'center',
       marginBottom: 12,
     },
     subtitle: {
       fontSize: getFontSize(14),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
       marginBottom: 20,
     },
     description: {
       fontSize: getFontSize(15),
       color: colors.bodyText,
-      textAlign: "center",
+      textAlign: 'center',
       lineHeight: getFontSize(22),
       marginBottom: 8,
     },
     freeNote: {
       fontSize: getFontSize(12),
       color: colors.placeholderText,
-      textAlign: "center",
-      fontStyle: "italic",
+      textAlign: 'center',
+      fontStyle: 'italic',
       marginBottom: 12,
       paddingHorizontal: 16,
     },
     goalScrollView: {
       maxHeight: 240,
-      width: "100%",
+      width: '100%',
       paddingRight: 8,
     },
     featureList: {
-      width: "100%",
+      width: '100%',
       marginBottom: 24,
     },
     featureItem: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       paddingVertical: 12,
       paddingHorizontal: 16,
       backgroundColor: colors.surfaceMuted,
@@ -371,12 +375,12 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     optionsScrollView: {
       maxHeight: 280,
-      width: "100%",
+      width: '100%',
     },
     optionsGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "center",
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
       gap: 12,
       paddingBottom: 16,
     },
@@ -386,10 +390,10 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       aspectRatio: 1,
       backgroundColor: colors.surfaceMuted,
       borderRadius: 16,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       borderWidth: 2,
-      borderColor: "transparent",
+      borderColor: 'transparent',
     },
     optionCardSelected: {
       borderColor: colors.accent,
@@ -397,7 +401,7 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     optionValue: {
       fontSize: getFontSize(24),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
     },
     optionValueSelected: {
@@ -412,28 +416,28 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       color: colors.accent,
     },
     checkmark: {
-      position: "absolute",
+      position: 'absolute',
       top: 6,
       right: 6,
       width: 22,
       height: 22,
       borderRadius: 11,
       backgroundColor: colors.accent,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     goalOptionsContainer: {
       paddingBottom: 16,
     },
     goalCard: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: colors.surfaceMuted,
       borderRadius: 16,
       padding: 16,
       marginBottom: 12,
       borderWidth: 2,
-      borderColor: "transparent",
+      borderColor: 'transparent',
     },
     goalCardSelected: {
       borderColor: colors.accent,
@@ -444,7 +448,7 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     goalDays: {
       fontSize: getFontSize(18),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
     },
     goalDaysSelected: {
@@ -459,7 +463,7 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       color: colors.accent,
     },
     goalReward: {
-      alignItems: "center",
+      alignItems: 'center',
       backgroundColor: `${STREAK_COLORS.gems}20`,
       paddingHorizontal: 12,
       paddingVertical: 8,
@@ -467,7 +471,7 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     goalGems: {
       fontSize: getFontSize(16),
-      fontWeight: "700",
+      fontWeight: '700',
       color: STREAK_COLORS.gems,
     },
     goalGemsLabel: {
@@ -475,25 +479,25 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       color: STREAK_COLORS.gems,
     },
     checkmarkGoal: {
-      position: "absolute",
+      position: 'absolute',
       top: 10,
       right: 10,
       width: 24,
       height: 24,
       borderRadius: 12,
       backgroundColor: colors.accent,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     primaryButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
       backgroundColor: colors.accent,
       paddingVertical: 16,
       paddingHorizontal: 32,
       borderRadius: 16,
-      width: "100%",
+      width: '100%',
       gap: 8,
     },
     startButton: {
@@ -501,12 +505,12 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     primaryButtonText: {
       fontSize: getFontSize(16),
-      fontWeight: "600",
-      color: "white",
+      fontWeight: '600',
+      color: 'white',
     },
     stepIndicators: {
-      flexDirection: "row",
-      justifyContent: "center",
+      flexDirection: 'row',
+      justifyContent: 'center',
       gap: 8,
       paddingBottom: 20,
     },

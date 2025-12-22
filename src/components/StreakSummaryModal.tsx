@@ -1,11 +1,5 @@
-import React from "react";
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import React from 'react';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   Flame,
   AlertTriangle,
@@ -14,9 +8,9 @@ import {
   Shield,
   Trophy,
   BookOpen,
-} from "lucide-react-native";
-import { useTheme, type ThemeColors } from "../context/ThemeContext";
-import { STREAK_COLORS, type StreakStatus } from "../types/streak";
+} from 'lucide-react-native';
+import { useTheme, type ThemeColors } from '../context/ThemeContext';
+import { STREAK_COLORS, type StreakStatus } from '../types/streak';
 
 interface StreakSummaryModalProps {
   visible: boolean;
@@ -65,9 +59,7 @@ export function StreakSummaryModal({
                 <Trophy size={64} color={STREAK_COLORS.gems} />
               </View>
 
-              <Text style={styles.celebrationTitle}>
-                ¡Meta Completada!
-              </Text>
+              <Text style={styles.celebrationTitle}>¡Meta Completada!</Text>
 
               <Text style={styles.celebrationSubtitle}>
                 {newGoalCompleted.title}
@@ -101,7 +93,7 @@ export function StreakSummaryModal({
   }
 
   // Estado de racha activa
-  if (streakStatus === "active" || streakStatus === "new") {
+  if (streakStatus === 'active' || streakStatus === 'new') {
     return (
       <Modal
         visible={visible}
@@ -116,12 +108,16 @@ export function StreakSummaryModal({
               <View style={styles.streakDisplay}>
                 <Flame
                   size={48}
-                  color={currentStreak > 0 ? STREAK_COLORS.fire : colors.placeholderText}
-                  fill={currentStreak > 0 ? STREAK_COLORS.fire : "transparent"}
+                  color={
+                    currentStreak > 0
+                      ? STREAK_COLORS.fire
+                      : colors.placeholderText
+                  }
+                  fill={currentStreak > 0 ? STREAK_COLORS.fire : 'transparent'}
                 />
                 <Text style={styles.streakNumber}>{currentStreak}</Text>
                 <Text style={styles.streakLabel}>
-                  {currentStreak === 1 ? "día de racha" : "días de racha"}
+                  {currentStreak === 1 ? 'día de racha' : 'días de racha'}
                 </Text>
               </View>
 
@@ -149,7 +145,7 @@ export function StreakSummaryModal({
                 </View>
                 <Text style={styles.progressSubtext}>
                   {todayProgress >= 100
-                    ? "¡Meta de hoy completada!"
+                    ? '¡Meta de hoy completada!'
                     : `Lee ${remainingMinutes} minutos más para completar tu meta`}
                 </Text>
               </View>
@@ -191,7 +187,7 @@ export function StreakSummaryModal({
   }
 
   // Estado de racha en riesgo
-  if (streakStatus === "at_risk") {
+  if (streakStatus === 'at_risk') {
     return (
       <Modal
         visible={visible}
@@ -206,16 +202,15 @@ export function StreakSummaryModal({
                 <AlertTriangle size={48} color={STREAK_COLORS.atRisk} />
               </View>
 
-              <Text style={styles.warningTitle}>
-                ¡Tu racha está en riesgo!
-              </Text>
+              <Text style={styles.warningTitle}>¡Tu racha está en riesgo!</Text>
 
               <Text style={styles.streakAtRisk}>
                 {currentStreak} días de racha
               </Text>
 
               <Text style={styles.warningMessage}>
-                Lee {remainingMinutes} minutos antes de medianoche para mantener tu racha
+                Lee {remainingMinutes} minutos antes de medianoche para mantener
+                tu racha
               </Text>
 
               {/* Info de protectores disponibles */}
@@ -223,7 +218,9 @@ export function StreakSummaryModal({
                 <View style={styles.freezeInfo}>
                   <Shield size={18} color={STREAK_COLORS.frozen} />
                   <Text style={styles.freezeInfoText}>
-                    Tienes {availableFreezes} protector{availableFreezes > 1 ? "es" : ""} que se usarán automáticamente si faltas un día
+                    Tienes {availableFreezes} protector
+                    {availableFreezes > 1 ? 'es' : ''} que se usarán
+                    automáticamente si faltas un día
                   </Text>
                 </View>
               )}
@@ -286,9 +283,7 @@ export function StreakSummaryModal({
               onPress={onClose}
             >
               <Flame size={20} color="white" />
-              <Text style={styles.primaryButtonText}>
-                Comenzar Nueva Racha
-              </Text>
+              <Text style={styles.primaryButtonText}>Comenzar Nueva Racha</Text>
             </Pressable>
           </View>
         </View>
@@ -297,33 +292,36 @@ export function StreakSummaryModal({
   );
 }
 
-const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =>
+const getStyles = (
+  colors: ThemeColors,
+  getFontSize: (size: number) => number,
+) =>
   StyleSheet.create({
     overlay: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.7)",
-      justifyContent: "center",
-      alignItems: "center",
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      justifyContent: 'center',
+      alignItems: 'center',
       padding: 20,
     },
     container: {
       backgroundColor: colors.backgroundSecondary,
       borderRadius: 24,
-      width: "100%",
+      width: '100%',
       maxWidth: 380,
-      overflow: "hidden",
+      overflow: 'hidden',
     },
     content: {
       padding: 24,
-      alignItems: "center",
+      alignItems: 'center',
     },
     streakDisplay: {
-      alignItems: "center",
+      alignItems: 'center',
       marginBottom: 24,
     },
     streakNumber: {
       fontSize: getFontSize(48),
-      fontWeight: "800",
+      fontWeight: '800',
       color: colors.headerText,
       marginTop: 8,
     },
@@ -332,56 +330,56 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       color: colors.placeholderText,
     },
     progressSection: {
-      width: "100%",
+      width: '100%',
       backgroundColor: colors.surfaceMuted,
       borderRadius: 16,
       padding: 16,
       marginBottom: 20,
     },
     progressHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       marginBottom: 10,
     },
     progressTitle: {
       fontSize: getFontSize(14),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.headerText,
     },
     progressValue: {
       fontSize: getFontSize(14),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.accent,
     },
     progressBar: {
       height: 8,
       backgroundColor: colors.divider,
       borderRadius: 4,
-      overflow: "hidden",
+      overflow: 'hidden',
     },
     progressFill: {
-      height: "100%",
+      height: '100%',
       borderRadius: 4,
     },
     progressSubtext: {
       fontSize: getFontSize(13),
       color: colors.placeholderText,
       marginTop: 10,
-      textAlign: "center",
+      textAlign: 'center',
     },
     statsRow: {
-      flexDirection: "row",
-      justifyContent: "space-around",
-      width: "100%",
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      width: '100%',
       marginBottom: 24,
     },
     statItem: {
-      alignItems: "center",
+      alignItems: 'center',
     },
     statValue: {
       fontSize: getFontSize(18),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
       marginTop: 4,
     },
@@ -390,28 +388,28 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       color: colors.placeholderText,
     },
     primaryButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
       backgroundColor: colors.accent,
       paddingVertical: 16,
       paddingHorizontal: 32,
       borderRadius: 16,
-      width: "100%",
+      width: '100%',
       gap: 8,
     },
     primaryButtonText: {
       fontSize: getFontSize(16),
-      fontWeight: "600",
-      color: "white",
+      fontWeight: '600',
+      color: 'white',
     },
     // Warning state
     iconContainer: {
       width: 100,
       height: 100,
       borderRadius: 50,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       marginBottom: 20,
     },
     warningIcon: {
@@ -419,9 +417,9 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     warningTitle: {
       fontSize: getFontSize(20),
-      fontWeight: "700",
+      fontWeight: '700',
       color: STREAK_COLORS.atRisk,
-      textAlign: "center",
+      textAlign: 'center',
       marginBottom: 8,
     },
     streakAtRisk: {
@@ -432,18 +430,18 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     warningMessage: {
       fontSize: getFontSize(15),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
       marginBottom: 20,
     },
     freezeInfo: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: `${STREAK_COLORS.frozen}15`,
       paddingVertical: 12,
       paddingHorizontal: 14,
       borderRadius: 12,
       marginBottom: 16,
-      width: "100%",
+      width: '100%',
       gap: 10,
     },
     freezeInfoText: {
@@ -461,21 +459,21 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     lostTitle: {
       fontSize: getFontSize(20),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
-      textAlign: "center",
+      textAlign: 'center',
       marginBottom: 12,
     },
     lostMessage: {
       fontSize: getFontSize(15),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
       marginBottom: 20,
       lineHeight: getFontSize(22),
     },
     bestStreakBadge: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: `${STREAK_COLORS.gems}15`,
       paddingVertical: 12,
       paddingHorizontal: 20,
@@ -485,7 +483,7 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     bestStreakText: {
       fontSize: getFontSize(14),
-      fontWeight: "600",
+      fontWeight: '600',
       color: STREAK_COLORS.gems,
     },
     encouragement: {
@@ -496,32 +494,32 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     // Celebration state
     celebrationContainer: {
       padding: 24,
-      alignItems: "center",
+      alignItems: 'center',
     },
     trophyContainer: {
       width: 120,
       height: 120,
       borderRadius: 60,
       backgroundColor: `${STREAK_COLORS.gems}20`,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       marginBottom: 20,
     },
     celebrationTitle: {
       fontSize: getFontSize(24),
-      fontWeight: "800",
+      fontWeight: '800',
       color: colors.headerText,
       marginBottom: 8,
     },
     celebrationSubtitle: {
       fontSize: getFontSize(16),
       color: colors.accent,
-      fontWeight: "600",
+      fontWeight: '600',
       marginBottom: 20,
     },
     gemsEarned: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: `${STREAK_COLORS.gems}20`,
       paddingVertical: 16,
       paddingHorizontal: 32,
@@ -531,13 +529,13 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     gemsEarnedText: {
       fontSize: getFontSize(32),
-      fontWeight: "800",
+      fontWeight: '800',
       color: STREAK_COLORS.gems,
     },
     celebrationMessage: {
       fontSize: getFontSize(14),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
       marginBottom: 24,
     },
   });

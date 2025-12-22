@@ -4,7 +4,7 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from "react";
+} from 'react';
 import {
   Animated,
   Pressable,
@@ -12,13 +12,10 @@ import {
   StyleSheet,
   Text,
   View,
-} from "react-native";
+} from 'react-native';
 
-import { useTheme } from "../context/ThemeContext";
-import type {
-  ThemeColors,
-  GetFontSize,
-} from "../context/ThemeContext";
+import { useTheme } from '../context/ThemeContext';
+import type { ThemeColors, GetFontSize } from '../context/ThemeContext';
 
 const DRAWER_WIDTH = 280;
 const ANIMATION_DURATION = 220;
@@ -52,7 +49,7 @@ export function BibleDrawer<T>({
   const { colors, getFontSize } = useTheme();
   const styles = useMemo(
     () => createStyles(colors, getFontSize),
-    [colors, getFontSize]
+    [colors, getFontSize],
   );
   const [renderDrawer, setRenderDrawer] = useState(visible);
   const [activeTab, setActiveTab] = useState<'old' | 'new'>('old');
@@ -100,38 +97,36 @@ export function BibleDrawer<T>({
       onSelectBook(book);
       onClose();
     },
-    [onClose, onSelectBook]
+    [onClose, onSelectBook],
   );
 
   // Separar secciones por testamento
   const { oldTestamentSections, newTestamentSections } = useMemo(() => {
     return {
       oldTestamentSections: sections.filter(s =>
-        s.title.toLowerCase().includes('antiguo')
+        s.title.toLowerCase().includes('antiguo'),
       ),
       newTestamentSections: sections.filter(s =>
-        s.title.toLowerCase().includes('nuevo')
+        s.title.toLowerCase().includes('nuevo'),
       ),
     };
   }, [sections]);
 
-  const activeSections = activeTab === 'old' ? oldTestamentSections : newTestamentSections;
+  const activeSections =
+    activeTab === 'old' ? oldTestamentSections : newTestamentSections;
 
   const content = useMemo(
     () =>
-      activeSections.map((section) => (
+      activeSections.map(section => (
         <View key={section.title} style={styles.section}>
           <Text style={styles.sectionTitle}>{section.title}</Text>
-          {section.books.map((book) => {
+          {section.books.map(book => {
             const isActive = book.id === selectedBookId;
             return (
               <Pressable
                 key={book.id}
                 onPress={() => handleSelect(book)}
-                style={[
-                  styles.bookButton,
-                  isActive && styles.bookButtonActive,
-                ]}
+                style={[styles.bookButton, isActive && styles.bookButtonActive]}
               >
                 <Text
                   style={[styles.bookName, isActive && styles.bookNameActive]}
@@ -143,7 +138,7 @@ export function BibleDrawer<T>({
           })}
         </View>
       )),
-    [handleSelect, activeSections, selectedBookId, styles]
+    [handleSelect, activeSections, selectedBookId, styles],
   );
 
   if (!renderDrawer) {
@@ -153,7 +148,7 @@ export function BibleDrawer<T>({
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       <Animated.View
-        pointerEvents={visible ? "auto" : "none"}
+        pointerEvents={visible ? 'auto' : 'none'}
         style={[styles.backdrop, { opacity: backdropOpacity }]}
       >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
@@ -168,10 +163,7 @@ export function BibleDrawer<T>({
       >
         <View style={styles.tabContainer}>
           <Pressable
-            style={[
-              styles.tab,
-              activeTab === 'old' && styles.tabActive,
-            ]}
+            style={[styles.tab, activeTab === 'old' && styles.tabActive]}
             onPress={() => setActiveTab('old')}
           >
             <Text
@@ -184,10 +176,7 @@ export function BibleDrawer<T>({
             </Text>
           </Pressable>
           <Pressable
-            style={[
-              styles.tab,
-              activeTab === 'new' && styles.tabActive,
-            ]}
+            style={[styles.tab, activeTab === 'new' && styles.tabActive]}
             onPress={() => setActiveTab('new')}
           >
             <Text
@@ -210,10 +199,10 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
   StyleSheet.create({
     backdrop: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: "#000",
+      backgroundColor: '#000',
     },
     drawer: {
-      position: "absolute",
+      position: 'absolute',
       left: 0,
       top: 0,
       bottom: 0,
@@ -222,13 +211,13 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       paddingVertical: 32,
       paddingHorizontal: 24,
       elevation: 6,
-      shadowColor: "#000",
+      shadowColor: '#000',
       shadowOpacity: 0.15,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 4 },
     },
     tabContainer: {
-      flexDirection: "row",
+      flexDirection: 'row',
       marginBottom: 20,
       backgroundColor: colors.surfaceMuted,
       borderRadius: 8,
@@ -239,8 +228,8 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       paddingVertical: 10,
       paddingHorizontal: 8,
       borderRadius: 6,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     tabActive: {
       backgroundColor: colors.accent,
@@ -248,18 +237,18 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     tabText: {
       fontSize: getFontSize(13),
       color: colors.bodyText,
-      fontWeight: "500",
-      textAlign: "center",
+      fontWeight: '500',
+      textAlign: 'center',
     },
     tabTextActive: {
-      color: "#FFF",
-      fontWeight: "600",
+      color: '#FFF',
+      fontWeight: '600',
     },
     section: {
       marginBottom: 24,
     },
     sectionTitle: {
-      fontWeight: "600",
+      fontWeight: '600',
       fontSize: getFontSize(16),
       marginBottom: 12,
       color: colors.headerText,
@@ -278,7 +267,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       color: colors.bodyText,
     },
     bookNameActive: {
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.accent,
     },
   });

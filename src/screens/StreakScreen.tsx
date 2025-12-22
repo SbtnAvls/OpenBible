@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Alert,
   Pressable,
@@ -6,19 +6,23 @@ import {
   StyleSheet,
   Text,
   View,
-} from "react-native";
-import { Flame, Gem, Shield, Trophy, Target, Clock, ChevronRight } from "lucide-react-native";
-import { useTheme, type ThemeColors } from "../context/ThemeContext";
-import { useStreak } from "../context/StreakContext";
-import { StreakCalendar } from "../components/StreakCalendar";
-import { GoalCard } from "../components/GoalCard";
-import { ShopItemCard } from "../components/ShopItemCard";
-import { ChangeGoalModal } from "../components/ChangeGoalModal";
+} from 'react-native';
 import {
-  STREAK_COLORS,
-  GOAL_BONUS,
-  MAX_FREEZES,
-} from "../types/streak";
+  Flame,
+  Gem,
+  Shield,
+  Trophy,
+  Target,
+  Clock,
+  ChevronRight,
+} from 'lucide-react-native';
+import { useTheme, type ThemeColors } from '../context/ThemeContext';
+import { useStreak } from '../context/StreakContext';
+import { StreakCalendar } from '../components/StreakCalendar';
+import { GoalCard } from '../components/GoalCard';
+import { ShopItemCard } from '../components/ShopItemCard';
+import { ChangeGoalModal } from '../components/ChangeGoalModal';
+import { STREAK_COLORS, GOAL_BONUS, MAX_FREEZES } from '../types/streak';
 
 export function StreakScreen() {
   const { colors, getFontSize } = useTheme();
@@ -53,47 +57,56 @@ export function StreakScreen() {
     return GOAL_BONUS[settings.streakGoalDays] || 0;
   }, [settings.streakGoalDays]);
 
-  const handlePurchase = useCallback((itemId: string) => {
-    const item = shopItems.find((i) => i.id === itemId);
-    if (!item) return;
+  const handlePurchase = useCallback(
+    (itemId: string) => {
+      const item = shopItems.find(i => i.id === itemId);
+      if (!item) return;
 
-    // Verificar límite
-    if (streakData.availableFreezes >= MAX_FREEZES) {
+      // Verificar límite
+      if (streakData.availableFreezes >= MAX_FREEZES) {
+        Alert.alert(
+          'Límite Alcanzado',
+          `Ya tienes el máximo de ${MAX_FREEZES} protectores. Úsalos antes de comprar más.`,
+        );
+        return;
+      }
+
       Alert.alert(
-        "Límite Alcanzado",
-        `Ya tienes el máximo de ${MAX_FREEZES} protectores. Úsalos antes de comprar más.`
-      );
-      return;
-    }
-
-    Alert.alert(
-      "Confirmar Compra",
-      `¿Comprar ${item.name} por ${item.price} gemas?`,
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Comprar",
-          onPress: () => {
-            const success = purchaseItem(itemId);
-            if (success) {
-              Alert.alert("Compra Exitosa", `Has obtenido ${item.quantity} protector(es).`);
-            } else {
-              Alert.alert("Error", "No se pudo completar la compra.");
-            }
+        'Confirmar Compra',
+        `¿Comprar ${item.name} por ${item.price} gemas?`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Comprar',
+            onPress: () => {
+              const success = purchaseItem(itemId);
+              if (success) {
+                Alert.alert(
+                  'Compra Exitosa',
+                  `Has obtenido ${item.quantity} protector(es).`,
+                );
+              } else {
+                Alert.alert('Error', 'No se pudo completar la compra.');
+              }
+            },
           },
-        },
-      ]
-    );
-  }, [shopItems, purchaseItem, streakData.availableFreezes]);
+        ],
+      );
+    },
+    [shopItems, purchaseItem, streakData.availableFreezes],
+  );
 
   const handleChangeGoal = useCallback(() => {
     setShowChangeGoalModal(true);
   }, []);
 
-  const handleConfirmGoalChange = useCallback((days: number) => {
-    setStreakGoal(days);
-    setShowChangeGoalModal(false);
-  }, [setStreakGoal]);
+  const handleConfirmGoalChange = useCallback(
+    (days: number) => {
+      setStreakGoal(days);
+      setShowChangeGoalModal(false);
+    },
+    [setStreakGoal],
+  );
 
   return (
     <ScrollView
@@ -106,13 +119,19 @@ export function StreakScreen() {
         <View style={styles.streakFireContainer}>
           <Flame
             size={64}
-            color={streakData.currentStreak > 0 ? STREAK_COLORS.fire : colors.placeholderText}
-            fill={streakData.currentStreak > 0 ? STREAK_COLORS.fire : "transparent"}
+            color={
+              streakData.currentStreak > 0
+                ? STREAK_COLORS.fire
+                : colors.placeholderText
+            }
+            fill={
+              streakData.currentStreak > 0 ? STREAK_COLORS.fire : 'transparent'
+            }
           />
         </View>
         <Text style={styles.streakNumber}>{streakData.currentStreak}</Text>
         <Text style={styles.streakLabel}>
-          {streakData.currentStreak === 1 ? "día de racha" : "días de racha"}
+          {streakData.currentStreak === 1 ? 'día de racha' : 'días de racha'}
         </Text>
         {streakData.longestStreak > streakData.currentStreak && (
           <Text style={styles.bestStreakText}>
@@ -130,11 +149,13 @@ export function StreakScreen() {
               <Clock size={18} color={colors.placeholderText} />
               <Text style={styles.progressText}>
                 {streakData.todayCompleted
-                  ? "Meta completada"
+                  ? 'Meta completada'
                   : `${remainingMinutes} min restantes`}
               </Text>
             </View>
-            <Text style={styles.progressPercentage}>{Math.round(todayProgress)}%</Text>
+            <Text style={styles.progressPercentage}>
+              {Math.round(todayProgress)}%
+            </Text>
           </View>
           <View style={styles.progressBar}>
             <View
@@ -166,7 +187,9 @@ export function StreakScreen() {
           </View>
           <View style={styles.inventoryCard}>
             <Shield size={28} color={STREAK_COLORS.frozen} />
-            <Text style={styles.inventoryValue}>{streakData.availableFreezes}</Text>
+            <Text style={styles.inventoryValue}>
+              {streakData.availableFreezes}
+            </Text>
             <Text style={styles.inventoryLabel}>
               Protectores ({MAX_FREEZES} máx)
             </Text>
@@ -245,7 +268,7 @@ export function StreakScreen() {
       {/* Metas históricas */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Logros</Text>
-        {goals.map((goal) => (
+        {goals.map(goal => (
           <GoalCard
             key={goal.id}
             goal={goal}
@@ -261,7 +284,7 @@ export function StreakScreen() {
         <Text style={styles.sectionSubtitle}>
           Compra protectores con tus gemas
         </Text>
-        {shopItems.map((item) => (
+        {shopItems.map(item => (
           <ShopItemCard
             key={item.id}
             item={item}
@@ -303,7 +326,9 @@ export function StreakScreen() {
         <View style={styles.freezeInfoBox}>
           <Shield size={20} color={STREAK_COLORS.frozen} />
           <Text style={styles.freezeInfoText}>
-            Tienes {streakData.availableFreezes} protector{streakData.availableFreezes > 1 ? "es" : ""} que se usarán automáticamente si faltas un día
+            Tienes {streakData.availableFreezes} protector
+            {streakData.availableFreezes > 1 ? 'es' : ''} que se usarán
+            automáticamente si faltas un día
           </Text>
         </View>
       )}
@@ -317,13 +342,18 @@ export function StreakScreen() {
         onClose={() => setShowChangeGoalModal(false)}
         onConfirm={handleConfirmGoalChange}
         currentGoalDays={settings.streakGoalDays}
-        currentProgress={streakData.currentStreak - streakData.currentGoalStartStreak}
+        currentProgress={
+          streakData.currentStreak - streakData.currentGoalStartStreak
+        }
       />
     </ScrollView>
   );
 }
 
-const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =>
+const getStyles = (
+  colors: ThemeColors,
+  getFontSize: (size: number) => number,
+) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -334,7 +364,7 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     // Header
     streakHeader: {
-      alignItems: "center",
+      alignItems: 'center',
       paddingVertical: 24,
     },
     streakFireContainer: {
@@ -342,7 +372,7 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     streakNumber: {
       fontSize: getFontSize(56),
-      fontWeight: "800",
+      fontWeight: '800',
       color: colors.headerText,
       lineHeight: getFontSize(64),
     },
@@ -355,20 +385,20 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       fontSize: getFontSize(13),
       color: STREAK_COLORS.completed,
       marginTop: 8,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     // Secciones
     section: {
       marginBottom: 24,
     },
     sectionHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
     },
     sectionTitle: {
       fontSize: getFontSize(18),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
       marginBottom: 12,
     },
@@ -385,45 +415,45 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       padding: 16,
     },
     progressHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       marginBottom: 12,
     },
     progressInfo: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: 8,
     },
     progressText: {
       fontSize: getFontSize(14),
       color: colors.bodyText,
-      fontWeight: "500",
+      fontWeight: '500',
     },
     progressPercentage: {
       fontSize: getFontSize(16),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.accent,
     },
     progressBar: {
       height: 8,
       backgroundColor: colors.divider,
       borderRadius: 4,
-      overflow: "hidden",
+      overflow: 'hidden',
     },
     progressFill: {
-      height: "100%",
+      height: '100%',
       borderRadius: 4,
     },
     goalDescription: {
       fontSize: getFontSize(12),
       color: colors.placeholderText,
       marginTop: 8,
-      textAlign: "center",
+      textAlign: 'center',
     },
     // Inventario
     inventoryRow: {
-      flexDirection: "row",
+      flexDirection: 'row',
       gap: 12,
     },
     inventoryCard: {
@@ -431,34 +461,34 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       backgroundColor: colors.surfaceMuted,
       borderRadius: 16,
       padding: 16,
-      alignItems: "center",
+      alignItems: 'center',
       gap: 8,
     },
     inventoryValue: {
       fontSize: getFontSize(24),
-      fontWeight: "800",
+      fontWeight: '800',
       color: colors.headerText,
     },
     inventoryLabel: {
       fontSize: getFontSize(12),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
     },
     // Meta actual
     changeGoalButton: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       paddingHorizontal: 8,
       paddingVertical: 4,
     },
     changeGoalText: {
       fontSize: getFontSize(14),
       color: colors.accent,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     currentGoalCard: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: colors.surfaceMuted,
       borderRadius: 16,
       padding: 16,
@@ -468,8 +498,8 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       height: 52,
       borderRadius: 26,
       backgroundColor: colors.accentSubtle,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       marginRight: 12,
     },
     goalInfo: {
@@ -477,7 +507,7 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     goalTitle: {
       fontSize: getFontSize(16),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
     },
     goalProgress: {
@@ -491,8 +521,8 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       marginTop: 2,
     },
     goalReward: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: `${STREAK_COLORS.gems}20`,
       paddingHorizontal: 10,
       paddingVertical: 6,
@@ -501,30 +531,30 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     goalRewardText: {
       fontSize: getFontSize(14),
-      fontWeight: "700",
+      fontWeight: '700',
       color: STREAK_COLORS.gems,
     },
     goalProgressBar: {
       height: 6,
       backgroundColor: colors.divider,
       borderRadius: 3,
-      overflow: "hidden",
+      overflow: 'hidden',
       marginTop: 12,
     },
     goalProgressFill: {
-      height: "100%",
+      height: '100%',
       backgroundColor: colors.accent,
       borderRadius: 3,
     },
     goalPercentage: {
       fontSize: getFontSize(12),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
       marginTop: 6,
     },
     // Estadísticas
     statsGrid: {
-      flexDirection: "row",
+      flexDirection: 'row',
       gap: 12,
     },
     statCard: {
@@ -532,31 +562,31 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       backgroundColor: colors.surfaceMuted,
       borderRadius: 16,
       padding: 14,
-      alignItems: "center",
+      alignItems: 'center',
       gap: 6,
     },
     statValue: {
       fontSize: getFontSize(20),
-      fontWeight: "800",
+      fontWeight: '800',
       color: colors.headerText,
     },
     statLabel: {
       fontSize: getFontSize(11),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
     },
     // Advertencia de protectores
     maxFreezesWarning: {
       fontSize: getFontSize(12),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
       marginTop: 8,
-      fontStyle: "italic",
+      fontStyle: 'italic',
     },
     // Botón de protector
     freezeInfoBox: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: `${STREAK_COLORS.frozen}15`,
       paddingVertical: 14,
       paddingHorizontal: 16,

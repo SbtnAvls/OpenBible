@@ -1,11 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Heart, Calendar, ArrowRight } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemeColors, GetFontSize } from '../context/ThemeContext';
@@ -16,11 +10,13 @@ type DevotionalListScreenProps = {
   onSelectDevotional: (devotional: Devotional) => void;
 };
 
-export function DevotionalListScreen({ onSelectDevotional }: DevotionalListScreenProps) {
+export function DevotionalListScreen({
+  onSelectDevotional,
+}: DevotionalListScreenProps) {
   const { colors, getFontSize } = useTheme();
   const styles = useMemo(
     () => createStyles(colors, getFontSize),
-    [colors, getFontSize]
+    [colors, getFontSize],
   );
 
   const formatDate = (date: Date) => {
@@ -64,7 +60,9 @@ export function DevotionalListScreen({ onSelectDevotional }: DevotionalListScree
           </Text>
           <Text style={styles.statLabel}>Devocionales</Text>
         </View>
-        <View style={[styles.statDivider, { backgroundColor: colors.accent }]} />
+        <View
+          style={[styles.statDivider, { backgroundColor: colors.accent }]}
+        />
         <View style={styles.statItem}>
           <Text style={[styles.statValue, { color: colors.accent }]}>0</Text>
           <Text style={styles.statLabel}>Completados</Text>

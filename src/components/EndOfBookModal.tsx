@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  StyleSheet,
-  Pressable,
-} from 'react-native';
+import { View, Text, Modal, StyleSheet, Pressable } from 'react-native';
 import { BookOpen, X } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemeColors, GetFontSize } from '../context/ThemeContext';
@@ -36,7 +30,9 @@ export const EndOfBookModal: React.FC<EndOfBookModalProps> = ({
       onRequestClose={onRemovePin}
     >
       <View style={styles.overlay}>
-        <View style={[styles.modal, { backgroundColor: colors.backgroundPrimary }]}>
+        <View
+          style={[styles.modal, { backgroundColor: colors.backgroundPrimary }]}
+        >
           <View style={styles.header}>
             <View style={styles.headerContent}>
               <BookOpen size={24} color={colors.accent} />

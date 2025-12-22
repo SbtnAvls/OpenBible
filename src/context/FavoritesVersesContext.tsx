@@ -6,8 +6,8 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from "react";
-import { getDataFromStorage, saveDataOnStorage } from "../helpers/storageData";
+} from 'react';
+import { getDataFromStorage, saveDataOnStorage } from '../helpers/storageData';
 
 export type FavoriteBlockVerse = {
   verseNumber: string;
@@ -25,40 +25,39 @@ export type FavoriteBlock = {
   savedAt: number;
 };
 
-export type FavoriteBlockInput = Omit<FavoriteBlock, "savedAt">;
+export type FavoriteBlockInput = Omit<FavoriteBlock, 'savedAt'>;
 
-const FAVORITES_STORAGE_FILE = "favorites-verses.json";
+const FAVORITES_STORAGE_FILE = 'favorites-verses.json';
 
 function isFavoriteBlockVerse(value: unknown): value is FavoriteBlockVerse {
-  if (!value || typeof value !== "object") {
+  if (!value || typeof value !== 'object') {
     return false;
   }
   const candidate = value as Record<string, unknown>;
   return (
-    typeof candidate.verseNumber === "string" &&
-    typeof candidate.text === "string"
+    typeof candidate.verseNumber === 'string' &&
+    typeof candidate.text === 'string'
   );
 }
 
 function isFavoriteBlock(value: unknown): value is FavoriteBlock {
-  if (!value || typeof value !== "object") {
+  if (!value || typeof value !== 'object') {
     return false;
   }
   const candidate = value as Record<string, unknown>;
   return (
-    typeof candidate.id === "string" &&
-    typeof candidate.bookId === "string" &&
-    typeof candidate.bookName === "string" &&
-    typeof candidate.chapterName === "string" &&
+    typeof candidate.id === 'string' &&
+    typeof candidate.bookId === 'string' &&
+    typeof candidate.bookName === 'string' &&
+    typeof candidate.chapterName === 'string' &&
     Array.isArray(candidate.verseNumbers) &&
-    (candidate.verseNumbers as unknown[]).every((item) => typeof item === "string") &&
+    (candidate.verseNumbers as unknown[]).every(
+      item => typeof item === 'string',
+    ) &&
     Array.isArray(candidate.verses) &&
     (candidate.verses as unknown[]).every(isFavoriteBlockVerse) &&
-    typeof candidate.savedAt === "number" &&
-    (
-      candidate.comment === undefined ||
-      typeof candidate.comment === "string"
-    )
+    typeof candidate.savedAt === 'number' &&
+    (candidate.comment === undefined || typeof candidate.comment === 'string')
   );
 }
 
@@ -77,12 +76,13 @@ type FavoritesVersesContextValue = {
   getVerseFavorites: (
     bookId: string,
     chapterName: string,
-    verseNumber: string
+    verseNumber: string,
   ) => FavoriteBlock[];
 };
 
-const FavoritesVersesContext =
-  createContext<FavoritesVersesContextValue | undefined>(undefined);
+const FavoritesVersesContext = createContext<
+  FavoritesVersesContextValue | undefined
+>(undefined);
 
 export function FavoritesVersesProvider({
   children,
@@ -121,18 +121,15 @@ export function FavoritesVersesProvider({
     if (!hydrationRef.current) {
       return;
     }
-    void saveDataOnStorage(
-      FAVORITES_STORAGE_FILE,
-      JSON.stringify(favorites)
-    );
+    void saveDataOnStorage(FAVORITES_STORAGE_FILE, JSON.stringify(favorites));
   }, [favorites]);
 
   const addFavorite = useCallback((entry: FavoriteBlockInput) => {
-    setFavorites((prev) => [{ ...entry, savedAt: Date.now() }, ...prev]);
+    setFavorites(prev => [{ ...entry, savedAt: Date.now() }, ...prev]);
   }, []);
 
   const removeFavorite = useCallback((id: string) => {
-    setFavorites((prev) => prev.filter((item) => item.id !== id));
+    setFavorites(prev => prev.filter(item => item.id !== id));
   }, []);
 
   const clearFavorites = useCallback(() => {
@@ -141,8 +138,8 @@ export function FavoritesVersesProvider({
 
   const verseLookup = useMemo(() => {
     const map = new Map<string, FavoriteBlock[]>();
-    favorites.forEach((block) => {
-      block.verseNumbers.forEach((verseNumber) => {
+    favorites.forEach(block => {
+      block.verseNumbers.forEach(verseNumber => {
         const key = `${block.bookId}-${block.chapterName}-${verseNumber}`;
         const list = map.get(key);
         if (list) {
@@ -158,7 +155,7 @@ export function FavoritesVersesProvider({
   const getVerseFavorites = useCallback(
     (bookId: string, chapterName: string, verseNumber: string) =>
       verseLookup.get(`${bookId}-${chapterName}-${verseNumber}`) ?? [],
-    [verseLookup]
+    [verseLookup],
   );
 
   const value = useMemo(
@@ -169,7 +166,7 @@ export function FavoritesVersesProvider({
       clearFavorites,
       getVerseFavorites,
     }),
-    [addFavorite, clearFavorites, favorites, getVerseFavorites, removeFavorite]
+    [addFavorite, clearFavorites, favorites, getVerseFavorites, removeFavorite],
   );
 
   return (
@@ -183,7 +180,7 @@ export function useFavoritesVerses() {
   const context = useContext(FavoritesVersesContext);
   if (!context) {
     throw new Error(
-      "useFavoritesVerses debe usarse dentro de un FavoritesVersesProvider"
+      'useFavoritesVerses debe usarse dentro de un FavoritesVersesProvider',
     );
   }
   return context;

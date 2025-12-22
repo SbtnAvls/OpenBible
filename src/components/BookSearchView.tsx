@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,9 @@ import {
   StyleSheet,
   FlatList,
   Pressable,
-} from "react-native";
-import { useTheme } from "../context/ThemeContext";
-import type { ThemeColors, GetFontSize } from "../context/ThemeContext";
+} from 'react-native';
+import { useTheme } from '../context/ThemeContext';
+import type { ThemeColors, GetFontSize } from '../context/ThemeContext';
 
 type VerseData = {
   name: string;
@@ -60,11 +60,13 @@ export function BookSearchView({
   const { colors, getFontSize } = useTheme();
   const styles = useMemo(
     () => createStyles(colors, getFontSize),
-    [colors, getFontSize]
+    [colors, getFontSize],
   );
 
-  const [displayedCurrentChapterResults, setDisplayedCurrentChapterResults] = useState(10);
-  const [displayedOtherChaptersResults, setDisplayedOtherChaptersResults] = useState(10);
+  const [displayedCurrentChapterResults, setDisplayedCurrentChapterResults] =
+    useState(10);
+  const [displayedOtherChaptersResults, setDisplayedOtherChaptersResults] =
+    useState(10);
   const [activeTab, setActiveTab] = useState<'current' | 'other'>('current');
   const RESULTS_PER_PAGE = 10;
 
@@ -72,8 +74,8 @@ export function BookSearchView({
   const normalizeText = useCallback((text: string) => {
     return text
       .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
   }, []);
 
   // Realizar búsqueda en todo el libro
@@ -90,7 +92,10 @@ export function BookSearchView({
     try {
       chapters.forEach((chapter, chapterIndex) => {
         chapter.verses.forEach((verse, verseIndex) => {
-          if (currentChapterResults.length + otherChaptersResults.length >= maxResults) {
+          if (
+            currentChapterResults.length + otherChaptersResults.length >=
+            maxResults
+          ) {
             return;
           }
 
@@ -114,7 +119,7 @@ export function BookSearchView({
         });
       });
     } catch (error) {
-      console.error("Error during book search:", error);
+      console.error('Error during book search:', error);
     }
 
     return {
@@ -144,25 +149,28 @@ export function BookSearchView({
 
       return { beforeMatch, match, afterMatch };
     },
-    [normalizeText]
+    [normalizeText],
   );
 
-  const handleSearch = useCallback((text: string) => {
-    onSearchQueryChange(text);
-    setDisplayedCurrentChapterResults(RESULTS_PER_PAGE);
-    setDisplayedOtherChaptersResults(RESULTS_PER_PAGE);
-    // Resetear a la primera pestaña cuando se busca algo nuevo
-    if (text.length >= 3) {
-      setActiveTab('current');
-    }
-  }, [onSearchQueryChange]);
+  const handleSearch = useCallback(
+    (text: string) => {
+      onSearchQueryChange(text);
+      setDisplayedCurrentChapterResults(RESULTS_PER_PAGE);
+      setDisplayedOtherChaptersResults(RESULTS_PER_PAGE);
+      // Resetear a la primera pestaña cuando se busca algo nuevo
+      if (text.length >= 3) {
+        setActiveTab('current');
+      }
+    },
+    [onSearchQueryChange],
+  );
 
   const handleLoadMoreCurrentChapter = useCallback(() => {
-    setDisplayedCurrentChapterResults((prev) => prev + RESULTS_PER_PAGE);
+    setDisplayedCurrentChapterResults(prev => prev + RESULTS_PER_PAGE);
   }, []);
 
   const handleLoadMoreOtherChapters = useCallback(() => {
-    setDisplayedOtherChaptersResults((prev) => prev + RESULTS_PER_PAGE);
+    setDisplayedOtherChaptersResults(prev => prev + RESULTS_PER_PAGE);
   }, []);
 
   const handleTabChange = useCallback((tab: 'current' | 'other') => {
@@ -171,17 +179,27 @@ export function BookSearchView({
 
   // Combinar resultados paginados
   const paginatedCurrentChapterResults = useMemo(() => {
-    return allSearchResults.currentChapter.slice(0, displayedCurrentChapterResults);
+    return allSearchResults.currentChapter.slice(
+      0,
+      displayedCurrentChapterResults,
+    );
   }, [allSearchResults.currentChapter, displayedCurrentChapterResults]);
 
   const paginatedOtherChaptersResults = useMemo(() => {
-    return allSearchResults.otherChapters.slice(0, displayedOtherChaptersResults);
+    return allSearchResults.otherChapters.slice(
+      0,
+      displayedOtherChaptersResults,
+    );
   }, [allSearchResults.otherChapters, displayedOtherChaptersResults]);
 
-  const hasMoreCurrentChapter = displayedCurrentChapterResults < allSearchResults.currentChapter.length;
-  const hasMoreOtherChapters = displayedOtherChaptersResults < allSearchResults.otherChapters.length;
+  const hasMoreCurrentChapter =
+    displayedCurrentChapterResults < allSearchResults.currentChapter.length;
+  const hasMoreOtherChapters =
+    displayedOtherChaptersResults < allSearchResults.otherChapters.length;
 
-  const totalResults = allSearchResults.currentChapter.length + allSearchResults.otherChapters.length;
+  const totalResults =
+    allSearchResults.currentChapter.length +
+    allSearchResults.otherChapters.length;
 
   // Resultados para la pestaña activa
   const activeResults = useMemo(() => {
@@ -190,54 +208,67 @@ export function BookSearchView({
     } else {
       return paginatedOtherChaptersResults;
     }
-  }, [activeTab, paginatedCurrentChapterResults, paginatedOtherChaptersResults]);
-
-  const activeHasMore = activeTab === 'current' ? hasMoreCurrentChapter : hasMoreOtherChapters;
-  const activeLoadMore = activeTab === 'current' ? handleLoadMoreCurrentChapter : handleLoadMoreOtherChapters;
-
-  const renderItem = useCallback(({ item }: { item: BookSearchResult }) => {
-    const highlighted = highlightText(item.verseText, searchQuery);
-    const isHighlighted = typeof highlighted === "object";
-
-    return (
-      <Pressable
-        onPress={() => onSelectResult(item.chapterIndex, item.isCurrentChapter ? item.verseIndex : undefined)}
-        style={({ pressed }) => [
-          styles.resultCard,
-          {
-            backgroundColor: item.isCurrentChapter
-              ? colors.accentSubtle
-              : colors.surfaceMuted,
-            borderColor: colors.divider,
-          },
-          pressed && { opacity: 0.7 },
-        ]}
-      >
-        <View style={styles.resultHeader}>
-          <Text style={styles.resultReference}>
-            {item.isCurrentChapter ? 'Versículo' : `Capítulo ${item.chapterName}:`} {item.verseName}
-          </Text>
-        </View>
-        <Text style={styles.resultText} numberOfLines={3}>
-          {isHighlighted ? (
-            <>
-              {highlighted.beforeMatch}
-              <Text style={styles.highlightedText}>{highlighted.match}</Text>
-              {highlighted.afterMatch}
-            </>
-          ) : (
-            item.verseText
-          )}
-        </Text>
-      </Pressable>
-    );
   }, [
-    searchQuery,
-    highlightText,
-    onSelectResult,
-    colors,
-    styles,
+    activeTab,
+    paginatedCurrentChapterResults,
+    paginatedOtherChaptersResults,
   ]);
+
+  const activeHasMore =
+    activeTab === 'current' ? hasMoreCurrentChapter : hasMoreOtherChapters;
+  const activeLoadMore =
+    activeTab === 'current'
+      ? handleLoadMoreCurrentChapter
+      : handleLoadMoreOtherChapters;
+
+  const renderItem = useCallback(
+    ({ item }: { item: BookSearchResult }) => {
+      const highlighted = highlightText(item.verseText, searchQuery);
+      const isHighlighted = typeof highlighted === 'object';
+
+      return (
+        <Pressable
+          onPress={() =>
+            onSelectResult(
+              item.chapterIndex,
+              item.isCurrentChapter ? item.verseIndex : undefined,
+            )
+          }
+          style={({ pressed }) => [
+            styles.resultCard,
+            {
+              backgroundColor: item.isCurrentChapter
+                ? colors.accentSubtle
+                : colors.surfaceMuted,
+              borderColor: colors.divider,
+            },
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <View style={styles.resultHeader}>
+            <Text style={styles.resultReference}>
+              {item.isCurrentChapter
+                ? 'Versículo'
+                : `Capítulo ${item.chapterName}:`}{' '}
+              {item.verseName}
+            </Text>
+          </View>
+          <Text style={styles.resultText} numberOfLines={3}>
+            {isHighlighted ? (
+              <>
+                {highlighted.beforeMatch}
+                <Text style={styles.highlightedText}>{highlighted.match}</Text>
+                {highlighted.afterMatch}
+              </>
+            ) : (
+              item.verseText
+            )}
+          </Text>
+        </Pressable>
+      );
+    },
+    [searchQuery, highlightText, onSelectResult, colors, styles],
+  );
 
   const renderListFooter = useCallback(() => {
     if (activeHasMore) {
@@ -281,7 +312,7 @@ export function BookSearchView({
           />
           {searchQuery.length > 0 && (
             <Pressable
-              onPress={() => handleSearch("")}
+              onPress={() => handleSearch('')}
               style={styles.clearButton}
             >
               <Text style={styles.clearButtonText}>✕</Text>
@@ -296,7 +327,7 @@ export function BookSearchView({
 
           {searchQuery.length >= 3 && totalResults > 0 && (
             <Text style={styles.totalCount}>
-              {totalResults} resultado{totalResults !== 1 ? "s" : ""}
+              {totalResults} resultado{totalResults !== 1 ? 's' : ''}
             </Text>
           )}
         </View>
@@ -309,13 +340,20 @@ export function BookSearchView({
             onPress={() => handleTabChange('current')}
             style={[
               styles.tabButton,
-              activeTab === 'current' && { backgroundColor: colors.accentSubtle }
+              activeTab === 'current' && {
+                backgroundColor: colors.accentSubtle,
+              },
             ]}
           >
-            <Text style={[
-              styles.tabText,
-              activeTab === 'current' && { color: colors.accent, fontWeight: '600' }
-            ]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'current' && {
+                  color: colors.accent,
+                  fontWeight: '600',
+                },
+              ]}
+            >
               📍 En este capítulo ({allSearchResults.currentChapter.length})
             </Text>
           </Pressable>
@@ -323,13 +361,18 @@ export function BookSearchView({
             onPress={() => handleTabChange('other')}
             style={[
               styles.tabButton,
-              activeTab === 'other' && { backgroundColor: colors.accentSubtle }
+              activeTab === 'other' && { backgroundColor: colors.accentSubtle },
             ]}
           >
-            <Text style={[
-              styles.tabText,
-              activeTab === 'other' && { color: colors.accent, fontWeight: '600' }
-            ]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'other' && {
+                  color: colors.accent,
+                  fontWeight: '600',
+                },
+              ]}
+            >
               📖 En otros capítulos ({allSearchResults.otherChapters.length})
             </Text>
           </Pressable>
@@ -341,9 +384,11 @@ export function BookSearchView({
         <View style={styles.emptyStateContainer}>
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>🔍</Text>
-            <Text style={styles.emptyTitle}>Buscar en {selectedBook.label}</Text>
+            <Text style={styles.emptyTitle}>
+              Buscar en {selectedBook.label}
+            </Text>
             <Text style={styles.emptyText}>
-              Busca palabras o frases en este libro.{"\n"}
+              Busca palabras o frases en este libro.{'\n'}
               Resultados del capítulo actual aparecerán primero.
             </Text>
           </View>
@@ -363,7 +408,9 @@ export function BookSearchView({
       ) : (
         <FlatList
           data={activeResults}
-          keyExtractor={(item, index) => `${item.chapterIndex}-${item.verseName}-${index}`}
+          keyExtractor={(item, index) =>
+            `${item.chapterIndex}-${item.verseName}-${index}`
+          }
           renderItem={renderItem}
           ListFooterComponent={renderListFooter}
           contentContainerStyle={styles.resultsContent}
@@ -414,8 +461,8 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       textAlign: 'center',
     },
     searchInputWrapper: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       borderRadius: 10,
       paddingHorizontal: 10,
       paddingVertical: 8,
@@ -446,7 +493,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     totalCount: {
       fontSize: getFontSize(12),
       color: colors.accent,
-      fontWeight: "600",
+      fontWeight: '600',
       marginLeft: 2,
     },
     resultsContent: {
@@ -464,7 +511,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     },
     resultReference: {
       fontSize: getFontSize(13),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.accent,
     },
     resultText: {
@@ -473,34 +520,34 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       lineHeight: Math.round(getFontSize(14) * 1.5),
     },
     highlightedText: {
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.accent,
       backgroundColor: colors.accentSubtle,
     },
     loadMoreContainer: {
       paddingVertical: 12,
       paddingHorizontal: 20,
-      alignItems: "center",
+      alignItems: 'center',
     },
     loadMoreButton: {
       paddingVertical: 10,
       paddingHorizontal: 20,
       borderRadius: 12,
       minWidth: 180,
-      alignItems: "center",
+      alignItems: 'center',
     },
     loadMoreText: {
       fontSize: getFontSize(14),
       color: colors.accentText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     emptyStateContainer: {
       flex: 1,
     },
     emptyState: {
       flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
       paddingHorizontal: 32,
       paddingTop: 40,
     },
@@ -510,16 +557,15 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     },
     emptyTitle: {
       fontSize: getFontSize(17),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.headerText,
       marginBottom: 6,
-      textAlign: "center",
+      textAlign: 'center',
     },
     emptyText: {
       fontSize: getFontSize(14),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
       lineHeight: Math.round(getFontSize(14) * 1.5),
     },
   });
-

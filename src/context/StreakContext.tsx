@@ -6,8 +6,8 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from "react";
-import { getDataFromStorage, saveDataOnStorage } from "../helpers/storageData";
+} from 'react';
+import { getDataFromStorage, saveDataOnStorage } from '../helpers/storageData';
 import {
   DEFAULT_STREAK_DATA,
   DEFAULT_STREAK_SETTINGS,
@@ -30,11 +30,11 @@ import {
   type StreakHistoryEntry,
   type StreakSettings,
   type StreakStatus,
-} from "../types/streak";
+} from '../types/streak';
 
 // Archivos de persistencia
-const STREAK_DATA_FILE = "streak_data.json";
-const STREAK_SETTINGS_FILE = "streak_settings.json";
+const STREAK_DATA_FILE = 'streak_data.json';
+const STREAK_SETTINGS_FILE = 'streak_settings.json';
 
 export interface StreakContextValue {
   // Estado
@@ -57,7 +57,11 @@ export interface StreakContextValue {
   getStreakStatus: () => StreakStatus;
   getMonthHistory: (year: number, month: number) => StreakHistoryEntry[];
   getRemainingMinutes: () => number;
-  getGoalProgress: () => { current: number; target: number; percentage: number };
+  getGoalProgress: () => {
+    current: number;
+    target: number;
+    percentage: number;
+  };
   getDaysToGoal: () => number;
 
   // Recompensa pendiente (para mostrar modal de celebración)
@@ -77,9 +81,13 @@ const StreakContext = createContext<StreakContextValue | undefined>(undefined);
 
 export function StreakProvider({ children }: { children: React.ReactNode }) {
   const [streakData, setStreakData] = useState<StreakData>(DEFAULT_STREAK_DATA);
-  const [settings, setSettings] = useState<StreakSettings>(DEFAULT_STREAK_SETTINGS);
+  const [settings, setSettings] = useState<StreakSettings>(
+    DEFAULT_STREAK_SETTINGS,
+  );
   const [isLoading, setIsLoading] = useState(true);
-  const [pendingReward, setPendingReward] = useState<PendingReward | null>(null);
+  const [pendingReward, setPendingReward] = useState<PendingReward | null>(
+    null,
+  );
   const [autoFreezesUsed, setAutoFreezesUsed] = useState<number>(0);
 
   const hydrationRef = useRef(false);
@@ -106,7 +114,7 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
           setSettings(storedSettings);
         }
       } catch (error) {
-        console.error("Error loading streak data:", error);
+        console.error('Error loading streak data:', error);
       } finally {
         if (isMounted) {
           hydrationRef.current = true;
@@ -140,7 +148,7 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
 
     lastCheckedDateRef.current = today;
 
-    setStreakData((prev) => {
+    setStreakData(prev => {
       // Si ya verificamos hoy, solo resetear progreso del día
       if (prev.lastCompletedDate === today) {
         return prev;
@@ -159,7 +167,8 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
       const lastActiveDate = new Date(prev.lastCompletedDate);
       const todayDate = new Date(today);
       const daysDiff = Math.floor(
-        (todayDate.getTime() - lastActiveDate.getTime()) / (1000 * 60 * 60 * 24)
+        (todayDate.getTime() - lastActiveDate.getTime()) /
+          (1000 * 60 * 60 * 24),
       );
 
       // Si es el día siguiente (daysDiff === 1), la racha continúa normalmente
@@ -189,7 +198,9 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
         const missedDateString = formatLocalDate(missedDate);
 
         // Verificar si ya existe entrada para este día
-        const existingEntryIndex = newHistory.findIndex((h) => h.date === missedDateString);
+        const existingEntryIndex = newHistory.findIndex(
+          h => h.date === missedDateString,
+        );
 
         if (existingEntryIndex >= 0) {
           const existingEntry = newHistory[existingEntryIndex];
@@ -198,7 +209,10 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
             // Día perdido sin protección previa
             if (freezesRemaining > 0) {
               // Crear nuevo objeto en lugar de mutar
-              newHistory[existingEntryIndex] = { ...existingEntry, frozen: true };
+              newHistory[existingEntryIndex] = {
+                ...existingEntry,
+                frozen: true,
+              };
               freezesRemaining--;
               freezesUsed++;
               lastProtectedDate = missedDateString;
@@ -234,7 +248,8 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
       if (streakSurvived) {
         // Racha sobrevivió con protectores
         // Actualizar lastCompletedDate al último día protegido para evitar reprocesar
-        const newLastCompletedDate = lastProtectedDate || prev.lastCompletedDate;
+        const newLastCompletedDate =
+          lastProtectedDate || prev.lastCompletedDate;
 
         // Notificar si se usaron protectores (se procesará fuera del setState)
         if (freezesUsed > 0) {
@@ -272,9 +287,10 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
     (minutes: number) => {
       const today = getTodayDateString();
 
-      setStreakData((prev) => {
+      setStreakData(prev => {
         const newReadingTime = prev.todayReadingTime + minutes;
-        const justCompleted = !prev.todayCompleted && newReadingTime >= settings.dailyGoalMinutes;
+        const justCompleted =
+          !prev.todayCompleted && newReadingTime >= settings.dailyGoalMinutes;
 
         let newStreak = prev.currentStreak;
         let newLongestStreak = prev.longestStreak;
@@ -295,10 +311,12 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
           newLongestStreak = Math.max(newLongestStreak, newStreak);
 
           // Sistema de gemas: cada 5 días de racha → +10 gemas
-          const intervalsSinceLastReward = Math.floor(newStreak / STREAK_INTERVAL_DAYS) -
-                                           Math.floor(prev.lastGemRewardStreak / STREAK_INTERVAL_DAYS);
+          const intervalsSinceLastReward =
+            Math.floor(newStreak / STREAK_INTERVAL_DAYS) -
+            Math.floor(prev.lastGemRewardStreak / STREAK_INTERVAL_DAYS);
           if (intervalsSinceLastReward > 0) {
-            intervalGemsEarned = intervalsSinceLastReward * GEMS_PER_STREAK_INTERVAL;
+            intervalGemsEarned =
+              intervalsSinceLastReward * GEMS_PER_STREAK_INTERVAL;
             newGems += intervalGemsEarned;
             newTotalGems += intervalGemsEarned;
             newLastGemRewardStreak = newStreak;
@@ -313,15 +331,20 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
             newTotalGems += goalGemsEarned;
             goalCompleted = true;
             // Buscar título de la meta
-            const goal = STREAK_GOALS.find(g => g.targetDays === settings.streakGoalDays);
+            const goal = STREAK_GOALS.find(
+              g => g.targetDays === settings.streakGoalDays,
+            );
             goalTitle = goal?.title;
             // Reiniciar para poder elegir nueva meta
             newCurrentGoalStartStreak = newStreak;
           }
 
           // Calcular días restantes para próximos hitos
-          const daysToNextInterval = STREAK_INTERVAL_DAYS - (newStreak % STREAK_INTERVAL_DAYS);
-          const newDaysSinceGoalStart = goalCompleted ? 0 : daysSinceGoalStart + 1;
+          const daysToNextInterval =
+            STREAK_INTERVAL_DAYS - (newStreak % STREAK_INTERVAL_DAYS);
+          const newDaysSinceGoalStart = goalCompleted
+            ? 0
+            : daysSinceGoalStart + 1;
           const daysToNextGoal = goalCompleted
             ? settings.streakGoalDays
             : Math.max(0, settings.streakGoalDays - newDaysSinceGoalStart);
@@ -335,18 +358,25 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
             goalGemsEarned,
             totalGemsEarned: intervalGemsEarned + goalGemsEarned,
             daysToNextGoal,
-            daysToNextInterval: daysToNextInterval === STREAK_INTERVAL_DAYS ? 0 : daysToNextInterval,
+            daysToNextInterval:
+              daysToNextInterval === STREAK_INTERVAL_DAYS
+                ? 0
+                : daysToNextInterval,
           };
 
           // Usar setTimeout para evitar actualizar estado durante render
           // Usamos callback para evitar duplicados si React llama setState múltiples veces (Strict Mode)
           setTimeout(() => {
-            setPendingReward(currentReward => currentReward === null ? reward : currentReward);
+            setPendingReward(currentReward =>
+              currentReward === null ? reward : currentReward,
+            );
           }, 0);
         }
 
         // Actualizar o agregar entrada del día en el historial
-        const existingEntryIndex = prev.streakHistory.findIndex((h) => h.date === today);
+        const existingEntryIndex = prev.streakHistory.findIndex(
+          h => h.date === today,
+        );
         const newHistory = [...prev.streakHistory];
 
         const todayEntry: StreakHistoryEntry = {
@@ -377,12 +407,12 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
         };
       });
     },
-    [settings.dailyGoalMinutes, settings.streakGoalDays]
+    [settings.dailyGoalMinutes, settings.streakGoalDays],
   );
 
   // Configurar meta diaria
   const setDailyGoal = useCallback((minutes: number) => {
-    setSettings((prev) => ({
+    setSettings(prev => ({
       ...prev,
       dailyGoalMinutes: minutes,
     }));
@@ -392,7 +422,7 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
   const setStreakGoal = useCallback((days: number) => {
     // Prevenir exploit: si el progreso actual ya supera la nueva meta,
     // ajustar currentGoalStartStreak para que el progreso sea 0
-    setStreakData((prev) => {
+    setStreakData(prev => {
       const currentProgress = prev.currentStreak - prev.currentGoalStartStreak;
       if (currentProgress >= days) {
         // El usuario ya tendría la meta completada instantáneamente - resetear progreso
@@ -405,28 +435,31 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
       return prev;
     });
 
-    setSettings((prev) => ({
+    setSettings(prev => ({
       ...prev,
       streakGoalDays: days,
     }));
   }, []);
 
   // Completar onboarding
-  const completeOnboarding = useCallback((dailyGoal: number, streakGoal: number) => {
-    setSettings((prev) => ({
-      ...prev,
-      dailyGoalMinutes: dailyGoal,
-      streakGoalDays: streakGoal,
-      hasCompletedOnboarding: true,
-    }));
-  }, []);
+  const completeOnboarding = useCallback(
+    (dailyGoal: number, streakGoal: number) => {
+      setSettings(prev => ({
+        ...prev,
+        dailyGoalMinutes: dailyGoal,
+        streakGoalDays: streakGoal,
+        hasCompletedOnboarding: true,
+      }));
+    },
+    [],
+  );
 
   // Comprar item de la tienda
   const purchaseItem = useCallback((itemId: string): boolean => {
-    const item = SHOP_ITEMS.find((i) => i.id === itemId);
+    const item = SHOP_ITEMS.find(i => i.id === itemId);
     if (!item) return false;
 
-    setStreakData((prev) => {
+    setStreakData(prev => {
       // Verificar si tiene gemas suficientes
       if (prev.currentGems < item.price) return prev;
 
@@ -436,9 +469,10 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Calcular cantidad final (no exceder MAX_FREEZES)
-      const newFreezes = item.type === 'freeze'
-        ? Math.min(prev.availableFreezes + item.quantity, MAX_FREEZES)
-        : prev.availableFreezes;
+      const newFreezes =
+        item.type === 'freeze'
+          ? Math.min(prev.availableFreezes + item.quantity, MAX_FREEZES)
+          : prev.availableFreezes;
 
       return {
         ...prev,
@@ -453,26 +487,30 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
   // Verificar si puede comprar
   const canPurchase = useCallback(
     (itemId: string): boolean => {
-      const item = SHOP_ITEMS.find((i) => i.id === itemId);
+      const item = SHOP_ITEMS.find(i => i.id === itemId);
       if (!item) return false;
 
       // Verificar gemas suficientes
       if (streakData.currentGems < item.price) return false;
 
       // Verificar límite de protectores
-      if (item.type === 'freeze' && streakData.availableFreezes >= MAX_FREEZES) {
+      if (
+        item.type === 'freeze' &&
+        streakData.availableFreezes >= MAX_FREEZES
+      ) {
         return false;
       }
 
       return true;
     },
-    [streakData.currentGems, streakData.availableFreezes]
+    [streakData.currentGems, streakData.availableFreezes],
   );
 
   // Obtener progreso del día (0-100)
   const getTodayProgress = useCallback((): number => {
     if (settings.dailyGoalMinutes === 0) return 0;
-    const progress = (streakData.todayReadingTime / settings.dailyGoalMinutes) * 100;
+    const progress =
+      (streakData.todayReadingTime / settings.dailyGoalMinutes) * 100;
     return Math.min(100, progress);
   }, [streakData.todayReadingTime, settings.dailyGoalMinutes]);
 
@@ -486,28 +524,38 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
   const getStreakStatus = useCallback((): StreakStatus => {
     // Usuario nuevo o sin racha
     if (streakData.currentStreak === 0 && !streakData.lastCompletedDate) {
-      return "new";
+      return 'new';
     }
 
     // Ya completó hoy
     if (streakData.todayCompleted) {
-      return "active";
+      return 'active';
     }
 
     // Verificar si ayer completó
     const yesterday = getYesterdayDateString();
-    const yesterdayEntry = streakData.streakHistory.find((h) => h.date === yesterday);
+    const yesterdayEntry = streakData.streakHistory.find(
+      h => h.date === yesterday,
+    );
 
-    if (!yesterdayEntry?.completed && !yesterdayEntry?.frozen && streakData.currentStreak > 0) {
-      return "lost";
+    if (
+      !yesterdayEntry?.completed &&
+      !yesterdayEntry?.frozen &&
+      streakData.currentStreak > 0
+    ) {
+      return 'lost';
     }
 
     // Si es después de mediodía y no ha completado hoy
-    if (isAfterNoon() && !streakData.todayCompleted && streakData.currentStreak > 0) {
-      return "at_risk";
+    if (
+      isAfterNoon() &&
+      !streakData.todayCompleted &&
+      streakData.currentStreak > 0
+    ) {
+      return 'at_risk';
     }
 
-    return "active";
+    return 'active';
   }, [
     streakData.currentStreak,
     streakData.lastCompletedDate,
@@ -518,29 +566,43 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
   // Obtener historial de un mes específico
   const getMonthHistory = useCallback(
     (year: number, month: number): StreakHistoryEntry[] => {
-      return streakData.streakHistory.filter((entry) => {
+      return streakData.streakHistory.filter(entry => {
         // Parsear fecha manualmente para evitar problemas de zona horaria
         const [entryYear, entryMonth] = entry.date.split('-').map(Number);
         return entryYear === year && entryMonth - 1 === month;
       });
     },
-    [streakData.streakHistory]
+    [streakData.streakHistory],
   );
 
   // Obtener progreso hacia la meta de racha actual (días completados / días objetivo)
-  const getGoalProgress = useCallback((): { current: number; target: number; percentage: number } => {
-    const daysSinceGoalStart = streakData.currentStreak - streakData.currentGoalStartStreak;
+  const getGoalProgress = useCallback((): {
+    current: number;
+    target: number;
+    percentage: number;
+  } => {
+    const daysSinceGoalStart =
+      streakData.currentStreak - streakData.currentGoalStartStreak;
     const target = settings.streakGoalDays;
     const current = Math.min(daysSinceGoalStart, target);
     const percentage = target > 0 ? Math.min(100, (current / target) * 100) : 0;
     return { current, target, percentage };
-  }, [streakData.currentStreak, streakData.currentGoalStartStreak, settings.streakGoalDays]);
+  }, [
+    streakData.currentStreak,
+    streakData.currentGoalStartStreak,
+    settings.streakGoalDays,
+  ]);
 
   // Obtener días restantes para cumplir la meta actual
   const getDaysToGoal = useCallback((): number => {
-    const daysSinceGoalStart = streakData.currentStreak - streakData.currentGoalStartStreak;
+    const daysSinceGoalStart =
+      streakData.currentStreak - streakData.currentGoalStartStreak;
     return Math.max(0, settings.streakGoalDays - daysSinceGoalStart);
-  }, [streakData.currentStreak, streakData.currentGoalStartStreak, settings.streakGoalDays]);
+  }, [
+    streakData.currentStreak,
+    streakData.currentGoalStartStreak,
+    settings.streakGoalDays,
+  ]);
 
   // Limpiar recompensa pendiente (después de mostrar el modal)
   const clearPendingReward = useCallback(() => {
@@ -596,16 +658,18 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
       clearPendingReward,
       autoFreezesUsed,
       clearAutoFreezesUsed,
-    ]
+    ],
   );
 
-  return <StreakContext.Provider value={value}>{children}</StreakContext.Provider>;
+  return (
+    <StreakContext.Provider value={value}>{children}</StreakContext.Provider>
+  );
 }
 
 export function useStreak() {
   const context = useContext(StreakContext);
   if (!context) {
-    throw new Error("useStreak debe usarse dentro de un StreakProvider");
+    throw new Error('useStreak debe usarse dentro de un StreakProvider');
   }
   return context;
 }

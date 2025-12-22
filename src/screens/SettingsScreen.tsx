@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   GestureResponderEvent,
@@ -10,8 +10,14 @@ import {
   Text,
   TextInput,
   View,
-} from "react-native";
-import { Check, Upload, Download, Trash2, Lightbulb } from "lucide-react-native";
+} from 'react-native';
+import {
+  Check,
+  Upload,
+  Download,
+  Trash2,
+  Lightbulb,
+} from 'lucide-react-native';
 
 import {
   FONT_SCALE_MAX,
@@ -20,12 +26,9 @@ import {
   themeOptions,
   useTheme,
   ACCENT_PRESETS,
-} from "../context/ThemeContext";
-import type {
-  ThemeColors,
-  GetFontSize,
-} from "../context/ThemeContext";
-import { useVerseOfTheDay } from "../context/VerseOfTheDayContext";
+} from '../context/ThemeContext';
+import type { ThemeColors, GetFontSize } from '../context/ThemeContext';
+import { useVerseOfTheDay } from '../context/VerseOfTheDayContext';
 
 const TRACK_HEIGHT = 6;
 const THUMB_SIZE = 22;
@@ -35,8 +38,18 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function SettingsScreen() {
-  const { theme, setTheme, accentColor, setAccentColor, tintedBackground, setTintedBackground, colors, fontScale, setFontScale, getFontSize } =
-    useTheme();
+  const {
+    theme,
+    setTheme,
+    accentColor,
+    setAccentColor,
+    tintedBackground,
+    setTintedBackground,
+    colors,
+    fontScale,
+    setFontScale,
+    getFontSize,
+  } = useTheme();
   const {
     curatedVerses,
     isAdmin,
@@ -47,10 +60,10 @@ export function SettingsScreen() {
   } = useVerseOfTheDay();
   const styles = useMemo(
     () => createStyles(colors, getFontSize),
-    [colors, getFontSize]
+    [colors, getFontSize],
   );
   const [trackWidth, setTrackWidth] = useState(0);
-  const [adminCodeInput, setAdminCodeInput] = useState("");
+  const [adminCodeInput, setAdminCodeInput] = useState('');
   const [tempFontScale, setTempFontScale] = useState(fontScale);
 
   const hasUnsavedFontChanges = tempFontScale !== fontScale;
@@ -58,7 +71,7 @@ export function SettingsScreen() {
   const sliderPercent = clamp(
     (tempFontScale - FONT_SCALE_MIN) / (FONT_SCALE_MAX - FONT_SCALE_MIN),
     0,
-    1
+    1,
   );
   const thumbLeft = trackWidth * sliderPercent;
   const fillWidth = trackWidth > 0 ? Math.max(0, thumbLeft) : 0;
@@ -75,14 +88,14 @@ export function SettingsScreen() {
         FONT_SCALE_MIN + ratio * (FONT_SCALE_MAX - FONT_SCALE_MIN);
       setTempFontScale(nextScale);
     },
-    [trackWidth]
+    [trackWidth],
   );
 
   const handleSliderEvent = useCallback(
     (event: GestureResponderEvent) => {
       updateScaleFromPosition(event.nativeEvent.locationX);
     },
-    [updateScaleFromPosition]
+    [updateScaleFromPosition],
   );
 
   const handleTrackLayout = useCallback((event: LayoutChangeEvent) => {
@@ -90,11 +103,11 @@ export function SettingsScreen() {
   }, []);
 
   const handleDecrease = useCallback(() => {
-    setTempFontScale((prev) => Math.max(FONT_SCALE_MIN, prev - FONT_SCALE_STEP));
+    setTempFontScale(prev => Math.max(FONT_SCALE_MIN, prev - FONT_SCALE_STEP));
   }, []);
 
   const handleIncrease = useCallback(() => {
-    setTempFontScale((prev) => Math.min(FONT_SCALE_MAX, prev + FONT_SCALE_STEP));
+    setTempFontScale(prev => Math.min(FONT_SCALE_MAX, prev + FONT_SCALE_STEP));
   }, []);
 
   const handleApplyFontScale = useCallback(() => {
@@ -108,10 +121,16 @@ export function SettingsScreen() {
   const handleCheckAdminCode = useCallback(async () => {
     const isValid = await checkAdminCode(adminCodeInput);
     if (isValid) {
-      Alert.alert('Modo Admin Activado', 'Ahora puedes agregar versículos a la lista curada');
+      Alert.alert(
+        'Modo Admin Activado',
+        'Ahora puedes agregar versículos a la lista curada',
+      );
       setAdminCodeInput('');
     } else {
-      Alert.alert('Código Incorrecto', 'El código de administrador no es válido');
+      Alert.alert(
+        'Código Incorrecto',
+        'El código de administrador no es válido',
+      );
     }
   }, [adminCodeInput, checkAdminCode]);
 
@@ -119,12 +138,12 @@ export function SettingsScreen() {
     Alert.prompt(
       'Importar Lista',
       'Pega el JSON exportado:',
-      async (text) => {
+      async text => {
         if (text) {
           await importCuratedList(text);
         }
       },
-      'plain-text'
+      'plain-text',
     );
   }, [importCuratedList]);
 
@@ -135,7 +154,7 @@ export function SettingsScreen() {
       [
         { text: 'Cancelar', style: 'cancel' },
         { text: 'Eliminar', style: 'destructive', onPress: clearCuratedList },
-      ]
+      ],
     );
   }, [clearCuratedList, curatedVerses.length]);
 
@@ -151,7 +170,7 @@ export function SettingsScreen() {
           Selecciona un tema para la app.
         </Text>
         <View>
-          {themeOptions.map((option) => {
+          {themeOptions.map(option => {
             const isActive = option === theme;
             return (
               <Pressable
@@ -159,10 +178,7 @@ export function SettingsScreen() {
                 accessibilityLabel={`Tema ${option}`}
                 accessibilityState={{ selected: isActive }}
                 onPress={() => setTheme(option)}
-                style={[
-                  styles.optionRow,
-                  isActive && styles.optionRowActive,
-                ]}
+                style={[styles.optionRow, isActive && styles.optionRowActive]}
               >
                 <View
                   style={[
@@ -181,7 +197,7 @@ export function SettingsScreen() {
         <View style={styles.colorSelectorContainer}>
           <Text style={styles.colorSelectorLabel}>Color de acento</Text>
           <View style={styles.colorOptionsRow}>
-            {ACCENT_PRESETS.map((preset) => {
+            {ACCENT_PRESETS.map(preset => {
               const isActive = preset.name === accentColor;
               return (
                 <Pressable
@@ -203,7 +219,12 @@ export function SettingsScreen() {
                   >
                     {isActive && <Check size={14} color="#FFFFFF" />}
                   </View>
-                  <Text style={[styles.colorLabel, isActive && styles.colorLabelActive]}>
+                  <Text
+                    style={[
+                      styles.colorLabel,
+                      isActive && styles.colorLabelActive,
+                    ]}
+                  >
                     {preset.label}
                   </Text>
                 </Pressable>
@@ -222,7 +243,9 @@ export function SettingsScreen() {
               value={tintedBackground}
               onValueChange={setTintedBackground}
               trackColor={{ false: colors.divider, true: colors.accentSubtle }}
-              thumbColor={tintedBackground ? colors.accent : colors.placeholderText}
+              thumbColor={
+                tintedBackground ? colors.accent : colors.placeholderText
+              }
             />
           </View>
         </View>
@@ -236,7 +259,9 @@ export function SettingsScreen() {
         <View style={styles.sliderContainer}>
           <View style={styles.sliderHeader}>
             <Text style={styles.sliderLabel}>Tamano de fuente</Text>
-            <Text style={styles.sliderValue}>{Math.round(tempFontScale * 100)}%</Text>
+            <Text style={styles.sliderValue}>
+              {Math.round(tempFontScale * 100)}%
+            </Text>
           </View>
           <View style={styles.sliderRow}>
             <Pressable
@@ -284,11 +309,23 @@ export function SettingsScreen() {
           <View style={styles.previewBox}>
             <Text style={styles.previewTitleStatic}>Vista previa</Text>
             <View style={styles.previewRow}>
-              <Text style={[styles.previewVerseNumberStatic, { fontSize: Math.round(14 * tempFontScale) }]}>1</Text>
-              <Text style={[styles.previewTextStatic, {
-                fontSize: Math.round(15 * tempFontScale),
-                lineHeight: Math.round(15 * tempFontScale * 1.46),
-              }]}>
+              <Text
+                style={[
+                  styles.previewVerseNumberStatic,
+                  { fontSize: Math.round(14 * tempFontScale) },
+                ]}
+              >
+                1
+              </Text>
+              <Text
+                style={[
+                  styles.previewTextStatic,
+                  {
+                    fontSize: Math.round(15 * tempFontScale),
+                    lineHeight: Math.round(15 * tempFontScale * 1.46),
+                  },
+                ]}
+              >
                 Asi se mostrara el texto de los versiculos con el tamano
                 seleccionado.
               </Text>
@@ -320,9 +357,18 @@ export function SettingsScreen() {
         </Text>
 
         {isAdmin && (
-          <View style={[styles.adminBadge, { backgroundColor: colors.accentSubtle }]}>
+          <View
+            style={[
+              styles.adminBadge,
+              { backgroundColor: colors.accentSubtle },
+            ]}
+          >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Check size={16} color={colors.accent} style={{ marginRight: 6 }} />
+              <Check
+                size={16}
+                color={colors.accent}
+                style={{ marginRight: 6 }}
+              />
               <Text style={[styles.adminBadgeText, { color: colors.accent }]}>
                 Modo Admin Activo
               </Text>
@@ -351,10 +397,18 @@ export function SettingsScreen() {
             />
             <Pressable
               onPress={handleCheckAdminCode}
-              style={[styles.adminCodeButton, { backgroundColor: colors.accent }]}
+              style={[
+                styles.adminCodeButton,
+                { backgroundColor: colors.accent },
+              ]}
               disabled={!adminCodeInput.trim()}
             >
-              <Text style={[styles.adminCodeButtonText, { color: colors.accentText }]}>
+              <Text
+                style={[
+                  styles.adminCodeButtonText,
+                  { color: colors.accentText },
+                ]}
+              >
                 Activar
               </Text>
             </Pressable>
@@ -363,7 +417,8 @@ export function SettingsScreen() {
 
         <View style={styles.statsContainer}>
           <Text style={styles.statsText}>
-            Versículos curados: <Text style={styles.statsValue}>{curatedVerses.length}</Text>
+            Versículos curados:{' '}
+            <Text style={styles.statsValue}>{curatedVerses.length}</Text>
           </Text>
         </View>
 
@@ -379,8 +434,20 @@ export function SettingsScreen() {
             ]}
             disabled={curatedVerses.length === 0}
           >
-            <Upload size={20} color={colors.bodyText} style={{ opacity: curatedVerses.length === 0 ? 0.3 : 1, marginRight: 12 }} />
-            <Text style={[styles.adminButtonText, { opacity: curatedVerses.length === 0 ? 0.3 : 1 }]}>
+            <Upload
+              size={20}
+              color={colors.bodyText}
+              style={{
+                opacity: curatedVerses.length === 0 ? 0.3 : 1,
+                marginRight: 12,
+              }}
+            />
+            <Text
+              style={[
+                styles.adminButtonText,
+                { opacity: curatedVerses.length === 0 ? 0.3 : 1 },
+              ]}
+            >
               Exportar Lista
             </Text>
           </Pressable>
@@ -395,7 +462,11 @@ export function SettingsScreen() {
               },
             ]}
           >
-            <Download size={20} color={colors.bodyText} style={{ marginRight: 12 }} />
+            <Download
+              size={20}
+              color={colors.bodyText}
+              style={{ marginRight: 12 }}
+            />
             <Text style={styles.adminButtonText}>Importar Lista</Text>
           </Pressable>
 
@@ -419,9 +490,14 @@ export function SettingsScreen() {
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          <Lightbulb size={16} color={colors.placeholderText} style={{ marginRight: 6, marginTop: 2 }} />
+          <Lightbulb
+            size={16}
+            color={colors.placeholderText}
+            style={{ marginRight: 6, marginTop: 2 }}
+          />
           <Text style={[styles.adminHint, { flex: 1 }]}>
-            En modo admin, al leer un versículo aparecerá un botón para agregarlo a la lista curada del "Versículo del Día"
+            En modo admin, al leer un versículo aparecerá un botón para
+            agregarlo a la lista curada del "Versículo del Día"
           </Text>
         </View>
       </View>
@@ -449,7 +525,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     },
     sectionTitle: {
       fontSize: getFontSize(16),
-      fontWeight: "600",
+      fontWeight: '600',
       marginBottom: 4,
       color: colors.headerText,
     },
@@ -459,8 +535,8 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       marginBottom: 16,
     },
     optionRow: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       paddingVertical: 12,
       paddingHorizontal: 16,
       borderRadius: 12,
@@ -478,8 +554,8 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       borderRadius: 10,
       borderWidth: 2,
       borderColor: colors.divider,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       marginRight: 12,
     },
     radioOuterActive: {
@@ -494,7 +570,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     optionLabel: {
       fontSize: getFontSize(15),
       color: colors.bodyText,
-      fontWeight: "500",
+      fontWeight: '500',
     },
     colorSelectorContainer: {
       marginTop: 8,
@@ -505,15 +581,15 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     colorSelectorLabel: {
       fontSize: getFontSize(14),
       color: colors.bodyText,
-      fontWeight: "500",
+      fontWeight: '500',
       marginBottom: 14,
     },
     colorOptionsRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
+      flexDirection: 'row',
+      justifyContent: 'space-between',
     },
     colorOption: {
-      alignItems: "center",
+      alignItems: 'center',
       padding: 8,
       borderRadius: 12,
     },
@@ -525,14 +601,14 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       height: 36,
       borderRadius: 18,
       marginBottom: 6,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
       borderWidth: 2,
-      borderColor: "transparent",
+      borderColor: 'transparent',
     },
     colorCircleActive: {
       borderColor: colors.backgroundPrimary,
-      shadowColor: "#000",
+      shadowColor: '#000',
       shadowOpacity: 0.2,
       shadowRadius: 4,
       shadowOffset: { width: 0, height: 2 },
@@ -541,16 +617,16 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     colorLabel: {
       fontSize: getFontSize(11),
       color: colors.placeholderText,
-      fontWeight: "500",
+      fontWeight: '500',
     },
     colorLabelActive: {
       color: colors.accent,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     tintedToggleContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
       marginTop: 16,
       paddingTop: 16,
       borderTopWidth: StyleSheet.hairlineWidth,
@@ -563,7 +639,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     tintedToggleLabel: {
       fontSize: getFontSize(14),
       color: colors.bodyText,
-      fontWeight: "500",
+      fontWeight: '500',
       marginBottom: 2,
     },
     tintedToggleDescription: {
@@ -574,23 +650,23 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       gap: 16,
     },
     sliderHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
     sliderLabel: {
       fontSize: getFontSize(14),
       color: colors.bodyText,
-      fontWeight: "500",
+      fontWeight: '500',
     },
     sliderValue: {
       fontSize: getFontSize(14),
       color: colors.placeholderText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     sliderRow: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: 12,
     },
     stepButton: {
@@ -600,12 +676,12 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.divider,
       backgroundColor: colors.surfaceMuted,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     stepButtonLabel: {
       fontSize: getFontSize(18),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.bodyText,
     },
     sliderTrack: {
@@ -615,11 +691,11 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       backgroundColor: colors.surfaceMuted,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.divider,
-      position: "relative",
-      overflow: "visible",
+      position: 'relative',
+      overflow: 'visible',
     },
     sliderFill: {
-      position: "absolute",
+      position: 'absolute',
       left: 0,
       top: 0,
       bottom: 0,
@@ -627,7 +703,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       borderRadius: TRACK_HEIGHT / 2,
     },
     sliderThumb: {
-      position: "absolute",
+      position: 'absolute',
       left: 0,
       top: -(THUMB_SIZE - TRACK_HEIGHT) / 2,
       width: THUMB_SIZE,
@@ -637,7 +713,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       borderWidth: 2,
       borderColor: colors.backgroundPrimary,
       elevation: 2,
-      shadowColor: "#000",
+      shadowColor: '#000',
       shadowOpacity: 0.2,
       shadowRadius: 3,
       shadowOffset: { width: 0, height: 1 },
@@ -652,17 +728,17 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     },
     previewTitleStatic: {
       fontSize: 14,
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.headerText,
     },
     previewRow: {
-      flexDirection: "row",
-      alignItems: "flex-start",
+      flexDirection: 'row',
+      alignItems: 'flex-start',
       gap: 12,
     },
     previewVerseNumberStatic: {
       width: 24,
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.verseNumber,
     },
     previewTextStatic: {
@@ -670,7 +746,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       color: colors.bodyText,
     },
     fontScaleActions: {
-      flexDirection: "row",
+      flexDirection: 'row',
       gap: 12,
       marginTop: 4,
     },
@@ -678,8 +754,8 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       flex: 1,
       paddingVertical: 12,
       borderRadius: 10,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     fontScaleButtonCancel: {
       backgroundColor: colors.surfaceMuted,
@@ -691,12 +767,12 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     },
     fontScaleButtonCancelText: {
       fontSize: 14,
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.bodyText,
     },
     fontScaleButtonApplyText: {
       fontSize: 14,
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.accentText,
     },
     adminBadge: {

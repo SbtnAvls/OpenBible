@@ -1,13 +1,8 @@
-import React from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { Gem, Shield } from "lucide-react-native";
-import { useTheme, type ThemeColors } from "../context/ThemeContext";
-import { STREAK_COLORS, type ShopItem } from "../types/streak";
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Gem, Shield } from 'lucide-react-native';
+import { useTheme, type ThemeColors } from '../context/ThemeContext';
+import { STREAK_COLORS, type ShopItem } from '../types/streak';
 
 interface ShopItemCardProps {
   item: ShopItem;
@@ -15,7 +10,11 @@ interface ShopItemCardProps {
   onPurchase: () => void;
 }
 
-export function ShopItemCard({ item, canPurchase, onPurchase }: ShopItemCardProps) {
+export function ShopItemCard({
+  item,
+  canPurchase,
+  onPurchase,
+}: ShopItemCardProps) {
   const { colors, getFontSize } = useTheme();
   const styles = getStyles(colors, getFontSize);
 
@@ -52,10 +51,7 @@ export function ShopItemCard({ item, canPurchase, onPurchase }: ShopItemCardProp
           color={canPurchase ? STREAK_COLORS.gems : colors.placeholderText}
         />
         <Text
-          style={[
-            styles.priceText,
-            !canPurchase && styles.priceTextDisabled,
-          ]}
+          style={[styles.priceText, !canPurchase && styles.priceTextDisabled]}
         >
           {item.price}
         </Text>
@@ -64,11 +60,14 @@ export function ShopItemCard({ item, canPurchase, onPurchase }: ShopItemCardProp
   );
 }
 
-const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =>
+const getStyles = (
+  colors: ThemeColors,
+  getFontSize: (size: number) => number,
+) =>
   StyleSheet.create({
     container: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: colors.surfaceMuted,
       borderRadius: 16,
       padding: 14,
@@ -79,12 +78,12 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       height: 52,
       borderRadius: 14,
       backgroundColor: `${STREAK_COLORS.frozen}20`,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       marginRight: 12,
     },
     quantityBadge: {
-      position: "absolute",
+      position: 'absolute',
       top: -4,
       right: -4,
       backgroundColor: STREAK_COLORS.frozen,
@@ -94,15 +93,15 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     quantityText: {
       fontSize: 11,
-      fontWeight: "700",
-      color: "white",
+      fontWeight: '700',
+      color: 'white',
     },
     info: {
       flex: 1,
     },
     name: {
       fontSize: getFontSize(15),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.headerText,
     },
     description: {
@@ -111,8 +110,8 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       marginTop: 2,
     },
     buyButton: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: `${STREAK_COLORS.gems}20`,
       paddingHorizontal: 14,
       paddingVertical: 10,
@@ -127,7 +126,7 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     priceText: {
       fontSize: getFontSize(15),
-      fontWeight: "700",
+      fontWeight: '700',
       color: STREAK_COLORS.gems,
     },
     priceTextDisabled: {

@@ -31,7 +31,9 @@ export const PinExplanationModal: React.FC<PinExplanationModalProps> = ({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={[styles.modal, { backgroundColor: colors.backgroundPrimary }]}>
+        <View
+          style={[styles.modal, { backgroundColor: colors.backgroundPrimary }]}
+        >
           <ScrollView showsVerticalScrollIndicator={false}>
             <View style={styles.header}>
               <View style={styles.iconContainer}>
@@ -40,50 +42,92 @@ export const PinExplanationModal: React.FC<PinExplanationModalProps> = ({
               <Text style={[styles.title, { color: colors.headerText }]}>
                 Anclas de Lectura
               </Text>
-              <Text style={[styles.subtitle, { color: colors.placeholderText }]}>
+              <Text
+                style={[styles.subtitle, { color: colors.placeholderText }]}
+              >
                 Continúa tu lectura automáticamente
               </Text>
             </View>
 
             <View style={styles.content}>
               <View style={styles.feature}>
-                <View style={[styles.featureIcon, { backgroundColor: colors.accentSubtle }]}>
+                <View
+                  style={[
+                    styles.featureIcon,
+                    { backgroundColor: colors.accentSubtle },
+                  ]}
+                >
                   <Pin size={20} color={colors.accent} />
                 </View>
                 <View style={styles.featureText}>
-                  <Text style={[styles.featureTitle, { color: colors.bodyText }]}>
+                  <Text
+                    style={[styles.featureTitle, { color: colors.bodyText }]}
+                  >
                     Ancla tus lecturas
                   </Text>
-                  <Text style={[styles.featureDescription, { color: colors.placeholderText }]}>
-                    Puedes anclar hasta 3 lecturas recientes. Estas nunca se borrarán automáticamente.
+                  <Text
+                    style={[
+                      styles.featureDescription,
+                      { color: colors.placeholderText },
+                    ]}
+                  >
+                    Puedes anclar hasta 3 lecturas recientes. Estas nunca se
+                    borrarán automáticamente.
                   </Text>
                 </View>
               </View>
 
               <View style={styles.feature}>
-                <View style={[styles.featureIcon, { backgroundColor: colors.accentSubtle }]}>
+                <View
+                  style={[
+                    styles.featureIcon,
+                    { backgroundColor: colors.accentSubtle },
+                  ]}
+                >
                   <ArrowRight size={20} color={colors.accent} />
                 </View>
                 <View style={styles.featureText}>
-                  <Text style={[styles.featureTitle, { color: colors.bodyText }]}>
+                  <Text
+                    style={[styles.featureTitle, { color: colors.bodyText }]}
+                  >
                     Actualización automática
                   </Text>
-                  <Text style={[styles.featureDescription, { color: colors.placeholderText }]}>
-                    Cuando avanzas al siguiente capítulo, el ancla se actualiza automáticamente y el capítulo anterior se elimina de la lista.
+                  <Text
+                    style={[
+                      styles.featureDescription,
+                      { color: colors.placeholderText },
+                    ]}
+                  >
+                    Cuando avanzas al siguiente capítulo, el ancla se actualiza
+                    automáticamente y el capítulo anterior se elimina de la
+                    lista.
                   </Text>
                 </View>
               </View>
 
               <View style={styles.feature}>
-                <View style={[styles.featureIcon, { backgroundColor: colors.accentSubtle }]}>
+                <View
+                  style={[
+                    styles.featureIcon,
+                    { backgroundColor: colors.accentSubtle },
+                  ]}
+                >
                   <BookOpen size={20} color={colors.accent} />
                 </View>
                 <View style={styles.featureText}>
-                  <Text style={[styles.featureTitle, { color: colors.bodyText }]}>
+                  <Text
+                    style={[styles.featureTitle, { color: colors.bodyText }]}
+                  >
                     Fin de libro
                   </Text>
-                  <Text style={[styles.featureDescription, { color: colors.placeholderText }]}>
-                    Al terminar un libro, podrás elegir si continuar al siguiente libro o eliminar el ancla.
+                  <Text
+                    style={[
+                      styles.featureDescription,
+                      { color: colors.placeholderText },
+                    ]}
+                  >
+                    Al terminar un libro, podrás elegir si continuar al
+                    siguiente libro o eliminar el ancla.
                   </Text>
                 </View>
               </View>

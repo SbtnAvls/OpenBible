@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,17 +6,17 @@ import {
   ScrollView,
   Pressable,
   Alert,
-} from "react-native";
+} from 'react-native';
 import {
   ChevronLeft,
   CheckCircle2,
   Heart,
   BookOpen,
-} from "lucide-react-native";
-import { useTheme } from "../context/ThemeContext";
-import { useStudyPlan } from "../context/StudyPlanContext";
-import { useFavoritesVerses } from "../context/FavoritesVersesContext";
-import type { ThemeColors, GetFontSize } from "../context/ThemeContext";
+} from 'lucide-react-native';
+import { useTheme } from '../context/ThemeContext';
+import { useStudyPlan } from '../context/StudyPlanContext';
+import { useFavoritesVerses } from '../context/FavoritesVersesContext';
+import type { ThemeColors, GetFontSize } from '../context/ThemeContext';
 
 type VerseData = {
   name: string;
@@ -69,19 +69,10 @@ export const StudyPlanReadingScreen: React.FC<StudyPlanReadingScreenProps> = ({
   const { plans, completeSection } = useStudyPlan();
   const { addFavorite, getVerseFavorites } = useFavoritesVerses();
   const [selectedVerses, setSelectedVerses] = useState<string[]>([]);
-  const scrollViewRef = useRef<ScrollView>(null);
   const styles = getStyles(colors, getFontSize);
 
-  const plan = plans.find((p) => p.id === planId);
-  const section = plan?.sections.find((s) => s.id === sectionId);
-
-  if (!plan || !section) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Sección no encontrada</Text>
-      </View>
-    );
-  }
+  const plan = plans.find(p => p.id === planId);
+  const section = plan?.sections.find(s => s.id === sectionId);
 
   const getBookByIndex = (bookId: number): BookData | null => {
     let currentIndex = 0;
@@ -96,19 +87,21 @@ export const StudyPlanReadingScreen: React.FC<StudyPlanReadingScreenProps> = ({
     return null;
   };
 
-  const getFilteredVerses = (): FilteredVerse[] => {
+  const filteredVerses = useMemo((): FilteredVerse[] => {
+    if (!section) return [];
+
     const verses: FilteredVerse[] = [];
 
-    section.readings.forEach((reading) => {
+    section.readings.forEach(reading => {
       const book = getBookByIndex(reading.bookId);
       if (!book) return;
 
       if (reading.chapters) {
-        reading.chapters.forEach((chapterNum) => {
+        reading.chapters.forEach(chapterNum => {
           const chapter = book.chapters[chapterNum - 1];
           if (!chapter) return;
 
-          chapter.verses.forEach((verse) => {
+          chapter.verses.forEach(verse => {
             verses.push({
               bookName: reading.book,
               bookId: reading.bookId,
@@ -121,7 +114,7 @@ export const StudyPlanReadingScreen: React.FC<StudyPlanReadingScreenProps> = ({
           });
         });
       } else if (reading.verseRanges) {
-        reading.verseRanges.forEach((range) => {
+        reading.verseRanges.forEach(range => {
           const chapter = book.chapters[range.chapter - 1];
           if (!chapter) return;
 
@@ -136,7 +129,9 @@ export const StudyPlanReadingScreen: React.FC<StudyPlanReadingScreenProps> = ({
                   chapterIndex: range.chapter - 1,
                   verseName: verse.name,
                   verseText: verse.text,
-                  verseId: `${reading.bookId}-${range.chapter - 1}-${verse.name}`,
+                  verseId: `${reading.bookId}-${range.chapter - 1}-${
+                    verse.name
+                  }`,
                 });
               }
             }
@@ -151,12 +146,14 @@ export const StudyPlanReadingScreen: React.FC<StudyPlanReadingScreenProps> = ({
                   chapterIndex: range.chapter - 1,
                   verseName: verse.name,
                   verseText: verse.text,
-                  verseId: `${reading.bookId}-${range.chapter - 1}-${verse.name}`,
+                  verseId: `${reading.bookId}-${range.chapter - 1}-${
+                    verse.name
+                  }`,
                 });
               }
             }
           } else {
-            chapter.verses.forEach((verse) => {
+            chapter.verses.forEach(verse => {
               verses.push({
                 bookName: reading.book,
                 bookId: reading.bookId,
@@ -173,34 +170,48 @@ export const StudyPlanReadingScreen: React.FC<StudyPlanReadingScreenProps> = ({
     });
 
     return verses;
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [section?.readings, bibleData]);
 
-  const filteredVerses = getFilteredVerses();
-
-  const groupedVerses: {
-    [key: string]: {
+  const groupedVerses = useMemo(() => {
+    const groups: {
+      key: string;
       bookName: string;
       chapterName: string;
       verses: FilteredVerse[];
-    };
-  } = {};
+    }[] = [];
 
-  filteredVerses.forEach((verse) => {
-    const key = `${verse.bookName}-${verse.chapterName}`;
-    if (!groupedVerses[key]) {
-      groupedVerses[key] = {
-        bookName: verse.bookName,
-        chapterName: verse.chapterName,
-        verses: [],
-      };
-    }
-    groupedVerses[key].verses.push(verse);
-  });
+    const groupMap: { [key: string]: number } = {};
+
+    filteredVerses.forEach(verse => {
+      const key = `${verse.bookName}-${verse.chapterName}`;
+      if (groupMap[key] === undefined) {
+        groupMap[key] = groups.length;
+        groups.push({
+          key,
+          bookName: verse.bookName,
+          chapterName: verse.chapterName,
+          verses: [],
+        });
+      }
+      groups[groupMap[key]].verses.push(verse);
+    });
+
+    return groups;
+  }, [filteredVerses]);
+
+  if (!plan || !section) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Sección no encontrada</Text>
+      </View>
+    );
+  }
 
   const handleVersePress = (verseId: string) => {
-    setSelectedVerses((prev) => {
+    setSelectedVerses(prev => {
       if (prev.includes(verseId)) {
-        return prev.filter((id) => id !== verseId);
+        return prev.filter(id => id !== verseId);
       } else {
         return [...prev, verseId];
       }
@@ -209,70 +220,98 @@ export const StudyPlanReadingScreen: React.FC<StudyPlanReadingScreenProps> = ({
 
   const handleAddToFavorites = () => {
     if (selectedVerses.length === 0) {
-      Alert.alert("Atención", "Selecciona al menos un versículo");
+      Alert.alert('Atención', 'Selecciona al menos un versículo');
       return;
     }
 
-    const versesToAdd = filteredVerses.filter((v) =>
-      selectedVerses.includes(v.verseId)
+    const versesToAdd = filteredVerses.filter(v =>
+      selectedVerses.includes(v.verseId),
     );
 
-    versesToAdd.forEach((verse) => {
+    // Filter out verses that are already in favorites
+    const newVersesToAdd = versesToAdd.filter(verse => {
+      const existingFavorites = getVerseFavorites(
+        `${verse.bookId}`,
+        verse.chapterName,
+        verse.verseName,
+      );
+      return existingFavorites.length === 0;
+    });
+
+    if (newVersesToAdd.length === 0) {
+      setSelectedVerses([]);
+      Alert.alert(
+        'Información',
+        versesToAdd.length === 1
+          ? 'Este versículo ya está en tus favoritos'
+          : 'Todos los versículos seleccionados ya están en tus favoritos',
+      );
+      return;
+    }
+
+    newVersesToAdd.forEach(verse => {
       addFavorite({
-        id: `${verse.bookId}-${verse.chapterName}-${verse.verseName}-${Date.now()}`,
+        id: `${verse.bookId}-${verse.chapterName}-${verse.verseName}`,
         bookId: `${verse.bookId}`,
         bookName: verse.bookName,
         chapterName: verse.chapterName,
         verseNumbers: [verse.verseName],
         verses: [{ verseNumber: verse.verseName, text: verse.verseText }],
-        comment: "",
+        comment: '',
       });
     });
 
+    const skippedCount = versesToAdd.length - newVersesToAdd.length;
     setSelectedVerses([]);
-    Alert.alert(
-      "¡Listo!",
-      `${versesToAdd.length} versículo${
-        versesToAdd.length > 1 ? "s" : ""
-      } agregado${versesToAdd.length > 1 ? "s" : ""} a favoritos`
-    );
+
+    let message = `${newVersesToAdd.length} versículo${
+      newVersesToAdd.length > 1 ? 's' : ''
+    } agregado${newVersesToAdd.length > 1 ? 's' : ''} a favoritos`;
+
+    if (skippedCount > 0) {
+      message += `\n(${skippedCount} ya estaba${
+        skippedCount > 1 ? 'n' : ''
+      } en favoritos)`;
+    }
+
+    Alert.alert('¡Listo!', message);
   };
 
   const handleCompleteSection = () => {
-    Alert.alert(
-      "Completar sección",
-      "¿Has terminado de leer esta sección?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Completar",
-          onPress: async () => {
-            try {
-              // Completar la sección y esperar a que se guarde
-              await completeSection(planId, sectionId);
+    Alert.alert('Completar sección', '¿Has terminado de leer esta sección?', [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Completar',
+        onPress: async () => {
+          try {
+            // Completar la sección y esperar a que se guarde
+            await completeSection(planId, sectionId);
 
-              // Verificar si hay una siguiente sección
-              const currentSectionIndex = plan.sections.findIndex(s => s.id === sectionId);
-              const hasNextSection = currentSectionIndex < plan.sections.length - 1;
+            // Verificar si hay una siguiente sección
+            const currentSectionIndex = plan.sections.findIndex(
+              s => s.id === sectionId,
+            );
+            const hasNextSection =
+              currentSectionIndex < plan.sections.length - 1;
 
-              const message = hasNextSection
-                ? "Has completado esta sección del plan de estudio.\n\n¡La siguiente sección ya está disponible!"
-                : "¡Has completado todo el plan de estudio!";
+            const message = hasNextSection
+              ? 'Has completado esta sección del plan de estudio.\n\n¡La siguiente sección ya está disponible!'
+              : '¡Has completado todo el plan de estudio!';
 
-              // Mostrar mensaje de felicitaciones y luego volver
-              Alert.alert(
-                "¡Felicitaciones!",
-                message,
-                [{ text: "Continuar", onPress: onBack }]
-              );
-            } catch (error) {
-              console.error("Error completing section:", error);
-              Alert.alert("Error", "No se pudo completar la sección. Intenta nuevamente.");
-            }
-          },
+            // Mostrar mensaje de felicitaciones y luego volver
+            Alert.alert('¡Felicitaciones!', message, [
+              { text: 'Continuar', onPress: onBack },
+            ]);
+          } catch (error) {
+            console.error('Error completing section:', error);
+            Alert.alert(
+              'Error',
+              'No se pudo completar la sección. Intenta nuevamente.',
+            );
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
@@ -297,13 +336,12 @@ export const StudyPlanReadingScreen: React.FC<StudyPlanReadingScreenProps> = ({
 
       {/* Content */}
       <ScrollView
-        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {Object.values(groupedVerses).map((group, idx) => (
-          <View key={idx} style={styles.chapterSection}>
+        {groupedVerses.map(group => (
+          <View key={group.key} style={styles.chapterSection}>
             {/* Chapter Header */}
             <View style={styles.chapterHeader}>
               <View style={styles.chapterIconContainer}>
@@ -316,13 +354,14 @@ export const StudyPlanReadingScreen: React.FC<StudyPlanReadingScreenProps> = ({
 
             {/* Verses */}
             <View style={styles.versesContainer}>
-              {group.verses.map((verse) => {
+              {group.verses.map(verse => {
                 const isSelected = selectedVerses.includes(verse.verseId);
-                const isFavorite = getVerseFavorites(
-                  `${verse.bookId}`,
-                  verse.chapterName,
-                  verse.verseName
-                ).length > 0;
+                const isFavorite =
+                  getVerseFavorites(
+                    `${verse.bookId}`,
+                    verse.chapterName,
+                    verse.verseName,
+                  ).length > 0;
 
                 return (
                   <Pressable
@@ -395,7 +434,9 @@ export const StudyPlanReadingScreen: React.FC<StudyPlanReadingScreenProps> = ({
               onPress={handleCompleteSection}
             >
               <CheckCircle2 size={18} color={colors.accentText} />
-              <Text style={styles.actionButtonText}>Marcar como completada</Text>
+              <Text style={styles.actionButtonText}>
+                Marcar como completada
+              </Text>
             </Pressable>
           )}
         </View>
@@ -499,7 +540,7 @@ const getStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       color: colors.accent,
     },
     verseNumberSelected: {
-      color: colors.accent,
+      color: colors.accentText,
     },
     verseText: {
       fontSize: getFontSize(16),
@@ -507,7 +548,8 @@ const getStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       lineHeight: 24,
     },
     verseTextSelected: {
-      color: colors.bodyText,
+      color: colors.headerText,
+      fontWeight: '500',
     },
     bottomBar: {
       position: 'absolute',

@@ -1,13 +1,12 @@
-import React, { useMemo } from "react";
+import React, { useMemo } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { useTheme, type ThemeColors } from '../context/ThemeContext';
 import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { ChevronLeft, ChevronRight } from "lucide-react-native";
-import { useTheme, type ThemeColors } from "../context/ThemeContext";
-import { STREAK_COLORS, getTodayDateString, type StreakHistoryEntry } from "../types/streak";
+  STREAK_COLORS,
+  getTodayDateString,
+  type StreakHistoryEntry,
+} from '../types/streak';
 
 interface StreakCalendarProps {
   history: StreakHistoryEntry[];
@@ -17,10 +16,20 @@ interface StreakCalendarProps {
   todayCompleted?: boolean;
 }
 
-const DAYS_OF_WEEK = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const DAYS_OF_WEEK = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const MONTH_NAMES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
 ];
 
 export function StreakCalendar({
@@ -36,12 +45,13 @@ export function StreakCalendar({
   const today = useMemo(() => new Date(), []);
   const todayString = getTodayDateString();
 
-  const isCurrentMonth = currentYear === today.getFullYear() && currentMonth === today.getMonth();
+  const isCurrentMonth =
+    currentYear === today.getFullYear() && currentMonth === today.getMonth();
 
   // Crear mapa de historial para acceso rápido
   const historyMap = useMemo(() => {
     const map = new Map<string, StreakHistoryEntry>();
-    history.forEach((entry) => {
+    history.forEach(entry => {
       map.set(entry.date, entry);
     });
     return map;
@@ -66,7 +76,7 @@ export function StreakCalendar({
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push({
         day: null,
-        dateString: "",
+        dateString: '',
         isToday: false,
         isFuture: false,
         entry: null,
@@ -75,7 +85,10 @@ export function StreakCalendar({
 
     // Días del mes
     for (let day = 1; day <= daysInMonth; day++) {
-      const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const dateString = `${currentYear}-${String(currentMonth + 1).padStart(
+        2,
+        '0',
+      )}-${String(day).padStart(2, '0')}`;
       const isToday = dateString === todayString;
       // Comparar strings directamente (YYYY-MM-DD se ordena correctamente)
       const isFuture = dateString > todayString;
@@ -111,7 +124,7 @@ export function StreakCalendar({
     }
   };
 
-  const getDayStyle = (day: typeof calendarDays[0]) => {
+  const getDayStyle = (day: (typeof calendarDays)[0]) => {
     if (day.day === null) return null;
 
     if (day.isFuture) {
@@ -136,14 +149,18 @@ export function StreakCalendar({
     return styles.dayMissed;
   };
 
-  const getDayTextStyle = (day: typeof calendarDays[0]) => {
+  const getDayTextStyle = (day: (typeof calendarDays)[0]) => {
     if (day.day === null) return null;
 
     if (day.isFuture) {
       return styles.dayTextFuture;
     }
 
-    if (day.entry?.completed || day.entry?.frozen || (day.isToday && todayCompleted)) {
+    if (
+      day.entry?.completed ||
+      day.entry?.frozen ||
+      (day.isToday && todayCompleted)
+    ) {
       return styles.dayTextCompleted;
     }
 
@@ -190,7 +207,7 @@ export function StreakCalendar({
 
       {/* Días de la semana */}
       <View style={styles.weekDays}>
-        {DAYS_OF_WEEK.map((day) => (
+        {DAYS_OF_WEEK.map(day => (
           <Text key={day} style={styles.weekDayText}>
             {day}
           </Text>
@@ -215,11 +232,21 @@ export function StreakCalendar({
       {/* Leyenda */}
       <View style={styles.legend}>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: STREAK_COLORS.completed }]} />
+          <View
+            style={[
+              styles.legendDot,
+              { backgroundColor: STREAK_COLORS.completed },
+            ]}
+          />
           <Text style={styles.legendText}>Completado</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: STREAK_COLORS.frozen }]} />
+          <View
+            style={[
+              styles.legendDot,
+              { backgroundColor: STREAK_COLORS.frozen },
+            ]}
+          />
           <Text style={styles.legendText}>Protegido</Text>
         </View>
       </View>
@@ -227,7 +254,10 @@ export function StreakCalendar({
   );
 }
 
-const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =>
+const getStyles = (
+  colors: ThemeColors,
+  getFontSize: (size: number) => number,
+) =>
   StyleSheet.create({
     container: {
       backgroundColor: colors.surfaceMuted,
@@ -235,16 +265,16 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       padding: 16,
     },
     header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       marginBottom: 16,
     },
     navButton: {
       width: 40,
       height: 40,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       borderRadius: 20,
     },
     navButtonDisabled: {
@@ -252,41 +282,41 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     monthTitle: {
       fontSize: getFontSize(18),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
     },
     weekDays: {
-      flexDirection: "row",
+      flexDirection: 'row',
       marginBottom: 8,
     },
     weekDayText: {
       flex: 1,
-      textAlign: "center",
+      textAlign: 'center',
       fontSize: getFontSize(12),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.placeholderText,
     },
     daysGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
+      flexDirection: 'row',
+      flexWrap: 'wrap',
     },
     dayCell: {
-      width: "14.28%",
+      width: '14.28%',
       aspectRatio: 1,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       padding: 2,
     },
     dayCircle: {
       width: 36,
       height: 36,
       borderRadius: 999, // Círculo perfecto
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     dayText: {
       fontSize: getFontSize(14),
-      fontWeight: "500",
+      fontWeight: '500',
     },
     // Estados de días
     dayCompleted: {
@@ -300,20 +330,20 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       borderColor: STREAK_COLORS.completed,
     },
     dayMissed: {
-      backgroundColor: "transparent",
+      backgroundColor: 'transparent',
     },
     dayFuture: {
-      backgroundColor: "transparent",
+      backgroundColor: 'transparent',
       opacity: 0.3,
     },
     // Textos de días
     dayTextCompleted: {
-      color: "#000000",
-      fontWeight: "700",
+      color: '#000000',
+      fontWeight: '700',
     },
     dayTextToday: {
       color: STREAK_COLORS.completed,
-      fontWeight: "700",
+      fontWeight: '700',
     },
     dayTextMissed: {
       color: colors.placeholderText,
@@ -323,8 +353,8 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     // Leyenda
     legend: {
-      flexDirection: "row",
-      justifyContent: "center",
+      flexDirection: 'row',
+      justifyContent: 'center',
       gap: 24,
       marginTop: 16,
       paddingTop: 12,
@@ -332,8 +362,8 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       borderTopColor: colors.divider,
     },
     legendItem: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: 6,
     },
     legendDot: {

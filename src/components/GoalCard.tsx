@@ -1,12 +1,8 @@
-import React from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { Check, Gem, Target } from "lucide-react-native";
-import { useTheme, type ThemeColors } from "../context/ThemeContext";
-import { STREAK_COLORS, type StreakGoal } from "../types/streak";
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { Check, Gem, Target } from 'lucide-react-native';
+import { useTheme, type ThemeColors } from '../context/ThemeContext';
+import { STREAK_COLORS, type StreakGoal } from '../types/streak';
 
 interface GoalCardProps {
   goal: StreakGoal;
@@ -34,7 +30,10 @@ export function GoalCard({ goal, isCompleted, currentStreak }: GoalCardProps) {
         {isCompleted ? (
           <Check size={24} color="white" />
         ) : (
-          <Target size={24} color={isLocked ? colors.placeholderText : colors.accent} />
+          <Target
+            size={24}
+            color={isLocked ? colors.placeholderText : colors.accent}
+          />
         )}
       </View>
 
@@ -54,12 +53,7 @@ export function GoalCard({ goal, isCompleted, currentStreak }: GoalCardProps) {
         {!isCompleted && (
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  { width: `${progress}%` },
-                ]}
-              />
+              <View style={[styles.progressFill, { width: `${progress}%` }]} />
             </View>
             <Text style={styles.progressText}>{Math.round(progress)}%</Text>
           </View>
@@ -67,34 +61,26 @@ export function GoalCard({ goal, isCompleted, currentStreak }: GoalCardProps) {
       </View>
 
       {/* Recompensa */}
-      <View
-        style={[
-          styles.reward,
-          isCompleted && styles.rewardCompleted,
-        ]}
-      >
-        <Gem
-          size={18}
-          color={isCompleted ? "white" : STREAK_COLORS.gems}
-        />
+      <View style={[styles.reward, isCompleted && styles.rewardCompleted]}>
+        <Gem size={18} color={isCompleted ? 'white' : STREAK_COLORS.gems} />
         <Text
-          style={[
-            styles.rewardText,
-            isCompleted && styles.rewardTextCompleted,
-          ]}
+          style={[styles.rewardText, isCompleted && styles.rewardTextCompleted]}
         >
-          {isCompleted ? "Obtenido" : `+${goal.gemsReward}`}
+          {isCompleted ? 'Obtenido' : `+${goal.gemsReward}`}
         </Text>
       </View>
     </View>
   );
 }
 
-const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =>
+const getStyles = (
+  colors: ThemeColors,
+  getFontSize: (size: number) => number,
+) =>
   StyleSheet.create({
     container: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: colors.surfaceMuted,
       borderRadius: 16,
       padding: 14,
@@ -110,8 +96,8 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       height: 44,
       borderRadius: 22,
       backgroundColor: colors.backgroundSecondary,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       marginRight: 12,
     },
     iconContainerCompleted: {
@@ -122,7 +108,7 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     title: {
       fontSize: getFontSize(15),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.headerText,
     },
     titleCompleted: {
@@ -137,8 +123,8 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       color: colors.placeholderText,
     },
     progressContainer: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       marginTop: 8,
       gap: 8,
     },
@@ -147,22 +133,22 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       height: 6,
       backgroundColor: colors.divider,
       borderRadius: 3,
-      overflow: "hidden",
+      overflow: 'hidden',
     },
     progressFill: {
-      height: "100%",
+      height: '100%',
       backgroundColor: colors.accent,
       borderRadius: 3,
     },
     progressText: {
       fontSize: getFontSize(11),
       color: colors.placeholderText,
-      fontWeight: "600",
+      fontWeight: '600',
       width: 35,
     },
     reward: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: `${STREAK_COLORS.gems}20`,
       paddingHorizontal: 10,
       paddingVertical: 6,
@@ -174,11 +160,11 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     rewardText: {
       fontSize: getFontSize(13),
-      fontWeight: "700",
+      fontWeight: '700',
       color: STREAK_COLORS.gems,
     },
     rewardTextCompleted: {
-      color: "white",
-      fontWeight: "600",
+      color: 'white',
+      fontWeight: '600',
     },
   });

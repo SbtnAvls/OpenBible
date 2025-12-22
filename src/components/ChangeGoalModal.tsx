@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -6,10 +6,14 @@ import {
   Text,
   View,
   ScrollView,
-} from "react-native";
-import { Target, AlertTriangle, Check, Gem } from "lucide-react-native";
-import { useTheme, type ThemeColors } from "../context/ThemeContext";
-import { STREAK_GOAL_OPTIONS, GOAL_BONUS, STREAK_COLORS } from "../types/streak";
+} from 'react-native';
+import { Target, AlertTriangle, Check, Gem } from 'lucide-react-native';
+import { useTheme, type ThemeColors } from '../context/ThemeContext';
+import {
+  STREAK_GOAL_OPTIONS,
+  GOAL_BONUS,
+  STREAK_COLORS,
+} from '../types/streak';
 
 interface ChangeGoalModalProps {
   visible: boolean;
@@ -68,7 +72,8 @@ export function ChangeGoalModal({
             </View>
             <Text style={styles.title}>Cambiar Meta</Text>
             <Text style={styles.subtitle}>
-              Meta actual: {currentGoalDays} días ({currentProgress}/{currentGoalDays} completados)
+              Meta actual: {currentGoalDays} días ({currentProgress}/
+              {currentGoalDays} completados)
             </Text>
           </View>
 
@@ -78,7 +83,7 @@ export function ChangeGoalModal({
             contentContainerStyle={styles.optionsListContent}
             showsVerticalScrollIndicator={false}
           >
-            {STREAK_GOAL_OPTIONS.map((days) => {
+            {STREAK_GOAL_OPTIONS.map(days => {
               const isCurrentGoal = days === currentGoalDays;
               const isSelected = days === selectedGoal;
               const willLoseProgress = wouldLoseProgress(days);
@@ -92,18 +97,22 @@ export function ChangeGoalModal({
                     styles.optionCard,
                     isCurrentGoal && styles.optionCardCurrent,
                     isSelected && styles.optionCardSelected,
-                    willLoseProgress && !isCurrentGoal && styles.optionCardWarning,
+                    willLoseProgress &&
+                      !isCurrentGoal &&
+                      styles.optionCardWarning,
                   ]}
                   onPress={() => !isCurrentGoal && setSelectedGoal(days)}
                   disabled={isCurrentGoal}
                 >
                   <View style={styles.optionContent}>
                     <View style={styles.optionHeader}>
-                      <Text style={[
-                        styles.optionDays,
-                        isCurrentGoal && styles.optionTextCurrent,
-                        isSelected && styles.optionTextSelected,
-                      ]}>
+                      <Text
+                        style={[
+                          styles.optionDays,
+                          isCurrentGoal && styles.optionTextCurrent,
+                          isSelected && styles.optionTextSelected,
+                        ]}
+                      >
                         {days} días
                       </Text>
                       {isCurrentGoal && (
@@ -111,9 +120,7 @@ export function ChangeGoalModal({
                           <Text style={styles.currentBadgeText}>Actual</Text>
                         </View>
                       )}
-                      {isSelected && (
-                        <Check size={20} color={colors.accent} />
-                      )}
+                      {isSelected && <Check size={20} color={colors.accent} />}
                     </View>
 
                     <View style={styles.optionDetails}>
@@ -123,14 +130,15 @@ export function ChangeGoalModal({
                       </View>
 
                       {!isCurrentGoal && (
-                        <Text style={[
-                          styles.progressPreview,
-                          willLoseProgress && styles.progressPreviewWarning,
-                        ]}>
+                        <Text
+                          style={[
+                            styles.progressPreview,
+                            willLoseProgress && styles.progressPreviewWarning,
+                          ]}
+                        >
                           {willLoseProgress
                             ? `Progreso: 0/${days}`
-                            : `Progreso: ${newProgress}/${days}`
-                          }
+                            : `Progreso: ${newProgress}/${days}`}
                         </Text>
                       )}
                     </View>
@@ -155,8 +163,9 @@ export function ChangeGoalModal({
             <View style={styles.warningBox}>
               <AlertTriangle size={20} color={STREAK_COLORS.atRisk} />
               <Text style={styles.warningBoxText}>
-                Ya tienes {currentProgress} días de progreso. Al cambiar a una meta de {selectedGoal} días,
-                tu progreso se reiniciará a 0 para evitar completar la meta instantáneamente.
+                Ya tienes {currentProgress} días de progreso. Al cambiar a una
+                meta de {selectedGoal} días, tu progreso se reiniciará a 0 para
+                evitar completar la meta instantáneamente.
               </Text>
             </View>
           )}
@@ -178,16 +187,18 @@ export function ChangeGoalModal({
               style={({ pressed }) => [
                 styles.button,
                 styles.confirmButton,
-                !selectedGoal && styles.buttonDisabled,
-                pressed && selectedGoal && { opacity: 0.8 },
+                selectedGoal === null && styles.buttonDisabled,
+                pressed && selectedGoal !== null && { opacity: 0.8 },
               ]}
               onPress={handleConfirm}
-              disabled={!selectedGoal}
+              disabled={selectedGoal === null}
             >
-              <Text style={[
-                styles.confirmButtonText,
-                !selectedGoal && styles.buttonTextDisabled,
-              ]}>
+              <Text
+                style={[
+                  styles.confirmButtonText,
+                  selectedGoal === null && styles.buttonTextDisabled,
+                ]}
+              >
                 Confirmar
               </Text>
             </Pressable>
@@ -198,25 +209,28 @@ export function ChangeGoalModal({
   );
 }
 
-const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =>
+const getStyles = (
+  colors: ThemeColors,
+  getFontSize: (size: number) => number,
+) =>
   StyleSheet.create({
     overlay: {
       flex: 1,
-      backgroundColor: "rgba(0, 0, 0, 0.7)",
-      justifyContent: "center",
-      alignItems: "center",
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      justifyContent: 'center',
+      alignItems: 'center',
       padding: 20,
     },
     container: {
       backgroundColor: colors.backgroundSecondary,
       borderRadius: 24,
-      width: "100%",
+      width: '100%',
       maxWidth: 400,
-      maxHeight: "80%",
-      overflow: "hidden",
+      maxHeight: '80%',
+      overflow: 'hidden',
     },
     header: {
-      alignItems: "center",
+      alignItems: 'center',
       padding: 24,
       paddingBottom: 16,
       borderBottomWidth: 1,
@@ -227,20 +241,20 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       height: 64,
       borderRadius: 32,
       backgroundColor: colors.accentSubtle,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       marginBottom: 12,
     },
     title: {
       fontSize: getFontSize(20),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
       marginBottom: 4,
     },
     subtitle: {
       fontSize: getFontSize(14),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
     },
     optionsList: {
       flexGrow: 0,
@@ -256,7 +270,7 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       padding: 16,
       marginBottom: 10,
       borderWidth: 2,
-      borderColor: "transparent",
+      borderColor: 'transparent',
     },
     optionCardCurrent: {
       opacity: 0.5,
@@ -273,13 +287,13 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       gap: 8,
     },
     optionHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
     optionDays: {
       fontSize: getFontSize(18),
-      fontWeight: "700",
+      fontWeight: '700',
       color: colors.headerText,
     },
     optionTextCurrent: {
@@ -296,22 +310,22 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     currentBadgeText: {
       fontSize: getFontSize(11),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.placeholderText,
     },
     optionDetails: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
     gemReward: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: 4,
     },
     gemRewardText: {
       fontSize: getFontSize(13),
-      fontWeight: "600",
+      fontWeight: '600',
       color: STREAK_COLORS.gems,
     },
     progressPreview: {
@@ -322,19 +336,19 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       color: STREAK_COLORS.atRisk,
     },
     warningContainer: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: 6,
       marginTop: 4,
     },
     warningText: {
       fontSize: getFontSize(12),
       color: STREAK_COLORS.atRisk,
-      fontWeight: "500",
+      fontWeight: '500',
     },
     warningBox: {
-      flexDirection: "row",
-      alignItems: "flex-start",
+      flexDirection: 'row',
+      alignItems: 'flex-start',
       gap: 10,
       backgroundColor: `${STREAK_COLORS.atRisk}15`,
       marginHorizontal: 16,
@@ -349,7 +363,7 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       lineHeight: getFontSize(18),
     },
     buttons: {
-      flexDirection: "row",
+      flexDirection: 'row',
       padding: 16,
       paddingTop: 8,
       gap: 12,
@@ -360,15 +374,15 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       flex: 1,
       paddingVertical: 14,
       borderRadius: 12,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     cancelButton: {
       backgroundColor: colors.surfaceMuted,
     },
     cancelButtonText: {
       fontSize: getFontSize(15),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.bodyText,
     },
     confirmButton: {
@@ -376,8 +390,8 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     confirmButtonText: {
       fontSize: getFontSize(15),
-      fontWeight: "600",
-      color: "white",
+      fontWeight: '600',
+      color: 'white',
     },
     buttonDisabled: {
       backgroundColor: colors.divider,

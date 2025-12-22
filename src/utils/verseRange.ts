@@ -1,6 +1,6 @@
 export function formatVerseNumbersRange(verseNumbers: string[]): string {
   if (!verseNumbers.length) {
-    return "";
+    return '';
   }
 
   const unique = Array.from(new Set(verseNumbers));
@@ -33,7 +33,11 @@ export function formatVerseNumbersRange(verseNumbers: string[]): string {
 
   for (let i = 1; i < parsed.length; i += 1) {
     const current = parsed[i];
-    if (prev.isNumeric && current.isNumeric && current.numeric === prev.numeric + 1) {
+    if (
+      prev.isNumeric &&
+      current.isNumeric &&
+      current.numeric === prev.numeric + 1
+    ) {
       prev = current;
       continue;
     }
@@ -70,7 +74,7 @@ function formatListWithAnd(values: string[]) {
   if (values.length === 2) {
     return `${values[0]} y ${values[1]}`;
   }
-  const initial = values.slice(0, -1).join(", ");
+  const initial = values.slice(0, -1).join(', ');
   const last = values[values.length - 1];
   return `${initial} y ${last}`;
 }

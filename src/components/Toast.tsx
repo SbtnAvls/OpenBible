@@ -62,7 +62,9 @@ export const Toast: React.FC<ToastProps> = ({
       ]}
     >
       {icon || <Pin size={14} color={colors.accent} fill={colors.accent} />}
-      <Text style={[styles.message, { color: colors.bodyText }]}>{message}</Text>
+      <Text style={[styles.message, { color: colors.bodyText }]}>
+        {message}
+      </Text>
     </Animated.View>
   );
 };

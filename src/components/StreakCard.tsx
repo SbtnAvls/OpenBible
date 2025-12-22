@@ -1,13 +1,8 @@
-import React from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { Flame, Gem, Shield, ChevronRight } from "lucide-react-native";
-import { useTheme, type ThemeColors } from "../context/ThemeContext";
-import { STREAK_COLORS } from "../types/streak";
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Flame, Gem, Shield, ChevronRight } from 'lucide-react-native';
+import { useTheme, type ThemeColors } from '../context/ThemeContext';
+import { STREAK_COLORS } from '../types/streak';
 
 interface StreakCardProps {
   currentStreak: number;
@@ -33,10 +28,7 @@ export function StreakCard({
 
   return (
     <Pressable
-      style={({ pressed }) => [
-        styles.container,
-        pressed && { opacity: 0.8 },
-      ]}
+      style={({ pressed }) => [styles.container, pressed && { opacity: 0.8 }]}
       onPress={onPress}
     >
       {/* Header con racha */}
@@ -44,13 +36,15 @@ export function StreakCard({
         <View style={styles.streakInfo}>
           <Flame
             size={32}
-            color={currentStreak > 0 ? STREAK_COLORS.fire : colors.placeholderText}
-            fill={currentStreak > 0 ? STREAK_COLORS.fire : "transparent"}
+            color={
+              currentStreak > 0 ? STREAK_COLORS.fire : colors.placeholderText
+            }
+            fill={currentStreak > 0 ? STREAK_COLORS.fire : 'transparent'}
           />
           <View style={styles.streakTextContainer}>
             <Text style={styles.streakNumber}>{currentStreak}</Text>
             <Text style={styles.streakLabel}>
-              {currentStreak === 1 ? "día" : "días"}
+              {currentStreak === 1 ? 'día' : 'días'}
             </Text>
           </View>
         </View>
@@ -62,7 +56,9 @@ export function StreakCard({
       <View style={styles.progressSection}>
         <View style={styles.progressHeader}>
           <Text style={styles.progressLabel}>
-            {todayCompleted ? "Meta completada" : `${remainingMinutes} min restantes`}
+            {todayCompleted
+              ? 'Meta completada'
+              : `${remainingMinutes} min restantes`}
           </Text>
           <Text style={styles.progressValue}>{Math.round(todayProgress)}%</Text>
         </View>
@@ -97,7 +93,10 @@ export function StreakCard({
   );
 }
 
-const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =>
+const getStyles = (
+  colors: ThemeColors,
+  getFontSize: (size: number) => number,
+) =>
   StyleSheet.create({
     container: {
       backgroundColor: colors.surfaceMuted,
@@ -107,21 +106,21 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       borderColor: colors.divider,
     },
     header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
       marginBottom: 14,
     },
     streakInfo: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     streakTextContainer: {
       marginLeft: 10,
     },
     streakNumber: {
       fontSize: getFontSize(28),
-      fontWeight: "800",
+      fontWeight: '800',
       color: colors.headerText,
       lineHeight: getFontSize(32),
     },
@@ -134,8 +133,8 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
       marginBottom: 14,
     },
     progressHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
+      flexDirection: 'row',
+      justifyContent: 'space-between',
       marginBottom: 6,
     },
     progressLabel: {
@@ -144,33 +143,33 @@ const getStyles = (colors: ThemeColors, getFontSize: (size: number) => number) =
     },
     progressValue: {
       fontSize: getFontSize(12),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.accent,
     },
     progressBar: {
       height: 6,
       backgroundColor: colors.divider,
       borderRadius: 3,
-      overflow: "hidden",
+      overflow: 'hidden',
     },
     progressFill: {
-      height: "100%",
+      height: '100%',
       borderRadius: 3,
     },
     statsRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
       gap: 16,
     },
     statItem: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: 6,
     },
     statValue: {
       fontSize: getFontSize(14),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.bodyText,
     },
     divider: {

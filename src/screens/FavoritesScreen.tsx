@@ -1,19 +1,10 @@
-import React, { useMemo } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import React, { useMemo } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { useFavoritesVerses } from "../context/FavoritesVersesContext";
-import { useTheme } from "../context/ThemeContext";
-import type {
-  GetFontSize,
-  ThemeColors,
-} from "../context/ThemeContext";
-import { formatVerseNumbersRange } from "../utils/verseRange";
+import { useFavoritesVerses } from '../context/FavoritesVersesContext';
+import { useTheme } from '../context/ThemeContext';
+import type { GetFontSize, ThemeColors } from '../context/ThemeContext';
+import { formatVerseNumbersRange } from '../utils/verseRange';
 
 type FavoritesScreenProps = {
   onNavigateToVerse: (bookId: string, chapterName: string) => void;
@@ -25,7 +16,7 @@ export function FavoritesScreen({ onNavigateToVerse }: FavoritesScreenProps) {
 
   const styles = useMemo(
     () => createStyles(colors, getFontSize),
-    [colors, getFontSize]
+    [colors, getFontSize],
   );
 
   if (!favorites.length) {
@@ -33,8 +24,8 @@ export function FavoritesScreen({ onNavigateToVerse }: FavoritesScreenProps) {
       <View style={styles.emptyState}>
         <Text style={styles.emptyTitle}>Aun no guardas citas.</Text>
         <Text style={styles.emptySubtitle}>
-          Mantente presionando un versiculo para seleccionarlo y luego
-          guardalo desde el menu inferior.
+          Mantente presionando un versiculo para seleccionarlo y luego guardalo
+          desde el menu inferior.
         </Text>
       </View>
     );
@@ -56,7 +47,7 @@ export function FavoritesScreen({ onNavigateToVerse }: FavoritesScreenProps) {
           <Text style={styles.clearButtonText}>Borrar todo</Text>
         </Pressable>
       </View>
-      {favorites.map((item) => (
+      {favorites.map(item => (
         <Pressable
           key={item.id}
           onPress={() => onNavigateToVerse(item.bookId, item.chapterName)}
@@ -77,7 +68,7 @@ export function FavoritesScreen({ onNavigateToVerse }: FavoritesScreenProps) {
             </View>
             <Pressable
               accessibilityLabel={`Eliminar cita ${item.bookName} ${item.chapterName}`}
-              onPress={(e) => {
+              onPress={e => {
                 e.stopPropagation();
                 removeFavorite(item.id);
               }}
@@ -88,8 +79,11 @@ export function FavoritesScreen({ onNavigateToVerse }: FavoritesScreenProps) {
           </View>
           <View style={styles.cardDivider} />
           <View style={styles.versesGroup}>
-            {item.verses.map((verse) => (
-              <View key={`${item.id}-${verse.verseNumber}`} style={styles.verseRow}>
+            {item.verses.map(verse => (
+              <View
+                key={`${item.id}-${verse.verseNumber}`}
+                style={styles.verseRow}
+              >
                 <Text style={styles.verseNumber}>{verse.verseNumber}</Text>
                 <Text style={styles.verseText}>{verse.text}</Text>
               </View>
@@ -113,14 +107,14 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       gap: 16,
     },
     headerRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
     headerTitle: {
       fontSize: getFontSize(18),
       color: colors.headerText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     clearButton: {
       paddingHorizontal: 12,
@@ -133,7 +127,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     clearButtonText: {
       fontSize: getFontSize(13),
       color: colors.placeholderText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     card: {
       borderRadius: 14,
@@ -144,9 +138,9 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       gap: 12,
     },
     cardHeader: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      justifyContent: "space-between",
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
       gap: 12,
     },
     cardHeaderText: {
@@ -156,29 +150,29 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     cardReference: {
       fontSize: getFontSize(15),
       color: colors.headerText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     cardSubtitle: {
       fontSize: getFontSize(13),
       color: colors.placeholderText,
-      fontWeight: "500",
+      fontWeight: '500',
     },
     cardComment: {
       fontSize: getFontSize(13),
       color: colors.bodyText,
-      fontStyle: "italic",
+      fontStyle: 'italic',
     },
     deleteButton: {
       paddingHorizontal: 12,
       paddingVertical: 6,
       borderRadius: 14,
       backgroundColor: colors.accentSubtle,
-      alignSelf: "flex-start",
+      alignSelf: 'flex-start',
     },
     deleteButtonText: {
       fontSize: getFontSize(13),
       color: colors.accent,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     cardDivider: {
       height: StyleSheet.hairlineWidth,
@@ -188,13 +182,13 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       gap: 8,
     },
     verseRow: {
-      flexDirection: "row",
+      flexDirection: 'row',
       gap: 8,
     },
     verseNumber: {
       fontSize: getFontSize(13),
       color: colors.verseNumber,
-      fontWeight: "600",
+      fontWeight: '600',
       width: 32,
     },
     verseText: {
@@ -205,21 +199,21 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     },
     emptyState: {
       flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       backgroundColor: colors.backgroundPrimary,
       paddingHorizontal: 32,
       gap: 12,
     },
     emptyTitle: {
       fontSize: getFontSize(18),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.headerText,
     },
     emptySubtitle: {
       fontSize: getFontSize(14),
       color: colors.placeholderText,
-      textAlign: "center",
+      textAlign: 'center',
       lineHeight: Math.round(getFontSize(14) * 1.4),
     },
   });

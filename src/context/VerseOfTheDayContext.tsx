@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 import Share from 'react-native-share';
 import { Alert } from 'react-native';
 import { getDataFromStorage, saveDataOnStorage } from '../helpers/storageData';
@@ -34,9 +40,15 @@ type VerseOfTheDayContextType = {
   getCuratedVerseForDate: (date: Date) => CuratedVerse | null;
 };
 
-const VerseOfTheDayContext = createContext<VerseOfTheDayContextType | undefined>(undefined);
+const VerseOfTheDayContext = createContext<
+  VerseOfTheDayContextType | undefined
+>(undefined);
 
-export const VerseOfTheDayProvider = ({ children }: { children: ReactNode }) => {
+export const VerseOfTheDayProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
   const [curatedVerses, setCuratedVerses] = useState<CuratedVerse[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminCode, setAdminCodeState] = useState(DEFAULT_ADMIN_CODE);
@@ -97,13 +109,17 @@ export const VerseOfTheDayProvider = ({ children }: { children: ReactNode }) => 
     try {
       // Verificar si ya existe
       const exists = curatedVerses.some(
-        v => v.bookId === verse.bookId &&
-             v.chapterName === verse.chapterName &&
-             v.verseName === verse.verseName
+        v =>
+          v.bookId === verse.bookId &&
+          v.chapterName === verse.chapterName &&
+          v.verseName === verse.verseName,
       );
 
       if (exists) {
-        Alert.alert('Versículo duplicado', 'Este versículo ya está en la lista curada.');
+        Alert.alert(
+          'Versículo duplicado',
+          'Este versículo ya está en la lista curada.',
+        );
         return;
       }
 
@@ -117,7 +133,7 @@ export const VerseOfTheDayProvider = ({ children }: { children: ReactNode }) => 
 
       Alert.alert(
         'Versículo agregado',
-        `Total de versículos curados: ${updatedVerses.length}`
+        `Total de versículos curados: ${updatedVerses.length}`,
       );
     } catch (e) {
       console.error('Error adding verse:', e);
@@ -129,7 +145,10 @@ export const VerseOfTheDayProvider = ({ children }: { children: ReactNode }) => 
     try {
       const updatedVerses = curatedVerses.filter((_, i) => i !== index);
       await saveCuratedList(updatedVerses);
-      Alert.alert('Versículo eliminado', `Quedan ${updatedVerses.length} versículos`);
+      Alert.alert(
+        'Versículo eliminado',
+        `Quedan ${updatedVerses.length} versículos`,
+      );
     } catch (e) {
       console.error('Error removing verse:', e);
       Alert.alert('Error', 'No se pudo eliminar el versículo');
@@ -155,7 +174,7 @@ export const VerseOfTheDayProvider = ({ children }: { children: ReactNode }) => 
 
       Alert.alert(
         'Lista exportada',
-        `Se exportaron ${curatedVerses.length} versículos`
+        `Se exportaron ${curatedVerses.length} versículos`,
       );
     } catch (error: any) {
       if (error?.message !== 'User did not share') {
@@ -174,8 +193,8 @@ export const VerseOfTheDayProvider = ({ children }: { children: ReactNode }) => 
       }
 
       // Validar estructura básica
-      const isValid = verses.every(v =>
-        v.bookName && v.chapterName && v.verseName && v.verseText
+      const isValid = verses.every(
+        v => v.bookName && v.chapterName && v.verseName && v.verseText,
       );
 
       if (!isValid) {
@@ -186,7 +205,7 @@ export const VerseOfTheDayProvider = ({ children }: { children: ReactNode }) => 
 
       Alert.alert(
         'Lista importada',
-        `Se importaron ${verses.length} versículos exitosamente`
+        `Se importaron ${verses.length} versículos exitosamente`,
       );
     } catch (e: any) {
       console.error('Error importing list:', e);
@@ -208,11 +227,13 @@ export const VerseOfTheDayProvider = ({ children }: { children: ReactNode }) => 
     if (curatedVerses.length === 0) return null;
 
     // Usar el mismo algoritmo de hash que antes
-    const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const dateString = `${date.getFullYear()}-${String(
+      date.getMonth() + 1,
+    ).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
     let hash = 0;
     for (let i = 0; i < dateString.length; i++) {
-      hash = ((hash << 5) - hash) + dateString.charCodeAt(i);
+      hash = (hash << 5) - hash + dateString.charCodeAt(i);
       hash = hash & hash;
     }
     hash = Math.abs(hash);
@@ -245,7 +266,9 @@ export const VerseOfTheDayProvider = ({ children }: { children: ReactNode }) => 
 export const useVerseOfTheDay = () => {
   const context = useContext(VerseOfTheDayContext);
   if (context === undefined) {
-    throw new Error('useVerseOfTheDay must be used within VerseOfTheDayProvider');
+    throw new Error(
+      'useVerseOfTheDay must be used within VerseOfTheDayProvider',
+    );
   }
   return context;
 };

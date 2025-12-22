@@ -1,16 +1,15 @@
-import React from "react";
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-} from "react-native";
-import { BookOpen, ChevronRight, CheckCircle2, TrendingUp } from "lucide-react-native";
-import { useTheme } from "../context/ThemeContext";
-import { useStudyPlan } from "../context/StudyPlanContext";
-import type { ThemeColors, GetFontSize } from "../context/ThemeContext";
-import { StudyPlan } from "../types/studyPlan";
+  BookOpen,
+  ChevronRight,
+  CheckCircle2,
+  TrendingUp,
+} from 'lucide-react-native';
+import { useTheme } from '../context/ThemeContext';
+import { useStudyPlan } from '../context/StudyPlanContext';
+import type { ThemeColors, GetFontSize } from '../context/ThemeContext';
+import { StudyPlan } from '../types/studyPlan';
 
 type StudyPlansScreenProps = {
   onSelectPlan: (planId: string) => void;
@@ -109,7 +108,8 @@ export const StudyPlansScreen: React.FC<StudyPlansScreenProps> = ({
           </View>
           <Text style={styles.headerTitle}>Planes de Estudio</Text>
           <Text style={styles.headerSubtitle}>
-            Profundiza en la Palabra con guías estructuradas que te llevan paso a paso
+            Profundiza en la Palabra con guías estructuradas que te llevan paso
+            a paso
           </Text>
         </View>
 

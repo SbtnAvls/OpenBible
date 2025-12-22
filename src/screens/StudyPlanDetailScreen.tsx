@@ -1,11 +1,5 @@
-import React, { useRef } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-} from "react-native";
+import React, { useRef, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import {
   ChevronLeft,
   Lock,
@@ -13,11 +7,11 @@ import {
   Circle,
   BookOpen,
   Play,
-} from "lucide-react-native";
-import { useTheme } from "../context/ThemeContext";
-import { useStudyPlan } from "../context/StudyPlanContext";
-import type { ThemeColors, GetFontSize } from "../context/ThemeContext";
-import { StudyPlanSection, Reading } from "../types/studyPlan";
+} from 'lucide-react-native';
+import { useTheme } from '../context/ThemeContext';
+import { useStudyPlan } from '../context/StudyPlanContext';
+import type { ThemeColors, GetFontSize } from '../context/ThemeContext';
+import { StudyPlanSection, Reading } from '../types/studyPlan';
 
 type StudyPlanDetailScreenProps = {
   planId: string;
@@ -36,11 +30,19 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
   const scrollViewRef = useRef<ScrollView>(null);
   const sectionYPositions = useRef<{ [key: string]: number }>({});
   const hasScrolled = useRef(false);
+  const layoutCompleteCount = useRef(0);
 
-  const plan = plans.find((p) => p.id === planId);
+  const plan = plans.find(p => p.id === planId);
+
+  // Reset scroll state when planId changes
+  useEffect(() => {
+    hasScrolled.current = false;
+    layoutCompleteCount.current = 0;
+    sectionYPositions.current = {};
+  }, [planId]);
 
   // Función para hacer scroll a la siguiente sección no completada
-  const scrollToNextSection = () => {
+  const scrollToNextSection = useCallback(() => {
     if (!plan || hasScrolled.current) return;
 
     const nextUncompletedSection = plan.sections.find(s => !s.isCompleted);
@@ -50,13 +52,30 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
       const yPosition = sectionYPositions.current[nextUncompletedSection.id];
 
       if (yPosition !== undefined && yPosition > 0) {
-        setTimeout(() => {
-          scrollViewRef.current?.scrollTo({ y: yPosition - 100, animated: true });
-          hasScrolled.current = true;
-        }, 400);
+        hasScrolled.current = true;
+        // Use requestAnimationFrame for smoother scrolling after layout
+        requestAnimationFrame(() => {
+          scrollViewRef.current?.scrollTo({
+            y: yPosition - 100,
+            animated: true,
+          });
+        });
       }
     }
-  };
+  }, [plan]);
+
+  const handleSectionLayout = useCallback(
+    (sectionId: string, y: number) => {
+      sectionYPositions.current[sectionId] = y;
+      layoutCompleteCount.current += 1;
+
+      // Trigger scroll when all sections have reported their layout
+      if (plan && layoutCompleteCount.current >= plan.sections.length) {
+        scrollToNextSection();
+      }
+    },
+    [plan, scrollToNextSection],
+  );
 
   if (!plan) {
     return (
@@ -67,20 +86,54 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
   }
 
   const formatReading = (reading: Reading): string => {
-    let result = reading.book + " ";
+    let result = reading.book + ' ';
 
-    if (reading.chapters) {
-      if (reading.chapters.length === 1) {
-        result += reading.chapters[0];
-      } else if (reading.chapters.length === 2) {
-        result += reading.chapters.join(", ");
+    const chapters = reading.chapters;
+    if (chapters) {
+      if (chapters.length === 1) {
+        result += chapters[0];
+      } else if (chapters.length === 2) {
+        result += chapters.join(', ');
       } else {
-        const first = reading.chapters[0];
-        const last = reading.chapters[reading.chapters.length - 1];
-        result += `${first}–${last}`;
+        // Check if chapters are consecutive
+        const isConsecutive = chapters.every(
+          (ch, idx) => idx === 0 || ch === chapters[idx - 1] + 1,
+        );
+
+        if (isConsecutive) {
+          const first = chapters[0];
+          const last = chapters[chapters.length - 1];
+          result += `${first}–${last}`;
+        } else {
+          // Group consecutive chapters into ranges
+          const ranges: string[] = [];
+          let rangeStart = chapters[0];
+          let rangeEnd = chapters[0];
+
+          for (let i = 1; i <= chapters.length; i++) {
+            const current = chapters[i];
+            const prev = chapters[i - 1];
+
+            if (current === prev + 1) {
+              rangeEnd = current;
+            } else {
+              // End current range
+              if (rangeStart === rangeEnd) {
+                ranges.push(`${rangeStart}`);
+              } else if (rangeEnd === rangeStart + 1) {
+                ranges.push(`${rangeStart}, ${rangeEnd}`);
+              } else {
+                ranges.push(`${rangeStart}–${rangeEnd}`);
+              }
+              rangeStart = current;
+              rangeEnd = current;
+            }
+          }
+          result += ranges.join(', ');
+        }
       }
     } else if (reading.verseRanges) {
-      const ranges = reading.verseRanges.map((range) => {
+      const ranges = reading.verseRanges.map(range => {
         if (range.startVerse && range.endVerse) {
           return `${range.chapter}:${range.startVerse}–${range.endVerse}`;
         } else if (range.startVerse) {
@@ -89,25 +142,20 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
           return `${range.chapter}`;
         }
       });
-      result += ranges.join(", ");
+      result += ranges.join(', ');
     }
 
     return result;
   };
 
-  const renderSection = ({ item }: { item: StudyPlanSection; index: number }) => {
+  const renderSection = (item: StudyPlanSection) => {
     const isLocked = !item.isUnlocked;
 
     return (
       <View
-        onLayout={(event) => {
+        onLayout={event => {
           const { y } = event.nativeEvent.layout;
-          sectionYPositions.current[item.id] = y;
-
-          // Intentar hacer scroll cuando se haya ejecutado onLayout de todas las secciones
-          if (plan && Object.keys(sectionYPositions.current).length === plan.sections.length) {
-            scrollToNextSection();
-          }
+          handleSectionLayout(item.id, y);
         }}
         style={[
           styles.sectionCard,
@@ -117,13 +165,19 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
       >
         {/* Section Header */}
         <View style={styles.sectionHeader}>
-          <View style={[
-            styles.sectionIconContainer,
-            isLocked && styles.sectionIconLocked,
-            item.isCompleted && styles.sectionIconCompleted,
-          ]}>
+          <View
+            style={[
+              styles.sectionIconContainer,
+              isLocked && styles.sectionIconLocked,
+              item.isCompleted && styles.sectionIconCompleted,
+            ]}
+          >
             {item.isCompleted ? (
-              <CheckCircle2 size={24} color={colors.accent} fill={colors.accent} />
+              <CheckCircle2
+                size={24}
+                color={colors.accent}
+                fill={colors.accent}
+              />
             ) : isLocked ? (
               <Lock size={20} color={colors.placeholderText} />
             ) : (
@@ -201,7 +255,11 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
             onPress={() => onStartReading(planId, item.id)}
           >
             {!item.isCompleted && (
-              <Play size={18} color={colors.accentText} fill={colors.accentText} />
+              <Play
+                size={18}
+                color={colors.accentText}
+                fill={colors.accentText}
+              />
             )}
             <Text
               style={[
@@ -209,7 +267,7 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
                 item.isCompleted && styles.startButtonTextOutline,
               ]}
             >
-              {item.isCompleted ? "Leer nuevamente" : "Comenzar lectura"}
+              {item.isCompleted ? 'Leer nuevamente' : 'Comenzar lectura'}
             </Text>
           </Pressable>
         )}
@@ -274,10 +332,8 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {plan.sections.map((section, index) => (
-          <View key={section.id}>
-            {renderSection({ item: section, index })}
-          </View>
+        {plan.sections.map(section => (
+          <View key={section.id}>{renderSection(section)}</View>
         ))}
       </ScrollView>
     </View>

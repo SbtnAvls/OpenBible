@@ -1,7 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { getDataFromStorage, saveDataOnStorage } from "../helpers/storageData";
-import { StudyPlan, StudyPlanProgress } from "../types/studyPlan";
-import { studyPlans } from "../data/studyPlans";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
+import { getDataFromStorage, saveDataOnStorage } from '../helpers/storageData';
+import { StudyPlan, StudyPlanProgress } from '../types/studyPlan';
+import { studyPlans } from '../data/studyPlans';
 
 interface StudyPlanContextType {
   plans: StudyPlan[];
@@ -12,12 +18,18 @@ interface StudyPlanContextType {
   getPlanById: (planId: string) => StudyPlan | undefined;
 }
 
-const StudyPlanContext = createContext<StudyPlanContextType | undefined>(undefined);
+const StudyPlanContext = createContext<StudyPlanContextType | undefined>(
+  undefined,
+);
 
-const STORAGE_FILE = "study_plans_progress.json";
+const STORAGE_FILE = 'study_plans_progress.json';
 
-export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [progressMap, setProgressMap] = useState<Record<string, StudyPlanProgress>>({});
+export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
+  const [progressMap, setProgressMap] = useState<
+    Record<string, StudyPlanProgress>
+  >({});
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Cargar progreso desde storage
@@ -32,18 +44,20 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
         setProgressMap(stored);
       }
     } catch (error) {
-      console.error("Error loading study plan progress:", error);
+      console.error('Error loading study plan progress:', error);
     } finally {
       setIsLoaded(true);
     }
   };
 
-  const saveProgress = async (newProgressMap: Record<string, StudyPlanProgress>) => {
+  const saveProgress = async (
+    newProgressMap: Record<string, StudyPlanProgress>,
+  ) => {
     try {
       await saveDataOnStorage(STORAGE_FILE, JSON.stringify(newProgressMap));
       setProgressMap(newProgressMap);
     } catch (error) {
-      console.error("Error saving study plan progress:", error);
+      console.error('Error saving study plan progress:', error);
     }
   };
 
@@ -99,27 +113,31 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
     await saveProgress(newProgressMap);
   };
 
-  const getPlanById = (planId: string): StudyPlan | undefined => {
-    return studyPlans.find(p => p.id === planId);
-  };
-
   // Calcular planes con progreso actualizado
   const plansWithProgress = studyPlans.map(plan => {
     const progress = progressMap[plan.id];
     const totalSections = plan.sections.length;
     const completedCount = progress?.completedSections.length || 0;
-    const progressPercentage = totalSections > 0 ? (completedCount / totalSections) * 100 : 0;
+    const progressPercentage =
+      totalSections > 0 ? (completedCount / totalSections) * 100 : 0;
 
     return {
       ...plan,
       progress: progressPercentage,
       sections: plan.sections.map((section, index) => ({
         ...section,
-        isUnlocked: index === 0 || (progress?.completedSections.includes(plan.sections[index - 1].id) || false),
+        isUnlocked:
+          index === 0 ||
+          progress?.completedSections.includes(plan.sections[index - 1].id) ||
+          false,
         isCompleted: progress?.completedSections.includes(section.id) || false,
       })),
     };
   });
+
+  const getPlanById = (planId: string): StudyPlan | undefined => {
+    return plansWithProgress.find(p => p.id === planId);
+  };
 
   if (!isLoaded) {
     return null;
@@ -144,7 +162,7 @@ export const StudyPlanProvider: React.FC<{ children: ReactNode }> = ({ children 
 export const useStudyPlan = (): StudyPlanContextType => {
   const context = useContext(StudyPlanContext);
   if (!context) {
-    throw new Error("useStudyPlan must be used within a StudyPlanProvider");
+    throw new Error('useStudyPlan must be used within a StudyPlanProvider');
   }
   return context;
 };

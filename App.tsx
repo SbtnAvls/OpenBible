@@ -4,7 +4,7 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from "react";
+} from 'react';
 import {
   Alert,
   Animated,
@@ -19,66 +19,81 @@ import {
   Text,
   TextInput,
   View,
-} from "react-native";
+} from 'react-native';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
-} from "react-native-safe-area-context";
-import Share from "react-native-share";
-import ViewShot from "react-native-view-shot";
-import { Home, Search, Share2, Heart, Sparkles, FileText, Image, BookOpen, ChevronLeft, X, ChevronDown, Flame, Shield, Bug } from "lucide-react-native";
+} from 'react-native-safe-area-context';
+import Share from 'react-native-share';
+import ViewShot from 'react-native-view-shot';
+import {
+  Home,
+  Search,
+  Share2,
+  Heart,
+  Sparkles,
+  FileText,
+  Image,
+  BookOpen,
+  ChevronLeft,
+  X,
+  ChevronDown,
+  Flame,
+  Shield,
+  Bug,
+} from 'lucide-react-native';
 
-import bibleContent from "./src/textContent/rv1909.json";
+import bibleContent from './src/textContent/rv1909.json';
 import {
   BibleDrawer,
   DrawerBook,
   DrawerSection,
-} from "./src/components/BibleDrawer";
-import { BookSearchView } from "./src/components/BookSearchView";
+} from './src/components/BibleDrawer';
+import { BookSearchView } from './src/components/BookSearchView';
 import {
   FavoritesVersesProvider,
   useFavoritesVerses,
-} from "./src/context/FavoritesVersesContext";
-import {
-  ThemeProvider,
-  useTheme,
-} from "./src/context/ThemeContext";
+} from './src/context/FavoritesVersesContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import {
   VerseOfTheDayProvider,
   useVerseOfTheDay,
-} from "./src/context/VerseOfTheDayContext";
+} from './src/context/VerseOfTheDayContext';
 import {
   ReadingHistoryProvider,
   useReadingHistory,
-} from "./src/context/ReadingHistoryContext";
+} from './src/context/ReadingHistoryContext';
+import { StudyPlanProvider } from './src/context/StudyPlanContext';
 import {
-  StudyPlanProvider,
-} from "./src/context/StudyPlanContext";
+  YearlyPlanProvider,
+  useYearlyPlan,
+} from './src/context/YearlyPlanContext';
+import { StreakProvider, useStreak } from './src/context/StreakContext';
+import type { GetFontSize, ThemeColors } from './src/context/ThemeContext';
+import { FavoritesScreen } from './src/screens/FavoritesScreen';
+import { SettingsScreen } from './src/screens/SettingsScreen';
 import {
-  StreakProvider,
-  useStreak,
-} from "./src/context/StreakContext";
-import type {
-  GetFontSize,
-  ThemeColors,
-} from "./src/context/ThemeContext";
-import { FavoritesScreen } from "./src/screens/FavoritesScreen";
-import { SettingsScreen } from "./src/screens/SettingsScreen";
-import { SearchScreen, SearchResult, BookMatch } from "./src/screens/SearchScreen";
-import { ReadingHistoryScreen } from "./src/screens/ReadingHistoryScreen";
-import { DevotionalListScreen } from "./src/screens/DevotionalListScreen";
-import { DevotionalDetailScreen } from "./src/screens/DevotionalDetailScreen";
-import { StudyPlansScreen } from "./src/screens/StudyPlansScreen";
-import { StudyPlanDetailScreen } from "./src/screens/StudyPlanDetailScreen";
-import { StudyPlanReadingScreen } from "./src/screens/StudyPlanReadingScreen";
-import { StreakScreen } from "./src/screens/StreakScreen";
-import { StreakOnboardingModal } from "./src/components/StreakOnboardingModal";
-import { StreakSummaryModal } from "./src/components/StreakSummaryModal";
-import { DailyCompletionModal } from "./src/components/DailyCompletionModal";
-import { Toast } from "./src/components/Toast";
-import { EndOfBookModal } from "./src/components/EndOfBookModal";
-import { formatVerseNumbersRange } from "./src/utils/verseRange";
-import type { Devotional } from "./src/types/devotional";
+  SearchScreen,
+  SearchResult,
+  BookMatch,
+} from './src/screens/SearchScreen';
+import { ReadingHistoryScreen } from './src/screens/ReadingHistoryScreen';
+import { DevotionalListScreen } from './src/screens/DevotionalListScreen';
+import { DevotionalDetailScreen } from './src/screens/DevotionalDetailScreen';
+import { StudyPlansScreen } from './src/screens/StudyPlansScreen';
+import { StudyPlanDetailScreen } from './src/screens/StudyPlanDetailScreen';
+import { StudyPlanReadingScreen } from './src/screens/StudyPlanReadingScreen';
+import { YearlyPlansScreen } from './src/screens/YearlyPlansScreen';
+import { YearlyPlanDetailScreen } from './src/screens/YearlyPlanDetailScreen';
+import { YearlyPlanReadingScreen } from './src/screens/YearlyPlanReadingScreen';
+import { StreakScreen } from './src/screens/StreakScreen';
+import { StreakOnboardingModal } from './src/components/StreakOnboardingModal';
+import { StreakSummaryModal } from './src/components/StreakSummaryModal';
+import { DailyCompletionModal } from './src/components/DailyCompletionModal';
+import { Toast } from './src/components/Toast';
+import { EndOfBookModal } from './src/components/EndOfBookModal';
+import { formatVerseNumbersRange } from './src/utils/verseRange';
+import type { Devotional } from './src/types/devotional';
 
 type VerseData = {
   name: string;
@@ -104,7 +119,20 @@ type BibleData = {
   testament: TestamentData[];
 };
 
-type ActiveScreen = "reader" | "settings" | "favorites" | "history" | "devotionals" | "devotional-detail" | "study-plans" | "study-plan-detail" | "study-plan-reading" | "streak";
+type ActiveScreen =
+  | 'reader'
+  | 'settings'
+  | 'favorites'
+  | 'history'
+  | 'devotionals'
+  | 'devotional-detail'
+  | 'study-plans'
+  | 'study-plan-detail'
+  | 'study-plan-reading'
+  | 'streak'
+  | 'yearly-plans'
+  | 'yearly-plan-detail'
+  | 'yearly-plan-reading';
 
 type PendingFavorite = {
   bookId: string;
@@ -124,9 +152,11 @@ function App() {
           <ReadingHistoryProvider>
             <StreakProvider>
               <StudyPlanProvider>
-                <SafeAreaProvider>
-                  <AppContent />
-                </SafeAreaProvider>
+                <YearlyPlanProvider>
+                  <SafeAreaProvider>
+                    <AppContent />
+                  </SafeAreaProvider>
+                </YearlyPlanProvider>
               </StudyPlanProvider>
             </StreakProvider>
           </ReadingHistoryProvider>
@@ -141,7 +171,13 @@ function AppContent() {
   const { colors, statusBarStyle, getFontSize } = useTheme();
   const { addFavorite, getVerseFavorites } = useFavoritesVerses();
   const { isAdmin, addVerseToCuratedList } = useVerseOfTheDay();
-  const { addFlashView, convertToRecentRead, recentReads, updatePinnedChapter, unpinChapter } = useReadingHistory();
+  const {
+    addFlashView,
+    convertToRecentRead,
+    recentReads,
+    updatePinnedChapter,
+    unpinChapter,
+  } = useReadingHistory();
   const {
     addReadingTime,
     settings: streakSettings,
@@ -155,21 +191,32 @@ function AppContent() {
     autoFreezesUsed,
     clearAutoFreezesUsed,
   } = useStreak();
+  const { switchPlan: switchYearlyPlan } = useYearlyPlan();
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [selectedBook, setSelectedBook] =
-    useState<DrawerBook<BookData> | null>(null);
+  const [selectedBook, setSelectedBook] = useState<DrawerBook<BookData> | null>(
+    null,
+  );
   const [selectedChapterIndex, setSelectedChapterIndex] = useState(0);
-  const [activeScreen, setActiveScreen] = useState<ActiveScreen>("reader");
+  const [activeScreen, setActiveScreen] = useState<ActiveScreen>('reader');
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedVerses, setSelectedVerses] = useState<string[]>([]);
-  const [selectedDevotional, setSelectedDevotional] = useState<Devotional | null>(null);
+  const [selectedDevotional, setSelectedDevotional] =
+    useState<Devotional | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
+    null,
+  );
+  const [selectedYearlyPlanId, setSelectedYearlyPlanId] = useState<
+    string | null
+  >(null);
+  const [selectedYearlyDay, setSelectedYearlyDay] = useState<number | null>(
+    null,
+  );
   const [pendingFavorite, setPendingFavorite] =
     useState<PendingFavorite | null>(null);
   const [commentModalVisible, setCommentModalVisible] = useState(false);
-  const [commentInput, setCommentInput] = useState("");
-  const [bookSearchQuery, setBookSearchQuery] = useState("");
+  const [commentInput, setCommentInput] = useState('');
+  const [bookSearchQuery, setBookSearchQuery] = useState('');
   const [isSearchDrawerExpanded, setIsSearchDrawerExpanded] = useState(false);
   const searchDrawerHeight = useRef(new Animated.Value(0)).current;
   const chapterScrollViewRef = useRef<ScrollView>(null);
@@ -184,10 +231,15 @@ function AppContent() {
 
   // Estados para ancla automática
   const [toastVisible, setToastVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
+  const [toastMessage, setToastMessage] = useState('');
   const [endOfBookModalVisible, setEndOfBookModalVisible] = useState(false);
-  const [nextBookForPin, setNextBookForPin] = useState<{ book: string; chapter: number } | null>(null);
-  const previousChapterRef = useRef<{ book: string; chapter: number } | null>(null);
+  const [nextBookForPin, setNextBookForPin] = useState<{
+    book: string;
+    chapter: number;
+  } | null>(null);
+  const previousChapterRef = useRef<{ book: string; chapter: number } | null>(
+    null,
+  );
 
   // Tracking de actividad para pausar contador de lectura por inactividad
   const lastActivityRef = useRef<number>(Date.now());
@@ -197,8 +249,10 @@ function AppContent() {
   const INACTIVITY_TIMEOUT = 3.5 * 60 * 1000; // 3.5 minutos en milisegundos
 
   // Estados para selector de versiones
-  const [bibleVersionPickerVisible, setBibleVersionPickerVisible] = useState(false);
-  const [selectedBibleVersion, setSelectedBibleVersion] = useState("Reina-Valera 1909");
+  const [bibleVersionPickerVisible, setBibleVersionPickerVisible] =
+    useState(false);
+  const [selectedBibleVersion, setSelectedBibleVersion] =
+    useState('Reina-Valera 1909');
 
   // Estados para debug menu (solo desarrollo)
   const [debugMenuVisible, setDebugMenuVisible] = useState(false);
@@ -209,19 +263,22 @@ function AppContent() {
 
   const styles = useMemo(
     () => createStyles(colors, getFontSize),
-    [colors, getFontSize]
+    [colors, getFontSize],
   );
 
-  const isReaderScreen = activeScreen === "reader";
-  const isSettingsScreen = activeScreen === "settings";
-  const isFavoritesScreen = activeScreen === "favorites";
-  const isHistoryScreen = activeScreen === "history";
-  const isDevotionalsScreen = activeScreen === "devotionals";
-  const isDevotionalDetailScreen = activeScreen === "devotional-detail";
-  const isStudyPlansScreen = activeScreen === "study-plans";
-  const isStudyPlanDetailScreen = activeScreen === "study-plan-detail";
-  const isStudyPlanReadingScreen = activeScreen === "study-plan-reading";
-  const isStreakScreen = activeScreen === "streak";
+  const isReaderScreen = activeScreen === 'reader';
+  const isSettingsScreen = activeScreen === 'settings';
+  const isFavoritesScreen = activeScreen === 'favorites';
+  const isHistoryScreen = activeScreen === 'history';
+  const isYearlyPlansScreen = activeScreen === 'yearly-plans';
+  const isYearlyPlanDetailScreen = activeScreen === 'yearly-plan-detail';
+  const isYearlyPlanReadingScreen = activeScreen === 'yearly-plan-reading';
+  const isDevotionalsScreen = activeScreen === 'devotionals';
+  const isDevotionalDetailScreen = activeScreen === 'devotional-detail';
+  const isStudyPlansScreen = activeScreen === 'study-plans';
+  const isStudyPlanDetailScreen = activeScreen === 'study-plan-detail';
+  const isStudyPlanReadingScreen = activeScreen === 'study-plan-reading';
+  const isStreakScreen = activeScreen === 'streak';
   const isSelecting = isReaderScreen && selectedVerses.length > 0;
 
   // Límite de versículos para compartir como imagen
@@ -230,9 +287,9 @@ function AppContent() {
 
   const sections = useMemo<DrawerSection<BookData>[]>(() => {
     const data = bibleContent as BibleData;
-    return data.testament.map((entry) => ({
+    return data.testament.map(entry => ({
       title: entry.name,
-      books: entry.books.map((book) => ({
+      books: entry.books.map(book => ({
         id: `${entry.name}-${book.name}`,
         label: book.name,
         data: book,
@@ -246,40 +303,51 @@ function AppContent() {
   const buildVerseId = useCallback(
     (bookId: string, chapterName: string, verseName: string) =>
       `${bookId}-${chapterName}-${verseName}`,
-    []
+    [],
   );
 
   // Helper para obtener el siguiente libro en la Biblia
-  const getNextBook = useCallback((currentBookName: string): { book: DrawerBook<BookData>; chapter: ChapterData } | null => {
-    const data = bibleContent as BibleData;
-    let foundCurrent = false;
+  const getNextBook = useCallback(
+    (
+      currentBookName: string,
+    ): { book: DrawerBook<BookData>; chapter: ChapterData } | null => {
+      const data = bibleContent as BibleData;
+      let foundCurrent = false;
 
-    for (const testament of data.testament) {
-      for (const book of testament.books) {
-        if (foundCurrent) {
-          // Este es el siguiente libro
-          const bookDrawer: DrawerBook<BookData> = {
-            id: `${testament.name}-${book.name}`,
-            label: book.name,
-            data: book,
-          };
-          return { book: bookDrawer, chapter: book.chapters[0] };
-        }
-        if (book.name === currentBookName) {
-          foundCurrent = true;
+      for (const testament of data.testament) {
+        for (const book of testament.books) {
+          if (foundCurrent) {
+            // Este es el siguiente libro
+            const bookDrawer: DrawerBook<BookData> = {
+              id: `${testament.name}-${book.name}`,
+              label: book.name,
+              data: book,
+            };
+            return { book: bookDrawer, chapter: book.chapters[0] };
+          }
+          if (book.name === currentBookName) {
+            foundCurrent = true;
+          }
         }
       }
-    }
-    return null; // Es el último libro de la Biblia
-  }, []);
+      return null; // Es el último libro de la Biblia
+    },
+    [],
+  );
 
   // Helper para verificar si es el último capítulo de la Biblia
-  const isLastChapterOfBible = useCallback((bookName: string, chapterIndex: number): boolean => {
-    const data = bibleContent as BibleData;
-    const lastTestament = data.testament[data.testament.length - 1];
-    const lastBook = lastTestament.books[lastTestament.books.length - 1];
-    return bookName === lastBook.name && chapterIndex === lastBook.chapters.length - 1;
-  }, []);
+  const isLastChapterOfBible = useCallback(
+    (bookName: string, chapterIndex: number): boolean => {
+      const data = bibleContent as BibleData;
+      const lastTestament = data.testament[data.testament.length - 1];
+      const lastBook = lastTestament.books[lastTestament.books.length - 1];
+      return (
+        bookName === lastBook.name &&
+        chapterIndex === lastBook.chapters.length - 1
+      );
+    },
+    [],
+  );
 
   // Manejo de ancla automática cuando se cambia de capítulo
   useEffect(() => {
@@ -292,7 +360,10 @@ function AppContent() {
 
     // Si no hay capítulo anterior, solo guardar el actual
     if (!previousChapterRef.current) {
-      previousChapterRef.current = { book: currentBook, chapter: currentChapter };
+      previousChapterRef.current = {
+        book: currentBook,
+        chapter: currentChapter,
+      };
       return;
     }
 
@@ -301,12 +372,18 @@ function AppContent() {
 
     // Verificar si el capítulo anterior está anclado
     const prevChapterPinned = recentReads.find(
-      entry => entry.book === prevBook && entry.chapter === prevChapter && entry.pinned
+      entry =>
+        entry.book === prevBook &&
+        entry.chapter === prevChapter &&
+        entry.pinned,
     );
 
     if (!prevChapterPinned) {
       // Actualizar referencia y salir
-      previousChapterRef.current = { book: currentBook, chapter: currentChapter };
+      previousChapterRef.current = {
+        book: currentBook,
+        chapter: currentChapter,
+      };
       return;
     }
 
@@ -320,7 +397,10 @@ function AppContent() {
         if (isLastChapterOfBible(currentBook, selectedChapterIndex)) {
           // Es el último capítulo de la Biblia - eliminar ancla sin preguntar
           unpinChapter(prevBook, prevChapter);
-          previousChapterRef.current = { book: currentBook, chapter: currentChapter };
+          previousChapterRef.current = {
+            book: currentBook,
+            chapter: currentChapter,
+          };
         } else {
           // Mostrar modal para preguntar al usuario
           const nextBookData = getNextBook(currentBook);
@@ -342,7 +422,17 @@ function AppContent() {
 
     // Actualizar referencia
     previousChapterRef.current = { book: currentBook, chapter: currentChapter };
-  }, [selectedBook, selectedChapter, selectedChapterIndex, chapters.length, recentReads, updatePinnedChapter, unpinChapter, getNextBook, isLastChapterOfBible]);
+  }, [
+    selectedBook,
+    selectedChapter,
+    selectedChapterIndex,
+    chapters.length,
+    recentReads,
+    updatePinnedChapter,
+    unpinChapter,
+    getNextBook,
+    isLastChapterOfBible,
+  ]);
 
   // Handlers para el modal de fin de libro
   const handleContinueToNextBook = useCallback(() => {
@@ -351,9 +441,11 @@ function AppContent() {
         previousChapterRef.current.book,
         previousChapterRef.current.chapter,
         nextBookForPin.book,
-        nextBookForPin.chapter
+        nextBookForPin.chapter,
       );
-      setToastMessage(`Ancla actualizada: ${nextBookForPin.book} ${nextBookForPin.chapter}`);
+      setToastMessage(
+        `Ancla actualizada: ${nextBookForPin.book} ${nextBookForPin.chapter}`,
+      );
       setToastVisible(true);
     }
     setEndOfBookModalVisible(false);
@@ -362,7 +454,10 @@ function AppContent() {
 
   const handleRemovePin = useCallback(() => {
     if (previousChapterRef.current) {
-      unpinChapter(previousChapterRef.current.book, previousChapterRef.current.chapter);
+      unpinChapter(
+        previousChapterRef.current.book,
+        previousChapterRef.current.chapter,
+      );
     }
     setEndOfBookModalVisible(false);
     setNextBookForPin(null);
@@ -371,66 +466,74 @@ function AppContent() {
   const handleSelectBook = (book: DrawerBook<BookData>) => {
     setSelectedBook(book);
     setSelectedChapterIndex(0);
-    setActiveScreen("reader");
+    setActiveScreen('reader');
     setSelectedVerses([]);
   };
 
-  const handleSearchResultSelect = useCallback((result: SearchResult) => {
-    // Encontrar el libro correcto en las secciones
-    const section = sections.find(s => s.title === result.testamentName);
-    if (!section) return;
+  const handleSearchResultSelect = useCallback(
+    (result: SearchResult) => {
+      // Encontrar el libro correcto en las secciones
+      const section = sections.find(s => s.title === result.testamentName);
+      if (!section) return;
 
-    const book = section.books.find(b => b.label === result.bookName);
-    if (!book) return;
+      const book = section.books.find(b => b.label === result.bookName);
+      if (!book) return;
 
-    // Seleccionar el libro y capítulo
-    setSelectedBook(book);
-    setSelectedChapterIndex(result.chapterIndex);
-    setActiveScreen("reader");
-    setSelectedVerses([]);
+      // Seleccionar el libro y capítulo
+      setSelectedBook(book);
+      setSelectedChapterIndex(result.chapterIndex);
+      setActiveScreen('reader');
+      setSelectedVerses([]);
 
-    // Hacer scroll al versículo específico después de que se renderice
-    setTimeout(() => {
-      if (chapterScrollViewRef.current) {
-        // Encontrar el índice del versículo en el capítulo
-        const chapter = book.data.chapters[result.chapterIndex];
-        if (chapter && chapter.verses) {
-          const verseIndex = chapter.verses.findIndex(v => v.name === result.verseName);
+      // Hacer scroll al versículo específico después de que se renderice
+      setTimeout(() => {
+        if (chapterScrollViewRef.current) {
+          // Encontrar el índice del versículo en el capítulo
+          const chapter = book.data.chapters[result.chapterIndex];
+          if (chapter && chapter.verses) {
+            const verseIndex = chapter.verses.findIndex(
+              v => v.name === result.verseName,
+            );
 
-          if (verseIndex !== -1) {
-            // Calcular posición aproximada basada en el índice del versículo
-            const estimatedVerseHeight = 90; // Altura promedio por versículo
-            const headerHeight = 50; // Altura del header del capítulo
-            const targetY = headerHeight + (verseIndex * estimatedVerseHeight);
+            if (verseIndex !== -1) {
+              // Calcular posición aproximada basada en el índice del versículo
+              const estimatedVerseHeight = 90; // Altura promedio por versículo
+              const headerHeight = 50; // Altura del header del capítulo
+              const targetY = headerHeight + verseIndex * estimatedVerseHeight;
 
-            chapterScrollViewRef.current.scrollTo({
-              y: Math.max(0, targetY - 100), // Offset de 100px para mejor visualización
-              animated: true,
-            });
+              chapterScrollViewRef.current.scrollTo({
+                y: Math.max(0, targetY - 100), // Offset de 100px para mejor visualización
+                animated: true,
+              });
+            }
           }
         }
-      }
-    }, 300); // Esperar a que se renderice el nuevo capítulo
-  }, [sections]);
+      }, 300); // Esperar a que se renderice el nuevo capítulo
+    },
+    [sections],
+  );
 
-  const handleBookMatchSelect = useCallback((bookMatch: BookMatch) => {
-    // Encontrar el libro correcto en las secciones
-    const section = sections.find(s => s.title === bookMatch.testamentName);
-    if (!section) return;
+  const handleBookMatchSelect = useCallback(
+    (bookMatch: BookMatch) => {
+      // Encontrar el libro correcto en las secciones
+      const section = sections.find(s => s.title === bookMatch.testamentName);
+      if (!section) return;
 
-    const book = section.books.find(b => b.label === bookMatch.bookName);
-    if (!book) return;
+      const book = section.books.find(b => b.label === bookMatch.bookName);
+      if (!book) return;
 
-    // Seleccionar el libro y abrir en el capítulo 1
-    setSelectedBook(book);
-    setSelectedChapterIndex(0);
-    setActiveScreen("reader");
-    setSelectedVerses([]);
-  }, [sections]);
+      // Seleccionar el libro y abrir en el capítulo 1
+      setSelectedBook(book);
+      setSelectedChapterIndex(0);
+      setActiveScreen('reader');
+      setSelectedVerses([]);
+    },
+    [sections],
+  );
 
   const handleSelectChapter = useCallback((index: number) => {
     setSelectedChapterIndex(index);
-    setActiveScreen("reader");
+    setActiveScreen('reader');
     setSelectedVerses([]);
   }, []);
 
@@ -460,7 +563,7 @@ function AppContent() {
         handleGoToNextChapter();
       }
     },
-    [handleGoToNextChapter, handleGoToPreviousChapter]
+    [handleGoToNextChapter, handleGoToPreviousChapter],
   );
 
   const panResponder = useMemo(
@@ -493,14 +596,14 @@ function AppContent() {
           handleHorizontalSwipe(gestureState.dx);
         },
       }),
-    [handleHorizontalSwipe, isSelecting]
+    [handleHorizontalSwipe, isSelecting],
   );
 
   const handleToggleMenu = () => {
     if (!isReaderScreen) {
       return;
     }
-    setMenuVisible((prev) => !prev);
+    setMenuVisible(prev => !prev);
   };
 
   const closeMenu = useCallback(() => {
@@ -518,7 +621,7 @@ function AppContent() {
     if (!isReaderScreen || !selectedBook) {
       setIsSearchDrawerExpanded(false);
       searchDrawerHeight.setValue(COLLAPSED_HEIGHT);
-      setBookSearchQuery("");
+      setBookSearchQuery('');
     }
   }, [isReaderScreen, selectedBook, searchDrawerHeight]);
 
@@ -530,7 +633,7 @@ function AppContent() {
 
   // Detectar cuando la app va a background/foreground para pausar/reanudar contador
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
       if (nextAppState === 'active') {
         // App vuelve a primer plano - reanudar tracking
         lastActivityRef.current = Date.now();
@@ -584,7 +687,9 @@ function AppContent() {
 
       if (isAppActive && isUserActive) {
         // Calcular segundos desde el último tick
-        const secondsSinceLastTick = Math.floor((now - lastReadingTickRef.current) / 1000);
+        const secondsSinceLastTick = Math.floor(
+          (now - lastReadingTickRef.current) / 1000,
+        );
         lastReadingTickRef.current = now;
 
         // Acumular tiempo parcial
@@ -606,7 +711,14 @@ function AppContent() {
       clearTimeout(recentReadTimer);
       clearInterval(readingInterval);
     };
-  }, [selectedBook, selectedChapter, addFlashView, convertToRecentRead, addReadingTime, INACTIVITY_TIMEOUT]);
+  }, [
+    selectedBook,
+    selectedChapter,
+    addFlashView,
+    convertToRecentRead,
+    addReadingTime,
+    INACTIVITY_TIMEOUT,
+  ]);
 
   // Mostrar modal de resumen de racha al abrir la app (después del onboarding)
   useEffect(() => {
@@ -616,7 +728,7 @@ function AppContent() {
     ) {
       const status = getStreakStatus();
       // Mostrar automáticamente si la racha está en riesgo o perdida
-      if (status === "at_risk" || status === "lost") {
+      if (status === 'at_risk' || status === 'lost') {
         setShowStreakSummary(true);
         streakSummaryShownRef.current = true;
       }
@@ -624,119 +736,171 @@ function AppContent() {
   }, [streakSettings.hasCompletedOnboarding, getStreakStatus]);
 
   const handleOpenSettings = () => {
-    setActiveScreen("settings");
+    setActiveScreen('settings');
     setDrawerVisible(false);
     setSelectedVerses([]);
   };
 
   const handleOpenSavedQuotes = () => {
-    setActiveScreen("favorites");
+    setActiveScreen('favorites');
     setDrawerVisible(false);
     setSelectedVerses([]);
   };
 
   const handleOpenReadingHistory = () => {
-    setActiveScreen("history");
+    setActiveScreen('history');
     setDrawerVisible(false);
     setSelectedVerses([]);
   };
 
   const handleOpenDevotionals = () => {
-    setActiveScreen("devotionals");
+    setActiveScreen('devotionals');
     setDrawerVisible(false);
     setSelectedVerses([]);
   };
 
   const handleSelectDevotional = useCallback((devotional: Devotional) => {
     setSelectedDevotional(devotional);
-    setActiveScreen("devotional-detail");
+    setActiveScreen('devotional-detail');
   }, []);
 
   const handleOpenStudyPlans = () => {
-    setActiveScreen("study-plans");
+    setActiveScreen('study-plans');
     setDrawerVisible(false);
     setSelectedVerses([]);
   };
 
+  const handleOpenYearlyPlans = () => {
+    setActiveScreen('yearly-plans');
+    setDrawerVisible(false);
+    setSelectedVerses([]);
+  };
+
+  const handleSelectYearlyPlan = useCallback((planId: string) => {
+    // Solo seleccionar para ver, NO activar
+    setSelectedYearlyPlanId(planId);
+    setActiveScreen('yearly-plan-detail');
+  }, []);
+
+  const handleBackFromYearlyPlanDetail = useCallback(() => {
+    setSelectedYearlyPlanId(null);
+    setActiveScreen('yearly-plans');
+  }, []);
+
+  const handleActivateYearlyPlan = useCallback(
+    async (planId: string) => {
+      // Activar/cambiar al plan seleccionado
+      await switchYearlyPlan(planId);
+    },
+    [switchYearlyPlan],
+  );
+
+  const handleStartYearlyReading = useCallback((day: number) => {
+    setSelectedYearlyDay(day);
+    setActiveScreen('yearly-plan-reading');
+  }, []);
+
+  const handleBackFromYearlyPlanReading = useCallback(() => {
+    setSelectedYearlyDay(null);
+    setActiveScreen('yearly-plan-detail');
+  }, []);
+
+  const handleNavigateToYearlyDay = useCallback((day: number) => {
+    setSelectedYearlyDay(day);
+  }, []);
+
   const handleOpenStreak = () => {
-    setActiveScreen("streak");
+    setActiveScreen('streak');
     setDrawerVisible(false);
     setSelectedVerses([]);
   };
 
   const handleOpenFavorites = () => {
-    setActiveScreen("favorites");
+    setActiveScreen('favorites');
     setDrawerVisible(false);
     setSelectedVerses([]);
   };
 
   const handleSelectPlan = useCallback((planId: string) => {
     setSelectedPlanId(planId);
-    setActiveScreen("study-plan-detail");
+    setActiveScreen('study-plan-detail');
   }, []);
 
-  const handleStartReading = useCallback((planId: string, sectionId: string) => {
-    setSelectedPlanId(planId);
-    setSelectedSectionId(sectionId);
-    setActiveScreen("study-plan-reading");
-  }, []);
+  const handleStartReading = useCallback(
+    (planId: string, sectionId: string) => {
+      setSelectedPlanId(planId);
+      setSelectedSectionId(sectionId);
+      setActiveScreen('study-plan-reading');
+    },
+    [],
+  );
 
   const handleBackFromStudyPlanDetail = useCallback(() => {
-    setActiveScreen("study-plans");
+    setActiveScreen('study-plans');
     setSelectedPlanId(null);
   }, []);
 
   const handleBackFromStudyPlanReading = useCallback(() => {
-    setActiveScreen("study-plan-detail");
+    setActiveScreen('study-plan-detail');
     setSelectedSectionId(null);
   }, []);
 
-  const handleNavigateFromHistory = useCallback((bookName: string, chapterNumber: number) => {
-    // Encontrar el libro y capítulo basados en el nombre y número
-    let foundBook: DrawerBook<BookData> | null = null;
-    let foundChapterIndex = -1;
+  const handleNavigateFromHistory = useCallback(
+    (bookName: string, chapterNumber: number) => {
+      // Encontrar el libro y capítulo basados en el nombre y número
+      let foundBook: DrawerBook<BookData> | null = null;
+      let foundChapterIndex = -1;
 
-    for (const section of sections) {
-      const book = section.books.find(b => b.label === bookName);
-      if (book) {
-        foundBook = book;
-        foundChapterIndex = book.data.chapters.findIndex(ch => parseInt(ch.name, 10) === chapterNumber);
-        break;
+      for (const section of sections) {
+        const book = section.books.find(b => b.label === bookName);
+        if (book) {
+          foundBook = book;
+          foundChapterIndex = book.data.chapters.findIndex(
+            ch => parseInt(ch.name, 10) === chapterNumber,
+          );
+          break;
+        }
       }
-    }
 
-    if (!foundBook || foundChapterIndex === -1) {
-      return;
-    }
+      if (!foundBook || foundChapterIndex === -1) {
+        return;
+      }
 
-    // Navegar al libro y capítulo
-    setSelectedBook(foundBook);
-    setSelectedChapterIndex(foundChapterIndex);
-    setActiveScreen("reader");
-    setSelectedVerses([]);
-  }, [sections]);
+      // Navegar al libro y capítulo
+      setSelectedBook(foundBook);
+      setSelectedChapterIndex(foundChapterIndex);
+      setActiveScreen('reader');
+      setSelectedVerses([]);
+    },
+    [sections],
+  );
 
-  const handleNavigateToFavorite = useCallback((bookId: string, chapterName: string) => {
-    // Encontrar el libro correcto en las secciones
-    const section = sections.find(s => s.books.some(b => b.id === bookId));
-    if (!section) return;
+  const handleNavigateToFavorite = useCallback(
+    (bookId: string, chapterName: string) => {
+      // Encontrar el libro correcto en las secciones
+      const section = sections.find(s => s.books.some(b => b.id === bookId));
+      if (!section) return;
 
-    const book = section.books.find(b => b.id === bookId);
-    if (!book) return;
+      const book = section.books.find(b => b.id === bookId);
+      if (!book) return;
 
-    // Encontrar el índice del capítulo
-    const chapterIndex = book.data.chapters.findIndex(ch => ch.name === chapterName);
-    if (chapterIndex === -1) return;
+      // Encontrar el índice del capítulo
+      const chapterIndex = book.data.chapters.findIndex(
+        ch => ch.name === chapterName,
+      );
+      if (chapterIndex === -1) return;
 
-    // Navegar al libro y capítulo
-    setSelectedBook(book);
-    setSelectedChapterIndex(chapterIndex);
-    setActiveScreen("reader");
-    setSelectedVerses([]);
-  }, [sections]);
+      // Navegar al libro y capítulo
+      setSelectedBook(book);
+      setSelectedChapterIndex(chapterIndex);
+      setActiveScreen('reader');
+      setSelectedVerses([]);
+    },
+    [sections],
+  );
 
   const handleBackToReader = () => {
-    setActiveScreen("reader");
+    setActiveScreen('reader');
     setSelectedVerses([]);
     setMenuVisible(false);
   };
@@ -744,7 +908,7 @@ function AppContent() {
   const toggleSearchDrawer = useCallback(() => {
     const toValue = isSearchDrawerExpanded ? COLLAPSED_HEIGHT : EXPANDED_HEIGHT;
     setIsSearchDrawerExpanded(!isSearchDrawerExpanded);
-    
+
     Animated.spring(searchDrawerHeight, {
       toValue,
       useNativeDriver: false,
@@ -754,36 +918,39 @@ function AppContent() {
 
     if (isSearchDrawerExpanded) {
       // Limpiar búsqueda al cerrar
-      setBookSearchQuery("");
+      setBookSearchQuery('');
     }
   }, [isSearchDrawerExpanded, searchDrawerHeight]);
 
-  const handleBookSearchResultSelect = useCallback((chapterIndex: number, verseIndex?: number) => {
-    if (chapterIndex === selectedChapterIndex && verseIndex !== undefined) {
-      // Mismo capítulo: hacer scroll al versículo
-      toggleSearchDrawer(); // Cerrar el drawer primero
-      
-      // Esperar a que se cierre el drawer antes de hacer scroll
-      setTimeout(() => {
-        if (chapterScrollViewRef.current) {
-          // Calcular posición aproximada basada en el índice del versículo
-          // Cada versículo tiene aproximadamente 80-100px de altura
-          const estimatedVerseHeight = 90; // Altura promedio por versículo
-          const headerHeight = 50; // Altura del header del capítulo
-          const targetY = headerHeight + (verseIndex * estimatedVerseHeight);
-          
-          chapterScrollViewRef.current.scrollTo({
-            y: Math.max(0, targetY - 100), // Offset de 100px para mejor visualización
-            animated: true,
-          });
-        }
-      }, 350); // Esperar a que termine la animación del drawer
-    } else {
-      // Diferente capítulo: cambiar de capítulo
-      setSelectedChapterIndex(chapterIndex);
-      toggleSearchDrawer(); // Cerrar el drawer
-    }
-  }, [selectedChapterIndex, toggleSearchDrawer]);
+  const handleBookSearchResultSelect = useCallback(
+    (chapterIndex: number, verseIndex?: number) => {
+      if (chapterIndex === selectedChapterIndex && verseIndex !== undefined) {
+        // Mismo capítulo: hacer scroll al versículo
+        toggleSearchDrawer(); // Cerrar el drawer primero
+
+        // Esperar a que se cierre el drawer antes de hacer scroll
+        setTimeout(() => {
+          if (chapterScrollViewRef.current) {
+            // Calcular posición aproximada basada en el índice del versículo
+            // Cada versículo tiene aproximadamente 80-100px de altura
+            const estimatedVerseHeight = 90; // Altura promedio por versículo
+            const headerHeight = 50; // Altura del header del capítulo
+            const targetY = headerHeight + verseIndex * estimatedVerseHeight;
+
+            chapterScrollViewRef.current.scrollTo({
+              y: Math.max(0, targetY - 100), // Offset de 100px para mejor visualización
+              animated: true,
+            });
+          }
+        }, 350); // Esperar a que termine la animación del drawer
+      } else {
+        // Diferente capítulo: cambiar de capítulo
+        setSelectedChapterIndex(chapterIndex);
+        toggleSearchDrawer(); // Cerrar el drawer
+      }
+    },
+    [selectedChapterIndex, toggleSearchDrawer],
+  );
 
   const handleClearSelection = () => {
     setSelectedVerses([]);
@@ -793,7 +960,7 @@ function AppContent() {
     if (!isReaderScreen) {
       return;
     }
-    setSelectedVerses((prev) => {
+    setSelectedVerses(prev => {
       if (prev.includes(verseId)) {
         return prev;
       }
@@ -805,10 +972,10 @@ function AppContent() {
     if (!isSelecting) {
       return;
     }
-    setSelectedVerses((prev) =>
+    setSelectedVerses(prev =>
       prev.includes(verseId)
-        ? prev.filter((item) => item !== verseId)
-        : [...prev, verseId]
+        ? prev.filter(item => item !== verseId)
+        : [...prev, verseId],
     );
   };
 
@@ -818,12 +985,12 @@ function AppContent() {
     }
 
     const versesToSave = selectedChapter.verses
-      .filter((verse) =>
+      .filter(verse =>
         selectedVerses.includes(
-          buildVerseId(selectedBook.id, selectedChapter.name, verse.name)
-        )
+          buildVerseId(selectedBook.id, selectedChapter.name, verse.name),
+        ),
       )
-      .map((verse) => ({
+      .map(verse => ({
         verseNumber: verse.name,
         text: verse.text,
       }));
@@ -834,14 +1001,14 @@ function AppContent() {
       chapterName: selectedChapter.name,
       verses: versesToSave,
     });
-    setCommentInput("");
+    setCommentInput('');
     setCommentModalVisible(true);
   };
 
   const handleCloseSaveDialog = () => {
     setCommentModalVisible(false);
     setPendingFavorite(null);
-    setCommentInput("");
+    setCommentInput('');
   };
 
   const handleConfirmSave = () => {
@@ -849,16 +1016,18 @@ function AppContent() {
       return;
     }
 
-    const verseNumbers = pendingFavorite.verses.map((verse) => verse.verseNumber);
+    const verseNumbers = pendingFavorite.verses.map(verse => verse.verseNumber);
     const comment = commentInput.trim();
 
     addFavorite({
-      id: `${pendingFavorite.bookId}-${pendingFavorite.chapterName}-${verseNumbers.join("_")}-${Date.now()}`,
+      id: `${pendingFavorite.bookId}-${
+        pendingFavorite.chapterName
+      }-${verseNumbers.join('_')}-${Date.now()}`,
       bookName: pendingFavorite.bookName,
       chapterName: pendingFavorite.chapterName,
       verseNumbers,
       verses: pendingFavorite.verses,
-      comment: comment ? comment : "",
+      comment: comment ? comment : '',
       bookId: pendingFavorite.bookId,
     });
 
@@ -866,10 +1035,10 @@ function AppContent() {
     handleCloseSaveDialog();
 
     Alert.alert(
-      "Citas guardas",
+      'Citas guardas',
       comment
         ? `Guardaste ${verseNumbers.length} versiculo(s) con comentario.`
-        : `Guardaste ${verseNumbers.length} versiculo(s).`
+        : `Guardaste ${verseNumbers.length} versiculo(s).`,
     );
   };
 
@@ -883,17 +1052,17 @@ function AppContent() {
 
   const getSelectedVersesText = useCallback(() => {
     if (!selectedBook || !selectedChapter || !selectedVerses.length) {
-      return "";
+      return '';
     }
 
     const versesToShare = selectedChapter.verses
-      .filter((verse) =>
+      .filter(verse =>
         selectedVerses.includes(
-          buildVerseId(selectedBook.id, selectedChapter.name, verse.name)
-        )
+          buildVerseId(selectedBook.id, selectedChapter.name, verse.name),
+        ),
       )
-      .map((verse) => `${verse.name}. ${verse.text}`)
-      .join("\n");
+      .map(verse => `${verse.name}. ${verse.text}`)
+      .join('\n');
 
     return `${selectedBook.label} ${selectedChapter.name}\n\n${versesToShare}\n\nBiblia Reina-Valera 1909`;
   }, [selectedBook, selectedChapter, selectedVerses, buildVerseId]);
@@ -901,17 +1070,17 @@ function AppContent() {
   const handleShareAsText = async () => {
     try {
       const text = getSelectedVersesText();
-      
+
       await Share.open({
         message: text,
-        title: "Compartir versículos",
+        title: 'Compartir versículos',
       });
-      
+
       handleCloseShareDialog();
       setSelectedVerses([]);
     } catch (error: any) {
-      if (error?.message !== "User did not share") {
-        Alert.alert("Error", "No se pudo compartir el texto");
+      if (error?.message !== 'User did not share') {
+        Alert.alert('Error', 'No se pudo compartir el texto');
       }
       handleCloseShareDialog();
     }
@@ -920,38 +1089,41 @@ function AppContent() {
   const handleShareAsImage = async () => {
     try {
       if (!selectedBook || !selectedChapter || !selectedVerses.length) {
-        Alert.alert("Error", "No hay versículos seleccionados");
+        Alert.alert('Error', 'No hay versículos seleccionados');
         return;
       }
 
       // Activar modo de captura temporalmente
       setIsCapturingImage(true);
-      
+
       // Esperar un momento para que se renderice la vista
       setTimeout(async () => {
         try {
           if (!selectedVersesViewShotRef.current) {
-            throw new Error("ViewShot reference not available");
+            throw new Error('ViewShot reference not available');
           }
 
           // Capturar la vista como imagen
           const uri = await selectedVersesViewShotRef.current.capture?.();
-          
+
           if (!uri) {
-            throw new Error("Failed to capture image");
+            throw new Error('Failed to capture image');
           }
-          
+
           await Share.open({
             url: `file://${uri}`,
-            title: "Compartir versículos",
+            title: 'Compartir versículos',
           });
-          
+
           handleCloseShareDialog();
           setSelectedVerses([]);
         } catch (captureError: any) {
-          console.error("Error capturing image:", captureError);
-          if (captureError?.message !== "User did not share") {
-            Alert.alert("Error", "No se pudo capturar la imagen. Intenta compartir como texto.");
+          console.error('Error capturing image:', captureError);
+          if (captureError?.message !== 'User did not share') {
+            Alert.alert(
+              'Error',
+              'No se pudo capturar la imagen. Intenta compartir como texto.',
+            );
           }
           handleCloseShareDialog();
         } finally {
@@ -959,9 +1131,9 @@ function AppContent() {
         }
       }, 300);
     } catch (error: any) {
-      console.error("Error in handleShareAsImage:", error);
-      if (error?.message !== "User did not share") {
-        Alert.alert("Error", "No se pudo compartir la imagen");
+      console.error('Error in handleShareAsImage:', error);
+      if (error?.message !== 'User did not share') {
+        Alert.alert('Error', 'No se pudo compartir la imagen');
       }
       handleCloseShareDialog();
       setIsCapturingImage(false);
@@ -969,17 +1141,23 @@ function AppContent() {
   };
 
   const headerTitle = isSettingsScreen
-    ? "Configuraciones"
+    ? 'Configuraciones'
     : isStreakScreen
-    ? "Mi Racha"
+    ? 'Mi Racha'
     : isFavoritesScreen
-    ? "Citas guardas"
+    ? 'Citas guardas'
     : isHistoryScreen
-    ? "Historial de lectura"
+    ? 'Historial de lectura'
     : isDevotionalsScreen
-    ? "Devocionales"
+    ? 'Devocionales'
     : isDevotionalDetailScreen
-    ? "Devocional"
+    ? 'Devocional'
+    : isYearlyPlansScreen
+    ? 'Biblia en 1 Año'
+    : isYearlyPlanDetailScreen
+    ? 'Detalle del plan'
+    : isYearlyPlanReadingScreen
+    ? 'Lectura del día'
     : null; // Para reader screen mostramos el selector
 
   return (
@@ -1005,8 +1183,22 @@ function AppContent() {
       >
         {!isReaderScreen ? (
           <Pressable
-            accessibilityLabel="Volver al buscador"
-            onPress={handleBackToReader}
+            accessibilityLabel="Volver"
+            onPress={
+              isDevotionalDetailScreen
+                ? () => setActiveScreen('devotionals')
+                : isStudyPlanReadingScreen
+                ? handleBackFromStudyPlanReading
+                : isStudyPlanDetailScreen
+                ? handleBackFromStudyPlanDetail
+                : isYearlyPlanReadingScreen
+                ? handleBackFromYearlyPlanReading
+                : isYearlyPlanDetailScreen
+                ? handleBackFromYearlyPlanDetail
+                : isYearlyPlansScreen
+                ? handleBackToReader
+                : handleBackToReader
+            }
             style={styles.actionButton}
           >
             <ChevronLeft size={24} color={colors.menuIcon} />
@@ -1025,9 +1217,15 @@ function AppContent() {
             onPress={() => setDrawerVisible(true)}
             style={styles.menuButton}
           >
-            <View style={[styles.menuBar, { backgroundColor: colors.menuIcon }]} />
-            <View style={[styles.menuBar, { backgroundColor: colors.menuIcon }]} />
-            <View style={[styles.menuBar, { backgroundColor: colors.menuIcon }]} />
+            <View
+              style={[styles.menuBar, { backgroundColor: colors.menuIcon }]}
+            />
+            <View
+              style={[styles.menuBar, { backgroundColor: colors.menuIcon }]}
+            />
+            <View
+              style={[styles.menuBar, { backgroundColor: colors.menuIcon }]}
+            />
           </Pressable>
         )}
 
@@ -1039,8 +1237,14 @@ function AppContent() {
             onPress={() => setBibleVersionPickerVisible(true)}
             style={styles.versionSelector}
           >
-            <Text style={styles.versionSelectorText}>{selectedBibleVersion}</Text>
-            <ChevronDown size={16} color={colors.menuIcon} style={{ marginLeft: 4 }} />
+            <Text style={styles.versionSelectorText}>
+              {selectedBibleVersion}
+            </Text>
+            <ChevronDown
+              size={16}
+              color={colors.menuIcon}
+              style={{ marginLeft: 4 }}
+            />
           </Pressable>
         )}
 
@@ -1066,9 +1270,15 @@ function AppContent() {
               onPress={handleToggleMenu}
               style={styles.menuTrigger}
             >
-              <View style={[styles.menuDot, { backgroundColor: colors.menuIcon }]} />
-              <View style={[styles.menuDot, { backgroundColor: colors.menuIcon }]} />
-              <View style={[styles.menuDot, { backgroundColor: colors.menuIcon }]} />
+              <View
+                style={[styles.menuDot, { backgroundColor: colors.menuIcon }]}
+              />
+              <View
+                style={[styles.menuDot, { backgroundColor: colors.menuIcon }]}
+              />
+              <View
+                style={[styles.menuDot, { backgroundColor: colors.menuIcon }]}
+              />
             </Pressable>
           </View>
         )}
@@ -1101,6 +1311,25 @@ function AppContent() {
           bibleData={bibleContent as BibleData}
           onBack={handleBackFromStudyPlanReading}
         />
+      ) : isYearlyPlansScreen ? (
+        <YearlyPlansScreen onSelectPlan={handleSelectYearlyPlan} />
+      ) : isYearlyPlanDetailScreen && selectedYearlyPlanId ? (
+        <YearlyPlanDetailScreen
+          planId={selectedYearlyPlanId}
+          onBack={handleBackFromYearlyPlanDetail}
+          onStartReading={handleStartYearlyReading}
+          onActivatePlan={handleActivateYearlyPlan}
+        />
+      ) : isYearlyPlanReadingScreen &&
+        selectedYearlyPlanId &&
+        selectedYearlyDay ? (
+        <YearlyPlanReadingScreen
+          planId={selectedYearlyPlanId}
+          day={selectedYearlyDay}
+          bibleData={bibleContent as BibleData}
+          onBack={handleBackFromYearlyPlanReading}
+          onNavigateToDay={handleNavigateToYearlyDay}
+        />
       ) : !selectedBook ? (
         <SearchScreen
           bibleData={bibleContent as BibleData}
@@ -1109,6 +1338,7 @@ function AppContent() {
           onOpenReadingHistory={handleOpenReadingHistory}
           onOpenDevotionals={handleOpenDevotionals}
           onOpenStudyPlans={handleOpenStudyPlans}
+          onOpenYearlyPlans={handleOpenYearlyPlans}
           onOpenStreak={handleOpenStreak}
           onOpenFavorites={handleOpenFavorites}
         />
@@ -1162,35 +1392,46 @@ function AppContent() {
           >
             <ScrollView
               ref={chapterScrollViewRef}
-              style={[styles.chapterContent, { backgroundColor: colors.backgroundPrimary }]}
+              style={[
+                styles.chapterContent,
+                { backgroundColor: colors.backgroundPrimary },
+              ]}
               contentContainerStyle={styles.chapterContentContainer}
               showsVerticalScrollIndicator={false}
               onScroll={registerActivity}
               onTouchStart={registerActivity}
               scrollEventThrottle={1000}
             >
-              <ViewShot ref={viewShotRef} options={{ format: "jpg", quality: 0.9 }}>
-                <View style={[styles.shareableContent, { backgroundColor: colors.backgroundPrimary }]}>
+              <ViewShot
+                ref={viewShotRef}
+                options={{ format: 'jpg', quality: 0.9 }}
+              >
+                <View
+                  style={[
+                    styles.shareableContent,
+                    { backgroundColor: colors.backgroundPrimary },
+                  ]}
+                >
                   <Text style={styles.chapterHeading}>
                     {selectedBook.label} {selectedChapter.name}
                   </Text>
-                  {selectedChapter.verses.map((verse) => {
+                  {selectedChapter.verses.map(verse => {
                     const verseId = buildVerseId(
                       selectedBook.id,
                       selectedChapter.name,
-                      verse.name
+                      verse.name,
                     );
                     const verseFavorites = getVerseFavorites(
                       selectedBook.id,
                       selectedChapter.name,
-                      verse.name
+                      verse.name,
                     );
                     const hasFavorite = verseFavorites.length > 0;
                     const favoriteComments = verseFavorites
-                      .map((favorite) => favorite.comment)
+                      .map(favorite => favorite.comment)
                       .filter(Boolean) as string[];
                     const isSelected = selectedVerses.includes(verseId);
-                    
+
                     return (
                       <Pressable
                         key={verseId}
@@ -1221,10 +1462,12 @@ function AppContent() {
                           >
                             {verse.text}
                           </Text>
-                          {!isSelected && hasFavorite && favoriteComments.length ? (
+                          {!isSelected &&
+                          hasFavorite &&
+                          favoriteComments.length ? (
                             <View style={styles.favoriteTag}>
                               <Text style={styles.favoriteTagText}>
-                                {favoriteComments.join(" / ")}
+                                {favoriteComments.join(' / ')}
                               </Text>
                             </View>
                           ) : null}
@@ -1320,7 +1563,11 @@ function AppContent() {
                 onPress={handleOpenShareDialog}
                 style={styles.selectionAction}
               >
-                <Share2 size={18} color={colors.accent} style={{ marginRight: 6 }} />
+                <Share2
+                  size={18}
+                  color={colors.accent}
+                  style={{ marginRight: 6 }}
+                />
                 <Text style={styles.selectionActionText}>Compartir</Text>
               </Pressable>
               <Pressable
@@ -1328,7 +1575,11 @@ function AppContent() {
                 onPress={handleOpenSaveDialog}
                 style={styles.selectionAction}
               >
-                <Heart size={18} color={colors.accent} style={{ marginRight: 6 }} />
+                <Heart
+                  size={18}
+                  color={colors.accent}
+                  style={{ marginRight: 6 }}
+                />
                 <Text style={styles.selectionActionText}>Guardar</Text>
               </Pressable>
               {isAdmin && selectedVerses.length === 1 && (
@@ -1338,18 +1589,23 @@ function AppContent() {
                     if (!selectedBook || !selectedChapter) return;
                     const verse = selectedChapter.verses.find(v =>
                       selectedVerses.includes(
-                        buildVerseId(selectedBook.id, selectedChapter.name, v.name)
-                      )
+                        buildVerseId(
+                          selectedBook.id,
+                          selectedChapter.name,
+                          v.name,
+                        ),
+                      ),
                     );
                     if (verse) {
                       addVerseToCuratedList({
                         bookName: selectedBook.label,
                         bookIndex: sections.findIndex(s =>
-                          s.books.some(b => b.id === selectedBook.id)
+                          s.books.some(b => b.id === selectedBook.id),
                         ),
-                        testamentName: sections.find(s =>
-                          s.books.some(b => b.id === selectedBook.id)
-                        )?.title ?? '',
+                        testamentName:
+                          sections.find(s =>
+                            s.books.some(b => b.id === selectedBook.id),
+                          )?.title ?? '',
                         chapterName: selectedChapter.name,
                         chapterIndex: selectedChapterIndex,
                         verseName: verse.name,
@@ -1361,7 +1617,11 @@ function AppContent() {
                   }}
                   style={styles.selectionAction}
                 >
-                  <Sparkles size={18} color={colors.accent} style={{ marginRight: 6 }} />
+                  <Sparkles
+                    size={18}
+                    color={colors.accent}
+                    style={{ marginRight: 6 }}
+                  />
                   <Text style={styles.selectionActionText}>Al Día</Text>
                 </Pressable>
               )}
@@ -1377,7 +1637,7 @@ function AppContent() {
             onPress={handleCloseSaveDialog}
           />
           <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.modalContainer}
           >
             <View
@@ -1391,11 +1651,13 @@ function AppContent() {
             >
               <Text style={styles.modalTitle}>Guardar cita</Text>
               <Text style={styles.modalSubtitle}>
-                {pendingFavorite.bookName} capitulo {pendingFavorite.chapterName}
+                {pendingFavorite.bookName} capitulo{' '}
+                {pendingFavorite.chapterName}
               </Text>
               <Text style={styles.modalSubtitle}>
-                Versos {formatVerseNumbersRange(
-                  pendingFavorite.verses.map((verse) => verse.verseNumber)
+                Versos{' '}
+                {formatVerseNumbersRange(
+                  pendingFavorite.verses.map(verse => verse.verseNumber),
                 )}
               </Text>
               <Text style={styles.modalHint}>Comentario (opcional)</Text>
@@ -1457,18 +1719,24 @@ function AppContent() {
               <Text style={styles.modalSubtitle}>
                 ¿Cómo deseas compartir los versículos?
               </Text>
-              
+
               <Pressable
                 accessibilityLabel="Compartir como texto"
                 onPress={handleShareAsText}
                 style={[
                   styles.shareOptionButton,
-                  { backgroundColor: colors.surfaceMuted }
+                  { backgroundColor: colors.surfaceMuted },
                 ]}
               >
-                <FileText size={32} color={colors.bodyText} style={{ marginRight: 12 }} />
+                <FileText
+                  size={32}
+                  color={colors.bodyText}
+                  style={{ marginRight: 12 }}
+                />
                 <View style={styles.shareOptionContent}>
-                  <Text style={styles.shareOptionTitle}>Compartir como texto</Text>
+                  <Text style={styles.shareOptionTitle}>
+                    Compartir como texto
+                  </Text>
                   <Text style={styles.shareOptionDescription}>
                     Comparte los versículos en formato de texto plano
                   </Text>
@@ -1490,22 +1758,27 @@ function AppContent() {
                   color={colors.bodyText}
                   style={{
                     marginRight: 12,
-                    opacity: !canShareAsImage ? 0.4 : 1
+                    opacity: !canShareAsImage ? 0.4 : 1,
                   }}
                 />
                 <View style={styles.shareOptionContent}>
-                  <Text style={[
-                    styles.shareOptionTitle,
-                    !canShareAsImage && { opacity: 0.5 }
-                  ]}>Compartir como imagen</Text>
-                  <Text style={[
-                    styles.shareOptionDescription,
-                    !canShareAsImage && { opacity: 0.5 }
-                  ]}>
+                  <Text
+                    style={[
+                      styles.shareOptionTitle,
+                      !canShareAsImage && { opacity: 0.5 },
+                    ]}
+                  >
+                    Compartir como imagen
+                  </Text>
+                  <Text
+                    style={[
+                      styles.shareOptionDescription,
+                      !canShareAsImage && { opacity: 0.5 },
+                    ]}
+                  >
                     {canShareAsImage
-                      ? "Comparte los versículos como una imagen"
-                      : `Solo disponible para ${MAX_VERSES_FOR_IMAGE} versículos o menos. Tienes ${selectedVerses.length} seleccionados.`
-                    }
+                      ? 'Comparte los versículos como una imagen'
+                      : `Solo disponible para ${MAX_VERSES_FOR_IMAGE} versículos o menos. Tienes ${selectedVerses.length} seleccionados.`}
                   </Text>
                 </View>
               </Pressable>
@@ -1539,7 +1812,11 @@ function AppContent() {
                 },
               ]}
             >
-              <Search size={18} color={colors.accentText} style={{ marginRight: 6 }} />
+              <Search
+                size={18}
+                color={colors.accentText}
+                style={{ marginRight: 6 }}
+              />
               <Text style={styles.searchTabText}>Buscar</Text>
             </Pressable>
           )}
@@ -1564,14 +1841,13 @@ function AppContent() {
                 borderTopColor: colors.divider,
               },
             ]}
-            pointerEvents={isSearchDrawerExpanded ? "auto" : "none"}
+            pointerEvents={isSearchDrawerExpanded ? 'auto' : 'none'}
           >
             {/* Handle para arrastrar */}
-            <Pressable
-              onPress={toggleSearchDrawer}
-              style={styles.drawerHandle}
-            >
-              <View style={[styles.handleBar, { backgroundColor: colors.divider }]} />
+            <Pressable onPress={toggleSearchDrawer} style={styles.drawerHandle}>
+              <View
+                style={[styles.handleBar, { backgroundColor: colors.divider }]}
+              />
             </Pressable>
 
             {/* Contenido del drawer */}
@@ -1590,53 +1866,57 @@ function AppContent() {
       )}
 
       {/* ViewShot oculto para capturar solo los versículos seleccionados */}
-      {isCapturingImage && selectedBook && selectedChapter && selectedVerses.length > 0 ? (
-        <View style={{ position: 'absolute', left: -9999, top: -9999, opacity: 0 }}>
-          <ViewShot 
-            ref={selectedVersesViewShotRef} 
-            options={{ format: "jpg", quality: 0.9, result: 'tmpfile' }}
+      {isCapturingImage &&
+      selectedBook &&
+      selectedChapter &&
+      selectedVerses.length > 0 ? (
+        <View
+          style={{ position: 'absolute', left: -9999, top: -9999, opacity: 0 }}
+        >
+          <ViewShot
+            ref={selectedVersesViewShotRef}
+            options={{ format: 'jpg', quality: 0.9, result: 'tmpfile' }}
             style={{ width: 400, backgroundColor: colors.backgroundPrimary }}
           >
-            <View style={[styles.shareableContent, { backgroundColor: colors.backgroundPrimary, width: 400 }]}>
+            <View
+              style={[
+                styles.shareableContent,
+                { backgroundColor: colors.backgroundPrimary, width: 400 },
+              ]}
+            >
               <Text style={styles.chapterHeading}>
                 {selectedBook.label} {selectedChapter.name}
               </Text>
-              {selectedChapter.verses.map((verse) => {
+              {selectedChapter.verses.map(verse => {
                 const verseId = buildVerseId(
                   selectedBook.id,
                   selectedChapter.name,
-                  verse.name
+                  verse.name,
                 );
                 const isSelected = selectedVerses.includes(verseId);
-                
+
                 // Solo mostrar versículos seleccionados
                 if (!isSelected) {
                   return null;
                 }
-                
+
                 return (
                   <View
                     key={verseId}
                     style={[
                       styles.verseRow,
                       styles.verseRowSelected,
-                      { marginBottom: 8 }
+                      { marginBottom: 8 },
                     ]}
                   >
                     <Text
-                      style={[
-                        styles.verseNumber,
-                        styles.verseNumberSelected,
-                      ]}
+                      style={[styles.verseNumber, styles.verseNumberSelected]}
                     >
                       {verse.name}
                     </Text>
                     <View style={styles.verseBody}>
                       <Text
-                        style={[
-                          styles.verseText,
-                          styles.verseTextSelected,
-                        ]}
+                        style={[styles.verseText, styles.verseTextSelected]}
                       >
                         {verse.text}
                       </Text>
@@ -1645,10 +1925,12 @@ function AppContent() {
                 );
               })}
               <View style={[styles.shareFooterContainer, { marginTop: 20 }]}>
-                <BookOpen size={14} color={colors.placeholderText} style={{ marginRight: 6 }} />
-                <Text style={styles.shareFooter}>
-                  Biblia Reina-Valera 1909
-                </Text>
+                <BookOpen
+                  size={14}
+                  color={colors.placeholderText}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={styles.shareFooter}>Biblia Reina-Valera 1909</Text>
               </View>
             </View>
           </ViewShot>
@@ -1677,12 +1959,12 @@ function AppContent() {
               <Pressable
                 accessibilityLabel="Biblia Reina-Valera 1909"
                 onPress={() => {
-                  setSelectedBibleVersion("Reina-Valera 1909");
+                  setSelectedBibleVersion('Reina-Valera 1909');
                   setBibleVersionPickerVisible(false);
                 }}
                 style={[
                   styles.versionOption,
-                  selectedBibleVersion === "Reina-Valera 1909" && {
+                  selectedBibleVersion === 'Reina-Valera 1909' && {
                     backgroundColor: colors.accentSubtle,
                   },
                 ]}
@@ -1690,15 +1972,15 @@ function AppContent() {
                 <Text
                   style={[
                     styles.versionOptionText,
-                    selectedBibleVersion === "Reina-Valera 1909" && {
+                    selectedBibleVersion === 'Reina-Valera 1909' && {
                       color: colors.accent,
-                      fontWeight: "700",
+                      fontWeight: '700',
                     },
                   ]}
                 >
                   Reina-Valera 1909
                 </Text>
-                {selectedBibleVersion === "Reina-Valera 1909" && (
+                {selectedBibleVersion === 'Reina-Valera 1909' && (
                   <View
                     style={[
                       styles.versionCheckmark,
@@ -1758,31 +2040,43 @@ function AppContent() {
       />
 
       {/* Modal de celebración: día 1 (inicio de racha) O cuando hay gemas */}
-      {pendingReward && (pendingReward.totalGemsEarned > 0 || pendingReward.newStreak === 1) && (
-        <DailyCompletionModal
-          visible={true}
-          onClose={clearPendingReward}
-          reward={pendingReward}
-        />
-      )}
+      {pendingReward &&
+        (pendingReward.totalGemsEarned > 0 ||
+          pendingReward.newStreak === 1) && (
+          <DailyCompletionModal
+            visible={true}
+            onClose={clearPendingReward}
+            reward={pendingReward}
+          />
+        )}
 
       {/* Toast pequeño cuando completa el día SIN gemas (excepto día 1) */}
-      {pendingReward && pendingReward.totalGemsEarned === 0 && pendingReward.newStreak > 1 && (
-        <Toast
-          visible={true}
-          message={`🔥 ¡Día ${pendingReward.newStreak} completado! ${pendingReward.daysToNextInterval > 0 ? `(${pendingReward.daysToNextInterval} días para +10 gemas)` : ""}`}
-          onHide={clearPendingReward}
-          duration={3000}
-          icon={<Flame size={16} color="#FF6B35" fill="#FF6B35" />}
-          borderColor="#FF6B35"
-        />
-      )}
+      {pendingReward &&
+        pendingReward.totalGemsEarned === 0 &&
+        pendingReward.newStreak > 1 && (
+          <Toast
+            visible={true}
+            message={`🔥 ¡Día ${pendingReward.newStreak} completado! ${
+              pendingReward.daysToNextInterval > 0
+                ? `(${pendingReward.daysToNextInterval} días para +10 gemas)`
+                : ''
+            }`}
+            onHide={clearPendingReward}
+            duration={3000}
+            icon={<Flame size={16} color="#FF6B35" fill="#FF6B35" />}
+            borderColor="#FF6B35"
+          />
+        )}
 
       {/* Toast cuando se usaron protectores automáticamente */}
       {autoFreezesUsed > 0 && (
         <Toast
           visible={true}
-          message={`🛡️ ${autoFreezesUsed === 1 ? 'Se usó 1 protector automáticamente' : `Se usaron ${autoFreezesUsed} protectores automáticamente`} para mantener tu racha`}
+          message={`🛡️ ${
+            autoFreezesUsed === 1
+              ? 'Se usó 1 protector automáticamente'
+              : `Se usaron ${autoFreezesUsed} protectores automáticamente`
+          } para mantener tu racha`}
           onHide={clearAutoFreezesUsed}
           duration={4000}
           icon={<Shield size={16} color="#87CEEB" />}
@@ -1796,7 +2090,7 @@ function AppContent() {
           <Pressable
             style={[
               styles.debugButton,
-              { bottom: insets.bottom + 80, backgroundColor: colors.accent }
+              { bottom: insets.bottom + 80, backgroundColor: colors.accent },
             ]}
             onPress={() => setDebugMenuVisible(true)}
           >
@@ -1822,37 +2116,55 @@ function AppContent() {
                   <Text style={styles.modalTitle}>Debug: Probar Modales</Text>
 
                   <Pressable
-                    style={[styles.debugMenuItem, { backgroundColor: colors.surfaceMuted }]}
+                    style={[
+                      styles.debugMenuItem,
+                      { backgroundColor: colors.surfaceMuted },
+                    ]}
                     onPress={() => {
                       setDebugMenuVisible(false);
                       setDebugStreakOnboarding(true);
                     }}
                   >
-                    <Text style={styles.debugMenuItemText}>StreakOnboardingModal</Text>
+                    <Text style={styles.debugMenuItemText}>
+                      StreakOnboardingModal
+                    </Text>
                   </Pressable>
 
                   <Pressable
-                    style={[styles.debugMenuItem, { backgroundColor: colors.surfaceMuted }]}
+                    style={[
+                      styles.debugMenuItem,
+                      { backgroundColor: colors.surfaceMuted },
+                    ]}
                     onPress={() => {
                       setDebugMenuVisible(false);
                       setDebugStreakSummary(true);
                     }}
                   >
-                    <Text style={styles.debugMenuItemText}>StreakSummaryModal</Text>
+                    <Text style={styles.debugMenuItemText}>
+                      StreakSummaryModal
+                    </Text>
                   </Pressable>
 
                   <Pressable
-                    style={[styles.debugMenuItem, { backgroundColor: colors.surfaceMuted }]}
+                    style={[
+                      styles.debugMenuItem,
+                      { backgroundColor: colors.surfaceMuted },
+                    ]}
                     onPress={() => {
                       setDebugMenuVisible(false);
                       setDebugDailyCompletion(true);
                     }}
                   >
-                    <Text style={styles.debugMenuItemText}>DailyCompletionModal</Text>
+                    <Text style={styles.debugMenuItemText}>
+                      DailyCompletionModal
+                    </Text>
                   </Pressable>
 
                   <Pressable
-                    style={[styles.debugMenuItem, { backgroundColor: colors.surfaceMuted }]}
+                    style={[
+                      styles.debugMenuItem,
+                      { backgroundColor: colors.surfaceMuted },
+                    ]}
                     onPress={() => {
                       setDebugMenuVisible(false);
                       setDebugEndOfBook(true);
@@ -1862,7 +2174,10 @@ function AppContent() {
                   </Pressable>
 
                   <Pressable
-                    style={[styles.debugMenuItem, { backgroundColor: colors.surfaceMuted }]}
+                    style={[
+                      styles.debugMenuItem,
+                      { backgroundColor: colors.surfaceMuted },
+                    ]}
                     onPress={() => {
                       setDebugMenuVisible(false);
                       setShareModalVisible(true);
@@ -1872,13 +2187,18 @@ function AppContent() {
                   </Pressable>
 
                   <Pressable
-                    style={[styles.debugMenuItem, { backgroundColor: colors.surfaceMuted }]}
+                    style={[
+                      styles.debugMenuItem,
+                      { backgroundColor: colors.surfaceMuted },
+                    ]}
                     onPress={() => {
                       setDebugMenuVisible(false);
                       setBibleVersionPickerVisible(true);
                     }}
                   >
-                    <Text style={styles.debugMenuItemText}>VersionPickerModal</Text>
+                    <Text style={styles.debugMenuItemText}>
+                      VersionPickerModal
+                    </Text>
                   </Pressable>
 
                   <Pressable
@@ -1916,10 +2236,12 @@ function AppContent() {
               onClose={() => setDebugDailyCompletion(false)}
               reward={{
                 newStreak: 7,
-                baseGems: 5,
-                bonusGems: 10,
+                intervalGemsEarned: 10,
+                goalCompleted: true,
+                goalTitle: '7 días',
+                goalGemsEarned: 5,
                 totalGemsEarned: 15,
-                isIntervalBonus: true,
+                daysToNextGoal: 0,
                 daysToNextInterval: 0,
               }}
             />
@@ -1945,8 +2267,8 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       backgroundColor: colors.backgroundPrimary,
     },
     header: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       paddingHorizontal: 20,
       paddingVertical: 16,
       borderBottomWidth: StyleSheet.hairlineWidth,
@@ -1954,21 +2276,21 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     menuButton: {
       width: 44,
       height: 44,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       marginRight: 12,
     },
     actionButton: {
       width: 64,
       height: 44,
-      justifyContent: "center",
-      alignItems: "flex-start",
+      justifyContent: 'center',
+      alignItems: 'flex-start',
       paddingHorizontal: 8,
       marginRight: 12,
     },
     backButtonText: {
       fontSize: getFontSize(14),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.menuIcon,
     },
     actionPlaceholder: {
@@ -1977,21 +2299,21 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       marginLeft: 12,
     },
     rightActionsContainer: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     homeButton: {
       width: 44,
       height: 44,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       marginRight: 8,
     },
     menuTrigger: {
       width: 44,
       height: 44,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       marginLeft: 12,
       paddingVertical: 6,
     },
@@ -2010,26 +2332,26 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     headerTitle: {
       flex: 1,
       fontSize: getFontSize(18),
-      fontWeight: "600",
-      textAlign: "center",
+      fontWeight: '600',
+      textAlign: 'center',
       color: colors.headerText,
     },
     versionSelector: {
       flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
       paddingVertical: 8,
     },
     versionSelectorText: {
       fontSize: getFontSize(16),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.headerText,
     },
     versionOption: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
       paddingHorizontal: 16,
       paddingVertical: 14,
       borderRadius: 10,
@@ -2038,7 +2360,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     versionOptionText: {
       fontSize: getFontSize(15),
       color: colors.bodyText,
-      fontWeight: "500",
+      fontWeight: '500',
     },
     versionCheckmark: {
       width: 8,
@@ -2077,13 +2399,13 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     },
     chapterHeading: {
       fontSize: getFontSize(20),
-      fontWeight: "600",
+      fontWeight: '600',
       marginBottom: 16,
       color: colors.headerText,
     },
     verseRow: {
-      flexDirection: "row",
-      alignItems: "flex-start",
+      flexDirection: 'row',
+      alignItems: 'flex-start',
       marginBottom: 12,
       borderRadius: 12,
       paddingHorizontal: 8,
@@ -2097,7 +2419,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     },
     verseNumber: {
       width: 28,
-      fontWeight: "600",
+      fontWeight: '600',
       fontSize: getFontSize(14),
       lineHeight: Math.round(getFontSize(14) * 1.2),
       color: colors.verseNumber,
@@ -2113,14 +2435,14 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     },
     verseTextSelected: {
       color: colors.bodyText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     verseBody: {
       flex: 1,
       gap: 6,
     },
     favoriteTag: {
-      alignSelf: "flex-start",
+      alignSelf: 'flex-start',
       paddingHorizontal: 10,
       paddingVertical: 4,
       borderRadius: 999,
@@ -2129,35 +2451,35 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     favoriteTagText: {
       fontSize: getFontSize(12),
       color: colors.accent,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     placeholder: {
       flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       paddingHorizontal: 24,
     },
     placeholderText: {
       fontSize: getFontSize(16),
-      textAlign: "center",
+      textAlign: 'center',
       color: colors.placeholderText,
     },
     menuPortal: {
       ...StyleSheet.absoluteFillObject,
-      justifyContent: "flex-start",
-      alignItems: "flex-end",
+      justifyContent: 'flex-start',
+      alignItems: 'flex-end',
     },
     menuBackdrop: {
       ...StyleSheet.absoluteFillObject,
     },
     menuDropdown: {
-      position: "absolute",
+      position: 'absolute',
       right: 16,
       borderRadius: 12,
       paddingVertical: 8,
       paddingHorizontal: 4,
       borderWidth: StyleSheet.hairlineWidth,
-      shadowColor: "#000",
+      shadowColor: '#000',
       shadowOpacity: 0.15,
       shadowRadius: 8,
       shadowOffset: { width: 0, height: 4 },
@@ -2174,21 +2496,21 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     },
     selectionBarWrapper: {
       ...StyleSheet.absoluteFillObject,
-      justifyContent: "flex-end",
-      alignItems: "center",
+      justifyContent: 'flex-end',
+      alignItems: 'center',
     },
     selectionBar: {
-      position: "absolute",
+      position: 'absolute',
       left: 20,
       right: 20,
       borderRadius: 16,
       paddingVertical: 12,
       paddingHorizontal: 20,
       borderWidth: StyleSheet.hairlineWidth,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      shadowColor: "#000",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      shadowColor: '#000',
       shadowOpacity: 0.12,
       shadowRadius: 10,
       shadowOffset: { width: 0, height: 4 },
@@ -2197,44 +2519,44 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     selectionCount: {
       fontSize: getFontSize(14),
       color: colors.bodyText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     selectionActions: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       gap: 16,
     },
     selectionAction: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
     },
     selectionActionText: {
       fontSize: getFontSize(15),
       color: colors.accent,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     modalWrapper: {
       ...StyleSheet.absoluteFillObject,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     modalBackdrop: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(0, 0, 0, 0.4)",
+      backgroundColor: 'rgba(0, 0, 0, 0.4)',
     },
     modalContainer: {
       ...StyleSheet.absoluteFillObject,
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: 'center',
+      alignItems: 'center',
       paddingHorizontal: 24,
     },
     modalCard: {
-      width: "100%",
+      width: '100%',
       borderRadius: 20,
       padding: 20,
       borderWidth: StyleSheet.hairlineWidth,
       gap: 12,
-      shadowColor: "#000",
+      shadowColor: '#000',
       shadowOpacity: 0.18,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 6 },
@@ -2243,7 +2565,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     modalTitle: {
       fontSize: getFontSize(18),
       color: colors.headerText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     modalSubtitle: {
       fontSize: getFontSize(13),
@@ -2252,7 +2574,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     modalHint: {
       fontSize: getFontSize(14),
       color: colors.bodyText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     modalInput: {
       borderWidth: StyleSheet.hairlineWidth,
@@ -2263,9 +2585,9 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       minHeight: 90,
     },
     modalActions: {
-      flexDirection: "row",
-      justifyContent: "flex-end",
-      alignItems: "center",
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      alignItems: 'center',
       gap: 12,
       marginTop: 4,
     },
@@ -2280,7 +2602,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     modalButtonSecondaryText: {
       fontSize: getFontSize(14),
       color: colors.bodyText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     modalButtonPrimary: {
       paddingHorizontal: 18,
@@ -2291,13 +2613,13 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     modalButtonPrimaryText: {
       fontSize: getFontSize(14),
       color: colors.accentText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     searchTab: {
-      position: "absolute",
+      position: 'absolute',
       right: 20,
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       paddingHorizontal: 16,
       paddingVertical: 12,
       borderRadius: 24,
@@ -2309,23 +2631,23 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     searchTabText: {
       fontSize: getFontSize(14),
       color: colors.accentText,
-      fontWeight: "600",
+      fontWeight: '600',
     },
     searchDrawer: {
-      position: "absolute",
+      position: 'absolute',
       left: 0,
       right: 0,
       borderTopWidth: StyleSheet.hairlineWidth,
-      shadowColor: "#000",
+      shadowColor: '#000',
       shadowOpacity: 0.2,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: -4 },
       elevation: 8,
       zIndex: 2,
-      overflow: "hidden",
+      overflow: 'hidden',
     },
     drawerHandle: {
-      alignItems: "center",
+      alignItems: 'center',
       paddingVertical: 12,
     },
     handleBar: {
@@ -2347,19 +2669,19 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
       paddingVertical: 24,
     },
     shareFooterContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     shareFooter: {
       fontSize: getFontSize(14),
       color: colors.placeholderText,
-      textAlign: "center",
-      fontWeight: "600",
+      textAlign: 'center',
+      fontWeight: '600',
     },
     shareOptionButton: {
-      flexDirection: "row",
-      alignItems: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
       padding: 16,
       borderRadius: 12,
       marginVertical: 8,
@@ -2373,7 +2695,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     },
     shareOptionTitle: {
       fontSize: getFontSize(16),
-      fontWeight: "600",
+      fontWeight: '600',
       color: colors.bodyText,
       marginBottom: 4,
     },
@@ -2384,14 +2706,14 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     },
     // Debug styles
     debugButton: {
-      position: "absolute",
+      position: 'absolute',
       left: 20,
       width: 44,
       height: 44,
       borderRadius: 22,
-      alignItems: "center",
-      justifyContent: "center",
-      shadowColor: "#000",
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
       shadowOpacity: 0.2,
       shadowRadius: 6,
       shadowOffset: { width: 0, height: 2 },
@@ -2405,7 +2727,7 @@ const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
     debugMenuItemText: {
       fontSize: getFontSize(14),
       color: colors.bodyText,
-      fontWeight: "500",
+      fontWeight: '500',
     },
   });
 
