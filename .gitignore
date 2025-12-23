@@ -76,7 +76,9 @@ yarn-error.log
 
 # Development docs
 /developing/
-/docs/
+
+# GitHub Pages (privacy policy, etc.)
+!/docs/
 
 # Claude Code
 .claude/
