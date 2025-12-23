@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import type { StatusBarStyle } from 'react-native';
+import { useColorScheme } from 'react-native';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { getDataFromStorage, saveDataOnStorage } from '../helpers/storageData';
 
@@ -362,6 +363,7 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const systemColorScheme = useColorScheme();
   const [theme, setTheme] = useState<ThemeName>('Claro');
   const [accentColor, setAccentColor] = useState<AccentColorName>('Sunset');
   const [tintedBackground, setTintedBackground] = useState(true); // Default ON
@@ -397,6 +399,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         } = stored as StoredThemeSettings;
         if (isThemeName(storedTheme)) {
           setTheme(storedTheme);
+        } else {
+          // First time: detect system theme
+          setTheme(systemColorScheme === 'dark' ? 'Oscuro' : 'Claro');
         }
         if (typeof fontScale === 'number') {
           handleSetFontScale(fontScale);
@@ -407,6 +412,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         if (typeof storedTinted === 'boolean') {
           setTintedBackground(storedTinted);
         }
+      } else {
+        // No stored settings at all (first time): detect system theme
+        setTheme(systemColorScheme === 'dark' ? 'Oscuro' : 'Claro');
       }
       hydrationRef.current = true;
     })().catch(() => {
@@ -418,7 +426,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, [handleSetFontScale]);
+  }, [handleSetFontScale, systemColorScheme]);
 
   useEffect(() => {
     if (!hydrationRef.current) {

@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Calendar,
   Quote,
+  Check,
 } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemeColors, GetFontSize } from '../context/ThemeContext';
@@ -14,10 +15,14 @@ import type { Devotional } from '../types/devotional';
 
 type DevotionalDetailScreenProps = {
   devotional: Devotional;
+  isCompleted?: boolean;
+  onComplete?: () => void;
 };
 
 export function DevotionalDetailScreen({
   devotional,
+  isCompleted = false,
+  onComplete,
 }: DevotionalDetailScreenProps) {
   const { colors, getFontSize } = useTheme();
   const styles = useMemo(
@@ -194,16 +199,23 @@ export function DevotionalDetailScreen({
       <Pressable
         style={({ pressed }) => [
           styles.completeButton,
-          { backgroundColor: colors.accent },
-          pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
+          {
+            backgroundColor: isCompleted ? '#4CAF50' : colors.accent,
+          },
+          pressed &&
+            !isCompleted && { opacity: 0.8, transform: [{ scale: 0.98 }] },
+          isCompleted && { opacity: 0.9 },
         ]}
-        onPress={() => {
-          // TODO: Implementar marcar como completado
-        }}
+        onPress={isCompleted ? undefined : onComplete}
+        disabled={isCompleted}
       >
-        <CheckCircle2 size={20} color={colors.accentText} />
+        {isCompleted ? (
+          <Check size={20} color={colors.accentText} />
+        ) : (
+          <CheckCircle2 size={20} color={colors.accentText} />
+        )}
         <Text style={[styles.completeButtonText, { color: colors.accentText }]}>
-          Marcar como completado
+          {isCompleted ? 'Completado' : 'Marcar como completado'}
         </Text>
       </Pressable>
     </ScrollView>

@@ -9,6 +9,7 @@ import {
   Alert,
   Animated,
   AppState,
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   PanResponder,
@@ -94,6 +95,10 @@ import { Toast } from './src/components/Toast';
 import { EndOfBookModal } from './src/components/EndOfBookModal';
 import { formatVerseNumbersRange } from './src/utils/verseRange';
 import type { Devotional } from './src/types/devotional';
+import {
+  getDataFromStorage,
+  saveDataOnStorage,
+} from './src/helpers/storageData';
 
 type VerseData = {
   name: string;
@@ -202,6 +207,9 @@ function AppContent() {
   const [selectedVerses, setSelectedVerses] = useState<string[]>([]);
   const [selectedDevotional, setSelectedDevotional] =
     useState<Devotional | null>(null);
+  const [completedDevotionals, setCompletedDevotionals] = useState<Set<string>>(
+    new Set(),
+  );
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
     null,
@@ -295,6 +303,16 @@ function AppContent() {
         data: book,
       })),
     }));
+  }, []);
+
+  // Cargar devocionales completados del storage
+  useEffect(() => {
+    (async () => {
+      const data = await getDataFromStorage('completed_devotionals.json');
+      if (data && Array.isArray(data)) {
+        setCompletedDevotionals(new Set(data));
+      }
+    })();
   }, []);
 
   const chapters = selectedBook?.data.chapters ?? [];
@@ -764,6 +782,30 @@ function AppContent() {
     setActiveScreen('devotional-detail');
   }, []);
 
+  const handleCompleteDevotional = useCallback(() => {
+    if (!selectedDevotional) return;
+
+    const devotionalId = selectedDevotional.id;
+
+    // Evitar marcar como completado si ya lo está
+    if (completedDevotionals.has(devotionalId)) return;
+
+    // Agregar a completados
+    setCompletedDevotionals(prev => {
+      const newSet = new Set(prev);
+      newSet.add(devotionalId);
+      // Guardar en storage
+      void saveDataOnStorage(
+        'completed_devotionals.json',
+        JSON.stringify(Array.from(newSet)),
+      );
+      return newSet;
+    });
+
+    // Registrar tiempo de lectura (5 minutos por devocional)
+    addReadingTime(5);
+  }, [selectedDevotional, completedDevotionals, addReadingTime]);
+
   const handleOpenStudyPlans = () => {
     setActiveScreen('study-plans');
     setDrawerVisible(false);
@@ -955,6 +997,150 @@ function AppContent() {
   const handleClearSelection = () => {
     setSelectedVerses([]);
   };
+
+  // Manejar botón/gesto de retroceso en Android
+  useEffect(() => {
+    const handleBackPress = () => {
+      // 1. Si hay algún modal abierto, cerrarlo
+      if (debugMenuVisible) {
+        setDebugMenuVisible(false);
+        return true;
+      }
+      if (bibleVersionPickerVisible) {
+        setBibleVersionPickerVisible(false);
+        return true;
+      }
+      if (shareModalVisible) {
+        setShareModalVisible(false);
+        return true;
+      }
+      if (commentModalVisible) {
+        setCommentModalVisible(false);
+        setPendingFavorite(null);
+        setCommentInput('');
+        return true;
+      }
+      if (endOfBookModalVisible) {
+        setEndOfBookModalVisible(false);
+        setNextBookForPin(null);
+        return true;
+      }
+      if (showStreakSummary) {
+        setShowStreakSummary(false);
+        return true;
+      }
+
+      // 2. Si el drawer de búsqueda está expandido, cerrarlo
+      if (isSearchDrawerExpanded) {
+        toggleSearchDrawer();
+        return true;
+      }
+
+      // 3. Si hay versículos seleccionados, limpiar selección
+      if (selectedVerses.length > 0) {
+        setSelectedVerses([]);
+        return true;
+      }
+
+      // 4. Si el drawer de navegación está abierto, cerrarlo
+      if (drawerVisible) {
+        setDrawerVisible(false);
+        return true;
+      }
+
+      // 5. Si el menú está visible, cerrarlo
+      if (menuVisible) {
+        setMenuVisible(false);
+        return true;
+      }
+
+      // 6. Navegación entre pantallas
+      if (isDevotionalDetailScreen) {
+        setActiveScreen('devotionals');
+        return true;
+      }
+      if (isStudyPlanReadingScreen) {
+        setActiveScreen('study-plan-detail');
+        setSelectedSectionId(null);
+        return true;
+      }
+      if (isStudyPlanDetailScreen) {
+        setActiveScreen('study-plans');
+        setSelectedPlanId(null);
+        return true;
+      }
+      if (isYearlyPlanReadingScreen) {
+        setSelectedYearlyDay(null);
+        setActiveScreen('yearly-plan-detail');
+        return true;
+      }
+      if (isYearlyPlanDetailScreen) {
+        setSelectedYearlyPlanId(null);
+        setActiveScreen('yearly-plans');
+        return true;
+      }
+      if (
+        isSettingsScreen ||
+        isFavoritesScreen ||
+        isHistoryScreen ||
+        isDevotionalsScreen ||
+        isStudyPlansScreen ||
+        isYearlyPlansScreen ||
+        isStreakScreen
+      ) {
+        setActiveScreen('reader');
+        setSelectedVerses([]);
+        setMenuVisible(false);
+        return true;
+      }
+
+      // 7. Si estamos en el reader con un libro seleccionado, volver a la búsqueda
+      if (isReaderScreen && selectedBook) {
+        setSelectedBook(null);
+        setSelectedChapterIndex(0);
+        setSelectedVerses([]);
+        return true;
+      }
+
+      // 8. Si estamos en la pantalla principal sin libro, permitir salida normal
+      return false;
+    };
+
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      handleBackPress,
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, [
+    debugMenuVisible,
+    bibleVersionPickerVisible,
+    shareModalVisible,
+    commentModalVisible,
+    endOfBookModalVisible,
+    showStreakSummary,
+    isSearchDrawerExpanded,
+    selectedVerses.length,
+    drawerVisible,
+    menuVisible,
+    isDevotionalDetailScreen,
+    isStudyPlanReadingScreen,
+    isStudyPlanDetailScreen,
+    isYearlyPlanReadingScreen,
+    isYearlyPlanDetailScreen,
+    isSettingsScreen,
+    isFavoritesScreen,
+    isHistoryScreen,
+    isDevotionalsScreen,
+    isStudyPlansScreen,
+    isYearlyPlansScreen,
+    isStreakScreen,
+    isReaderScreen,
+    selectedBook,
+    toggleSearchDrawer,
+  ]);
 
   const handleLongPressVerse = (verseId: string) => {
     if (!isReaderScreen) {
@@ -1161,1107 +1347,1148 @@ function AppContent() {
     : null; // Para reader screen mostramos el selector
 
   return (
-    <View
-      style={[
-        styles.screen,
-        { paddingTop: insets.top, paddingBottom: insets.bottom },
-      ]}
-    >
-      <StatusBar
-        barStyle={statusBarStyle}
-        backgroundColor={colors.backgroundSecondary}
-      />
-
+    <View style={styles.tabletContainer}>
       <View
         style={[
-          styles.header,
-          {
-            backgroundColor: colors.backgroundSecondary,
-            borderBottomColor: colors.divider,
-          },
+          styles.screen,
+          styles.phoneContainer,
+          { paddingTop: insets.top, paddingBottom: insets.bottom },
         ]}
       >
-        {!isReaderScreen ? (
-          <Pressable
-            accessibilityLabel="Volver"
-            onPress={
-              isDevotionalDetailScreen
-                ? () => setActiveScreen('devotionals')
-                : isStudyPlanReadingScreen
-                ? handleBackFromStudyPlanReading
-                : isStudyPlanDetailScreen
-                ? handleBackFromStudyPlanDetail
-                : isYearlyPlanReadingScreen
-                ? handleBackFromYearlyPlanReading
-                : isYearlyPlanDetailScreen
-                ? handleBackFromYearlyPlanDetail
-                : isYearlyPlansScreen
-                ? handleBackToReader
-                : handleBackToReader
-            }
-            style={styles.actionButton}
-          >
-            <ChevronLeft size={24} color={colors.menuIcon} />
-          </Pressable>
-        ) : isSelecting ? (
-          <Pressable
-            accessibilityLabel="Cancelar seleccion"
-            onPress={handleClearSelection}
-            style={styles.actionButton}
-          >
-            <X size={24} color={colors.menuIcon} />
-          </Pressable>
-        ) : (
-          <Pressable
-            accessibilityLabel="Abrir navegacion"
-            onPress={() => setDrawerVisible(true)}
-            style={styles.menuButton}
-          >
-            <View
-              style={[styles.menuBar, { backgroundColor: colors.menuIcon }]}
-            />
-            <View
-              style={[styles.menuBar, { backgroundColor: colors.menuIcon }]}
-            />
-            <View
-              style={[styles.menuBar, { backgroundColor: colors.menuIcon }]}
-            />
-          </Pressable>
-        )}
+        <StatusBar
+          barStyle={statusBarStyle}
+          backgroundColor={colors.backgroundSecondary}
+        />
 
-        {headerTitle ? (
-          <Text style={styles.headerTitle}>{headerTitle}</Text>
-        ) : (
-          <Pressable
-            accessibilityLabel="Seleccionar versión de la Biblia"
-            onPress={() => setBibleVersionPickerVisible(true)}
-            style={styles.versionSelector}
-          >
-            <Text style={styles.versionSelectorText}>
-              {selectedBibleVersion}
-            </Text>
-            <ChevronDown
-              size={16}
-              color={colors.menuIcon}
-              style={{ marginLeft: 4 }}
-            />
-          </Pressable>
-        )}
-
-        {!isReaderScreen || isSelecting ? (
-          <View style={styles.actionPlaceholder} />
-        ) : (
-          <View style={styles.rightActionsContainer}>
-            {selectedBook && (
-              <Pressable
-                accessibilityLabel="Volver al buscador principal"
-                onPress={() => {
-                  setSelectedBook(null);
-                  setSelectedChapterIndex(0);
-                  setSelectedVerses([]);
-                }}
-                style={styles.homeButton}
-              >
-                <Home size={20} color={colors.menuIcon} />
-              </Pressable>
-            )}
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.backgroundSecondary,
+              borderBottomColor: colors.divider,
+            },
+          ]}
+        >
+          {!isReaderScreen ? (
             <Pressable
-              accessibilityLabel="Abrir menu de opciones"
-              onPress={handleToggleMenu}
-              style={styles.menuTrigger}
+              accessibilityLabel="Volver"
+              onPress={
+                isDevotionalDetailScreen
+                  ? () => setActiveScreen('devotionals')
+                  : isStudyPlanReadingScreen
+                  ? handleBackFromStudyPlanReading
+                  : isStudyPlanDetailScreen
+                  ? handleBackFromStudyPlanDetail
+                  : isYearlyPlanReadingScreen
+                  ? handleBackFromYearlyPlanReading
+                  : isYearlyPlanDetailScreen
+                  ? handleBackFromYearlyPlanDetail
+                  : isYearlyPlansScreen
+                  ? handleBackToReader
+                  : handleBackToReader
+              }
+              style={styles.actionButton}
+            >
+              <ChevronLeft size={24} color={colors.menuIcon} />
+            </Pressable>
+          ) : isSelecting ? (
+            <Pressable
+              accessibilityLabel="Cancelar seleccion"
+              onPress={handleClearSelection}
+              style={styles.actionButton}
+            >
+              <X size={24} color={colors.menuIcon} />
+            </Pressable>
+          ) : (
+            <Pressable
+              accessibilityLabel="Abrir navegacion"
+              onPress={() => setDrawerVisible(true)}
+              style={styles.menuButton}
             >
               <View
-                style={[styles.menuDot, { backgroundColor: colors.menuIcon }]}
+                style={[styles.menuBar, { backgroundColor: colors.menuIcon }]}
               />
               <View
-                style={[styles.menuDot, { backgroundColor: colors.menuIcon }]}
+                style={[styles.menuBar, { backgroundColor: colors.menuIcon }]}
               />
               <View
-                style={[styles.menuDot, { backgroundColor: colors.menuIcon }]}
+                style={[styles.menuBar, { backgroundColor: colors.menuIcon }]}
               />
             </Pressable>
-          </View>
-        )}
-      </View>
+          )}
 
-      {isSettingsScreen ? (
-        <SettingsScreen />
-      ) : isStreakScreen ? (
-        <StreakScreen />
-      ) : isFavoritesScreen ? (
-        <FavoritesScreen onNavigateToVerse={handleNavigateToFavorite} />
-      ) : isHistoryScreen ? (
-        <ReadingHistoryScreen onNavigateToReading={handleNavigateFromHistory} />
-      ) : isDevotionalsScreen ? (
-        <DevotionalListScreen onSelectDevotional={handleSelectDevotional} />
-      ) : isDevotionalDetailScreen && selectedDevotional ? (
-        <DevotionalDetailScreen devotional={selectedDevotional} />
-      ) : isStudyPlansScreen ? (
-        <StudyPlansScreen onSelectPlan={handleSelectPlan} />
-      ) : isStudyPlanDetailScreen && selectedPlanId ? (
-        <StudyPlanDetailScreen
-          planId={selectedPlanId}
-          onBack={handleBackFromStudyPlanDetail}
-          onStartReading={handleStartReading}
-        />
-      ) : isStudyPlanReadingScreen && selectedPlanId && selectedSectionId ? (
-        <StudyPlanReadingScreen
-          planId={selectedPlanId}
-          sectionId={selectedSectionId}
-          bibleData={bibleContent as BibleData}
-          onBack={handleBackFromStudyPlanReading}
-        />
-      ) : isYearlyPlansScreen ? (
-        <YearlyPlansScreen onSelectPlan={handleSelectYearlyPlan} />
-      ) : isYearlyPlanDetailScreen && selectedYearlyPlanId ? (
-        <YearlyPlanDetailScreen
-          planId={selectedYearlyPlanId}
-          onBack={handleBackFromYearlyPlanDetail}
-          onStartReading={handleStartYearlyReading}
-          onActivatePlan={handleActivateYearlyPlan}
-        />
-      ) : isYearlyPlanReadingScreen &&
-        selectedYearlyPlanId &&
-        selectedYearlyDay ? (
-        <YearlyPlanReadingScreen
-          planId={selectedYearlyPlanId}
-          day={selectedYearlyDay}
-          bibleData={bibleContent as BibleData}
-          onBack={handleBackFromYearlyPlanReading}
-          onNavigateToDay={handleNavigateToYearlyDay}
-        />
-      ) : !selectedBook ? (
-        <SearchScreen
-          bibleData={bibleContent as BibleData}
-          onSelectResult={handleSearchResultSelect}
-          onSelectBook={handleBookMatchSelect}
-          onOpenReadingHistory={handleOpenReadingHistory}
-          onOpenDevotionals={handleOpenDevotionals}
-          onOpenStudyPlans={handleOpenStudyPlans}
-          onOpenYearlyPlans={handleOpenYearlyPlans}
-          onOpenStreak={handleOpenStreak}
-          onOpenFavorites={handleOpenFavorites}
-        />
-      ) : selectedBook && selectedChapter ? (
-        <View style={styles.content}>
-          <View
-            style={[
-              styles.chapterNavWrapper,
-              {
-                backgroundColor: colors.backgroundSecondary,
-                borderBottomColor: colors.divider,
-              },
-            ]}
-          >
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.chapterNavContent}
+          {headerTitle ? (
+            <Text style={styles.headerTitle}>{headerTitle}</Text>
+          ) : (
+            <Pressable
+              accessibilityLabel="Seleccionar versión de la Biblia"
+              onPress={() => setBibleVersionPickerVisible(true)}
+              style={styles.versionSelector}
             >
-              {chapters.map((chapter, index) => {
-                const isActive = index === selectedChapterIndex;
-                return (
-                  <Pressable
-                    key={`${selectedBook.id}-${chapter.name}`}
-                    onPress={() => handleSelectChapter(index)}
-                    style={[
-                      styles.chapterPill,
-                      { backgroundColor: colors.surfaceMuted },
-                      isActive && {
-                        backgroundColor: colors.accent,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.chapterPillText,
-                        isActive && { color: colors.accentText },
-                      ]}
-                    >
-                      {chapter.name}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
+              <Text style={styles.versionSelectorText}>
+                {selectedBibleVersion}
+              </Text>
+              <ChevronDown
+                size={16}
+                color={colors.menuIcon}
+                style={{ marginLeft: 4 }}
+              />
+            </Pressable>
+          )}
 
-          <View
-            style={styles.chapterContentWrapper}
-            {...panResponder.panHandlers}
-          >
-            <ScrollView
-              ref={chapterScrollViewRef}
-              style={[
-                styles.chapterContent,
-                { backgroundColor: colors.backgroundPrimary },
-              ]}
-              contentContainerStyle={styles.chapterContentContainer}
-              showsVerticalScrollIndicator={false}
-              onScroll={registerActivity}
-              onTouchStart={registerActivity}
-              scrollEventThrottle={1000}
-            >
-              <ViewShot
-                ref={viewShotRef}
-                options={{ format: 'jpg', quality: 0.9 }}
+          {!isReaderScreen || isSelecting ? (
+            <View style={styles.actionPlaceholder} />
+          ) : (
+            <View style={styles.rightActionsContainer}>
+              {selectedBook && (
+                <Pressable
+                  accessibilityLabel="Volver al buscador principal"
+                  onPress={() => {
+                    setSelectedBook(null);
+                    setSelectedChapterIndex(0);
+                    setSelectedVerses([]);
+                  }}
+                  style={styles.homeButton}
+                >
+                  <Home size={20} color={colors.menuIcon} />
+                </Pressable>
+              )}
+              <Pressable
+                accessibilityLabel="Abrir menu de opciones"
+                onPress={handleToggleMenu}
+                style={styles.menuTrigger}
               >
                 <View
-                  style={[
-                    styles.shareableContent,
-                    { backgroundColor: colors.backgroundPrimary },
-                  ]}
-                >
-                  <Text style={styles.chapterHeading}>
-                    {selectedBook.label} {selectedChapter.name}
-                  </Text>
-                  {selectedChapter.verses.map(verse => {
-                    const verseId = buildVerseId(
-                      selectedBook.id,
-                      selectedChapter.name,
-                      verse.name,
-                    );
-                    const verseFavorites = getVerseFavorites(
-                      selectedBook.id,
-                      selectedChapter.name,
-                      verse.name,
-                    );
-                    const hasFavorite = verseFavorites.length > 0;
-                    const favoriteComments = verseFavorites
-                      .map(favorite => favorite.comment)
-                      .filter(Boolean) as string[];
-                    const isSelected = selectedVerses.includes(verseId);
+                  style={[styles.menuDot, { backgroundColor: colors.menuIcon }]}
+                />
+                <View
+                  style={[styles.menuDot, { backgroundColor: colors.menuIcon }]}
+                />
+                <View
+                  style={[styles.menuDot, { backgroundColor: colors.menuIcon }]}
+                />
+              </Pressable>
+            </View>
+          )}
+        </View>
 
-                    return (
-                      <Pressable
-                        key={verseId}
-                        accessibilityLabel={`Versiculo ${verse.name}`}
-                        onLongPress={() => handleLongPressVerse(verseId)}
-                        delayLongPress={180}
-                        onPress={() => handlePressVerse(verseId)}
+        {isSettingsScreen ? (
+          <SettingsScreen />
+        ) : isStreakScreen ? (
+          <StreakScreen />
+        ) : isFavoritesScreen ? (
+          <FavoritesScreen onNavigateToVerse={handleNavigateToFavorite} />
+        ) : isHistoryScreen ? (
+          <ReadingHistoryScreen
+            onNavigateToReading={handleNavigateFromHistory}
+          />
+        ) : isDevotionalsScreen ? (
+          <DevotionalListScreen onSelectDevotional={handleSelectDevotional} />
+        ) : isDevotionalDetailScreen && selectedDevotional ? (
+          <DevotionalDetailScreen
+            devotional={selectedDevotional}
+            isCompleted={completedDevotionals.has(selectedDevotional.id)}
+            onComplete={handleCompleteDevotional}
+          />
+        ) : isStudyPlansScreen ? (
+          <StudyPlansScreen onSelectPlan={handleSelectPlan} />
+        ) : isStudyPlanDetailScreen && selectedPlanId ? (
+          <StudyPlanDetailScreen
+            planId={selectedPlanId}
+            onBack={handleBackFromStudyPlanDetail}
+            onStartReading={handleStartReading}
+          />
+        ) : isStudyPlanReadingScreen && selectedPlanId && selectedSectionId ? (
+          <StudyPlanReadingScreen
+            planId={selectedPlanId}
+            sectionId={selectedSectionId}
+            bibleData={bibleContent as BibleData}
+            onBack={handleBackFromStudyPlanReading}
+          />
+        ) : isYearlyPlansScreen ? (
+          <YearlyPlansScreen onSelectPlan={handleSelectYearlyPlan} />
+        ) : isYearlyPlanDetailScreen && selectedYearlyPlanId ? (
+          <YearlyPlanDetailScreen
+            planId={selectedYearlyPlanId}
+            onBack={handleBackFromYearlyPlanDetail}
+            onStartReading={handleStartYearlyReading}
+            onActivatePlan={handleActivateYearlyPlan}
+          />
+        ) : isYearlyPlanReadingScreen &&
+          selectedYearlyPlanId &&
+          selectedYearlyDay ? (
+          <YearlyPlanReadingScreen
+            planId={selectedYearlyPlanId}
+            day={selectedYearlyDay}
+            bibleData={bibleContent as BibleData}
+            onBack={handleBackFromYearlyPlanReading}
+            onNavigateToDay={handleNavigateToYearlyDay}
+          />
+        ) : !selectedBook ? (
+          <SearchScreen
+            bibleData={bibleContent as BibleData}
+            onSelectResult={handleSearchResultSelect}
+            onSelectBook={handleBookMatchSelect}
+            onOpenReadingHistory={handleOpenReadingHistory}
+            onOpenDevotionals={handleOpenDevotionals}
+            onOpenStudyPlans={handleOpenStudyPlans}
+            onOpenYearlyPlans={handleOpenYearlyPlans}
+            onOpenStreak={handleOpenStreak}
+            onOpenFavorites={handleOpenFavorites}
+          />
+        ) : selectedBook && selectedChapter ? (
+          <View style={styles.content}>
+            <View
+              style={[
+                styles.chapterNavWrapper,
+                {
+                  backgroundColor: colors.backgroundSecondary,
+                  borderBottomColor: colors.divider,
+                },
+              ]}
+            >
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chapterNavContent}
+              >
+                {chapters.map((chapter, index) => {
+                  const isActive = index === selectedChapterIndex;
+                  return (
+                    <Pressable
+                      key={`${selectedBook.id}-${chapter.name}`}
+                      onPress={() => handleSelectChapter(index)}
+                      style={[
+                        styles.chapterPill,
+                        { backgroundColor: colors.surfaceMuted },
+                        isActive && {
+                          backgroundColor: colors.accent,
+                        },
+                      ]}
+                    >
+                      <Text
                         style={[
-                          styles.verseRow,
-                          isSelected && styles.verseRowSelected,
-                          !isSelected && hasFavorite && styles.verseRowFavorite,
+                          styles.chapterPillText,
+                          isActive && { color: colors.accentText },
                         ]}
                       >
-                        <Text
+                        {chapter.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            <View
+              style={styles.chapterContentWrapper}
+              {...panResponder.panHandlers}
+            >
+              <ScrollView
+                ref={chapterScrollViewRef}
+                style={[
+                  styles.chapterContent,
+                  { backgroundColor: colors.backgroundPrimary },
+                ]}
+                contentContainerStyle={styles.chapterContentContainer}
+                showsVerticalScrollIndicator={false}
+                onScroll={registerActivity}
+                onTouchStart={registerActivity}
+                scrollEventThrottle={1000}
+              >
+                <ViewShot
+                  ref={viewShotRef}
+                  options={{ format: 'jpg', quality: 0.9 }}
+                >
+                  <View
+                    style={[
+                      styles.shareableContent,
+                      { backgroundColor: colors.backgroundPrimary },
+                    ]}
+                  >
+                    <Text style={styles.chapterHeading}>
+                      {selectedBook.label} {selectedChapter.name}
+                    </Text>
+                    {selectedChapter.verses.map(verse => {
+                      const verseId = buildVerseId(
+                        selectedBook.id,
+                        selectedChapter.name,
+                        verse.name,
+                      );
+                      const verseFavorites = getVerseFavorites(
+                        selectedBook.id,
+                        selectedChapter.name,
+                        verse.name,
+                      );
+                      const hasFavorite = verseFavorites.length > 0;
+                      const favoriteComments = verseFavorites
+                        .map(favorite => favorite.comment)
+                        .filter(Boolean) as string[];
+                      const isSelected = selectedVerses.includes(verseId);
+
+                      return (
+                        <Pressable
+                          key={verseId}
+                          accessibilityLabel={`Versiculo ${verse.name}`}
+                          onLongPress={() => handleLongPressVerse(verseId)}
+                          delayLongPress={180}
+                          onPress={() => handlePressVerse(verseId)}
                           style={[
-                            styles.verseNumber,
-                            isSelected && styles.verseNumberSelected,
+                            styles.verseRow,
+                            isSelected && styles.verseRowSelected,
+                            !isSelected &&
+                              hasFavorite &&
+                              styles.verseRowFavorite,
                           ]}
                         >
-                          {verse.name}
-                        </Text>
-                        <View style={styles.verseBody}>
                           <Text
                             style={[
-                              styles.verseText,
-                              isSelected && styles.verseTextSelected,
+                              styles.verseNumber,
+                              isSelected && styles.verseNumberSelected,
                             ]}
                           >
-                            {verse.text}
+                            {verse.name}
                           </Text>
-                          {!isSelected &&
-                          hasFavorite &&
-                          favoriteComments.length ? (
-                            <View style={styles.favoriteTag}>
-                              <Text style={styles.favoriteTagText}>
-                                {favoriteComments.join(' / ')}
-                              </Text>
-                            </View>
-                          ) : null}
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </ViewShot>
-            </ScrollView>
+                          <View style={styles.verseBody}>
+                            <Text
+                              style={[
+                                styles.verseText,
+                                isSelected && styles.verseTextSelected,
+                              ]}
+                            >
+                              {verse.text}
+                            </Text>
+                            {!isSelected &&
+                            hasFavorite &&
+                            favoriteComments.length ? (
+                              <View style={styles.favoriteTag}>
+                                <Text style={styles.favoriteTagText}>
+                                  {favoriteComments.join(' / ')}
+                                </Text>
+                              </View>
+                            ) : null}
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </ViewShot>
+              </ScrollView>
+            </View>
           </View>
-        </View>
-      ) : null}
+        ) : null}
 
-      <BibleDrawer
-        visible={drawerVisible && isReaderScreen}
-        onClose={() => setDrawerVisible(false)}
-        sections={sections}
-        onSelectBook={handleSelectBook}
-        selectedBookId={selectedBook?.id}
-      />
+        <BibleDrawer
+          visible={drawerVisible && isReaderScreen}
+          onClose={() => setDrawerVisible(false)}
+          sections={sections}
+          onSelectBook={handleSelectBook}
+          selectedBookId={selectedBook?.id}
+        />
 
-      {menuVisible ? (
-        <View style={styles.menuPortal} pointerEvents="box-none">
-          <Pressable style={styles.menuBackdrop} onPress={closeMenu} />
-          <View
-            style={[
-              styles.menuDropdown,
-              {
-                top: insets.top + 56,
-                backgroundColor: colors.backgroundSecondary,
-                borderColor: colors.divider,
-              },
-            ]}
-          >
-            <Pressable
-              accessibilityLabel="Abrir configuraciones"
-              onPress={() => {
-                closeMenu();
-                handleOpenSettings();
-              }}
-              style={styles.menuItem}
+        {menuVisible ? (
+          <View style={styles.menuPortal} pointerEvents="box-none">
+            <Pressable style={styles.menuBackdrop} onPress={closeMenu} />
+            <View
+              style={[
+                styles.menuDropdown,
+                {
+                  top: insets.top + 56,
+                  backgroundColor: colors.backgroundSecondary,
+                  borderColor: colors.divider,
+                },
+              ]}
             >
-              <Text style={styles.menuItemText}>Configuraciones</Text>
-            </Pressable>
-            <Pressable
-              accessibilityLabel="Abrir citas guardas"
-              onPress={() => {
-                closeMenu();
-                handleOpenSavedQuotes();
-              }}
-              style={styles.menuItem}
-            >
-              <Text style={styles.menuItemText}>Citas guardas</Text>
-            </Pressable>
-            <Pressable
-              accessibilityLabel="Abrir historial de lectura"
-              onPress={() => {
-                closeMenu();
-                handleOpenReadingHistory();
-              }}
-              style={styles.menuItem}
-            >
-              <Text style={styles.menuItemText}>Historial de lectura</Text>
-            </Pressable>
-          </View>
-        </View>
-      ) : null}
-
-      {isSelecting ? (
-        <View style={styles.selectionBarWrapper} pointerEvents="box-none">
-          <View
-            style={[
-              styles.selectionBar,
-              {
-                bottom: insets.bottom + 16,
-                backgroundColor: colors.backgroundSecondary,
-                borderColor: colors.divider,
-              },
-            ]}
-          >
-            <Pressable
-              accessibilityLabel="Limpiar seleccion"
-              onPress={handleClearSelection}
-            >
-              <Text style={styles.selectionCount}>
-                {selectedVerses.length} seleccionado(s)
-              </Text>
-            </Pressable>
-            <View style={styles.selectionActions}>
               <Pressable
-                accessibilityLabel="Compartir versiculos seleccionados"
-                onPress={handleOpenShareDialog}
-                style={styles.selectionAction}
+                accessibilityLabel="Abrir configuraciones"
+                onPress={() => {
+                  closeMenu();
+                  handleOpenSettings();
+                }}
+                style={styles.menuItem}
               >
-                <Share2
-                  size={18}
-                  color={colors.accent}
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={styles.selectionActionText}>Compartir</Text>
+                <Text style={styles.menuItemText}>Configuraciones</Text>
               </Pressable>
               <Pressable
-                accessibilityLabel="Guardar versiculos seleccionados"
-                onPress={handleOpenSaveDialog}
-                style={styles.selectionAction}
+                accessibilityLabel="Abrir citas guardas"
+                onPress={() => {
+                  closeMenu();
+                  handleOpenSavedQuotes();
+                }}
+                style={styles.menuItem}
               >
-                <Heart
-                  size={18}
-                  color={colors.accent}
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={styles.selectionActionText}>Guardar</Text>
+                <Text style={styles.menuItemText}>Citas guardas</Text>
               </Pressable>
-              {isAdmin && selectedVerses.length === 1 && (
+              <Pressable
+                accessibilityLabel="Abrir historial de lectura"
+                onPress={() => {
+                  closeMenu();
+                  handleOpenReadingHistory();
+                }}
+                style={styles.menuItem}
+              >
+                <Text style={styles.menuItemText}>Historial de lectura</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
+        {isSelecting ? (
+          <View style={styles.selectionBarWrapper} pointerEvents="box-none">
+            <View
+              style={[
+                styles.selectionBar,
+                {
+                  bottom: insets.bottom + 16,
+                  backgroundColor: colors.backgroundSecondary,
+                  borderColor: colors.divider,
+                },
+              ]}
+            >
+              <Pressable
+                accessibilityLabel="Limpiar seleccion"
+                onPress={handleClearSelection}
+              >
+                <Text style={styles.selectionCount}>
+                  {selectedVerses.length} seleccionado(s)
+                </Text>
+              </Pressable>
+              <View style={styles.selectionActions}>
                 <Pressable
-                  accessibilityLabel="Agregar versiculo al dia"
-                  onPress={() => {
-                    if (!selectedBook || !selectedChapter) return;
-                    const verse = selectedChapter.verses.find(v =>
-                      selectedVerses.includes(
-                        buildVerseId(
-                          selectedBook.id,
-                          selectedChapter.name,
-                          v.name,
-                        ),
-                      ),
-                    );
-                    if (verse) {
-                      addVerseToCuratedList({
-                        bookName: selectedBook.label,
-                        bookIndex: sections.findIndex(s =>
-                          s.books.some(b => b.id === selectedBook.id),
-                        ),
-                        testamentName:
-                          sections.find(s =>
-                            s.books.some(b => b.id === selectedBook.id),
-                          )?.title ?? '',
-                        chapterName: selectedChapter.name,
-                        chapterIndex: selectedChapterIndex,
-                        verseName: verse.name,
-                        verseText: verse.text,
-                        bookId: selectedBook.id,
-                      });
-                      setSelectedVerses([]);
-                    }
-                  }}
+                  accessibilityLabel="Compartir versiculos seleccionados"
+                  onPress={handleOpenShareDialog}
                   style={styles.selectionAction}
                 >
-                  <Sparkles
+                  <Share2
                     size={18}
                     color={colors.accent}
                     style={{ marginRight: 6 }}
                   />
-                  <Text style={styles.selectionActionText}>Al Día</Text>
+                  <Text style={styles.selectionActionText}>Compartir</Text>
                 </Pressable>
-              )}
+                <Pressable
+                  accessibilityLabel="Guardar versiculos seleccionados"
+                  onPress={handleOpenSaveDialog}
+                  style={styles.selectionAction}
+                >
+                  <Heart
+                    size={18}
+                    color={colors.accent}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={styles.selectionActionText}>Guardar</Text>
+                </Pressable>
+                {isAdmin && selectedVerses.length === 1 && (
+                  <Pressable
+                    accessibilityLabel="Agregar versiculo al dia"
+                    onPress={() => {
+                      if (!selectedBook || !selectedChapter) return;
+                      const verse = selectedChapter.verses.find(v =>
+                        selectedVerses.includes(
+                          buildVerseId(
+                            selectedBook.id,
+                            selectedChapter.name,
+                            v.name,
+                          ),
+                        ),
+                      );
+                      if (verse) {
+                        addVerseToCuratedList({
+                          bookName: selectedBook.label,
+                          bookIndex: sections.findIndex(s =>
+                            s.books.some(b => b.id === selectedBook.id),
+                          ),
+                          testamentName:
+                            sections.find(s =>
+                              s.books.some(b => b.id === selectedBook.id),
+                            )?.title ?? '',
+                          chapterName: selectedChapter.name,
+                          chapterIndex: selectedChapterIndex,
+                          verseName: verse.name,
+                          verseText: verse.text,
+                          bookId: selectedBook.id,
+                        });
+                        setSelectedVerses([]);
+                      }
+                    }}
+                    style={styles.selectionAction}
+                  >
+                    <Sparkles
+                      size={18}
+                      color={colors.accent}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text style={styles.selectionActionText}>Al Día</Text>
+                  </Pressable>
+                )}
+              </View>
             </View>
           </View>
-        </View>
-      ) : null}
+        ) : null}
 
-      {commentModalVisible && pendingFavorite ? (
-        <View style={styles.modalWrapper} pointerEvents="box-none">
-          <Pressable
-            style={styles.modalBackdrop}
-            onPress={handleCloseSaveDialog}
-          />
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.modalContainer}
-          >
-            <View
-              style={[
-                styles.modalCard,
-                {
-                  backgroundColor: colors.backgroundSecondary,
-                  borderColor: colors.divider,
-                },
-              ]}
+        {commentModalVisible && pendingFavorite ? (
+          <View style={styles.modalWrapper} pointerEvents="box-none">
+            <Pressable
+              style={styles.modalBackdrop}
+              onPress={handleCloseSaveDialog}
+            />
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              style={styles.modalContainer}
             >
-              <Text style={styles.modalTitle}>Guardar cita</Text>
-              <Text style={styles.modalSubtitle}>
-                {pendingFavorite.bookName} capitulo{' '}
-                {pendingFavorite.chapterName}
-              </Text>
-              <Text style={styles.modalSubtitle}>
-                Versos{' '}
-                {formatVerseNumbersRange(
-                  pendingFavorite.verses.map(verse => verse.verseNumber),
-                )}
-              </Text>
-              <Text style={styles.modalHint}>Comentario (opcional)</Text>
-              <TextInput
+              <View
                 style={[
-                  styles.modalInput,
+                  styles.modalCard,
                   {
-                    color: colors.bodyText,
+                    backgroundColor: colors.backgroundSecondary,
                     borderColor: colors.divider,
-                    backgroundColor: colors.backgroundPrimary,
                   },
                 ]}
-                placeholder="Escribe un comentario..."
-                placeholderTextColor={colors.placeholderText}
-                value={commentInput}
-                onChangeText={setCommentInput}
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-              />
-              <View style={styles.modalActions}>
+              >
+                <Text style={styles.modalTitle}>Guardar cita</Text>
+                <Text style={styles.modalSubtitle}>
+                  {pendingFavorite.bookName} capitulo{' '}
+                  {pendingFavorite.chapterName}
+                </Text>
+                <Text style={styles.modalSubtitle}>
+                  Versos{' '}
+                  {formatVerseNumbersRange(
+                    pendingFavorite.verses.map(verse => verse.verseNumber),
+                  )}
+                </Text>
+                <Text style={styles.modalHint}>Comentario (opcional)</Text>
+                <TextInput
+                  style={[
+                    styles.modalInput,
+                    {
+                      color: colors.bodyText,
+                      borderColor: colors.divider,
+                      backgroundColor: colors.backgroundPrimary,
+                    },
+                  ]}
+                  placeholder="Escribe un comentario..."
+                  placeholderTextColor={colors.placeholderText}
+                  value={commentInput}
+                  onChangeText={setCommentInput}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                />
+                <View style={styles.modalActions}>
+                  <Pressable
+                    accessibilityLabel="Cancelar guardado"
+                    onPress={handleCloseSaveDialog}
+                    style={styles.modalButtonSecondary}
+                  >
+                    <Text style={styles.modalButtonSecondaryText}>
+                      Cancelar
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel="Confirmar guardado"
+                    onPress={handleConfirmSave}
+                    style={styles.modalButtonPrimary}
+                  >
+                    <Text style={styles.modalButtonPrimaryText}>Guardar</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </KeyboardAvoidingView>
+          </View>
+        ) : null}
+
+        {shareModalVisible ? (
+          <View style={styles.modalWrapper} pointerEvents="box-none">
+            <Pressable
+              style={styles.modalBackdrop}
+              onPress={handleCloseShareDialog}
+            />
+            <View style={styles.modalContainer}>
+              <View
+                style={[
+                  styles.modalCard,
+                  {
+                    backgroundColor: colors.backgroundSecondary,
+                    borderColor: colors.divider,
+                  },
+                ]}
+              >
+                <Text style={styles.modalTitle}>Compartir versículos</Text>
+                <Text style={styles.modalSubtitle}>
+                  ¿Cómo deseas compartir los versículos?
+                </Text>
+
                 <Pressable
-                  accessibilityLabel="Cancelar guardado"
-                  onPress={handleCloseSaveDialog}
+                  accessibilityLabel="Compartir como texto"
+                  onPress={handleShareAsText}
+                  style={[
+                    styles.shareOptionButton,
+                    { backgroundColor: colors.surfaceMuted },
+                  ]}
+                >
+                  <FileText
+                    size={32}
+                    color={colors.bodyText}
+                    style={{ marginRight: 12 }}
+                  />
+                  <View style={styles.shareOptionContent}>
+                    <Text style={styles.shareOptionTitle}>
+                      Compartir como texto
+                    </Text>
+                    <Text style={styles.shareOptionDescription}>
+                      Comparte los versículos en formato de texto plano
+                    </Text>
+                  </View>
+                </Pressable>
+
+                <Pressable
+                  accessibilityLabel="Compartir como imagen"
+                  onPress={canShareAsImage ? handleShareAsImage : undefined}
+                  disabled={!canShareAsImage}
+                  style={[
+                    styles.shareOptionButton,
+                    { backgroundColor: colors.surfaceMuted },
+                    !canShareAsImage && styles.shareOptionButtonDisabled,
+                  ]}
+                >
+                  <Image
+                    size={32}
+                    color={colors.bodyText}
+                    style={{
+                      marginRight: 12,
+                      opacity: !canShareAsImage ? 0.4 : 1,
+                    }}
+                  />
+                  <View style={styles.shareOptionContent}>
+                    <Text
+                      style={[
+                        styles.shareOptionTitle,
+                        !canShareAsImage && { opacity: 0.5 },
+                      ]}
+                    >
+                      Compartir como imagen
+                    </Text>
+                    <Text
+                      style={[
+                        styles.shareOptionDescription,
+                        !canShareAsImage && { opacity: 0.5 },
+                      ]}
+                    >
+                      {canShareAsImage
+                        ? 'Comparte los versículos como una imagen'
+                        : `Solo disponible para ${MAX_VERSES_FOR_IMAGE} versículos o menos. Tienes ${selectedVerses.length} seleccionados.`}
+                    </Text>
+                  </View>
+                </Pressable>
+
+                <Pressable
+                  accessibilityLabel="Cancelar compartir"
+                  onPress={handleCloseShareDialog}
                   style={styles.modalButtonSecondary}
                 >
                   <Text style={styles.modalButtonSecondaryText}>Cancelar</Text>
                 </Pressable>
-                <Pressable
-                  accessibilityLabel="Confirmar guardado"
-                  onPress={handleConfirmSave}
-                  style={styles.modalButtonPrimary}
-                >
-                  <Text style={styles.modalButtonPrimaryText}>Guardar</Text>
-                </Pressable>
               </View>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      ) : null}
-
-      {shareModalVisible ? (
-        <View style={styles.modalWrapper} pointerEvents="box-none">
-          <Pressable
-            style={styles.modalBackdrop}
-            onPress={handleCloseShareDialog}
-          />
-          <View style={styles.modalContainer}>
-            <View
-              style={[
-                styles.modalCard,
-                {
-                  backgroundColor: colors.backgroundSecondary,
-                  borderColor: colors.divider,
-                },
-              ]}
-            >
-              <Text style={styles.modalTitle}>Compartir versículos</Text>
-              <Text style={styles.modalSubtitle}>
-                ¿Cómo deseas compartir los versículos?
-              </Text>
-
-              <Pressable
-                accessibilityLabel="Compartir como texto"
-                onPress={handleShareAsText}
-                style={[
-                  styles.shareOptionButton,
-                  { backgroundColor: colors.surfaceMuted },
-                ]}
-              >
-                <FileText
-                  size={32}
-                  color={colors.bodyText}
-                  style={{ marginRight: 12 }}
-                />
-                <View style={styles.shareOptionContent}>
-                  <Text style={styles.shareOptionTitle}>
-                    Compartir como texto
-                  </Text>
-                  <Text style={styles.shareOptionDescription}>
-                    Comparte los versículos en formato de texto plano
-                  </Text>
-                </View>
-              </Pressable>
-
-              <Pressable
-                accessibilityLabel="Compartir como imagen"
-                onPress={canShareAsImage ? handleShareAsImage : undefined}
-                disabled={!canShareAsImage}
-                style={[
-                  styles.shareOptionButton,
-                  { backgroundColor: colors.surfaceMuted },
-                  !canShareAsImage && styles.shareOptionButtonDisabled,
-                ]}
-              >
-                <Image
-                  size={32}
-                  color={colors.bodyText}
-                  style={{
-                    marginRight: 12,
-                    opacity: !canShareAsImage ? 0.4 : 1,
-                  }}
-                />
-                <View style={styles.shareOptionContent}>
-                  <Text
-                    style={[
-                      styles.shareOptionTitle,
-                      !canShareAsImage && { opacity: 0.5 },
-                    ]}
-                  >
-                    Compartir como imagen
-                  </Text>
-                  <Text
-                    style={[
-                      styles.shareOptionDescription,
-                      !canShareAsImage && { opacity: 0.5 },
-                    ]}
-                  >
-                    {canShareAsImage
-                      ? 'Comparte los versículos como una imagen'
-                      : `Solo disponible para ${MAX_VERSES_FOR_IMAGE} versículos o menos. Tienes ${selectedVerses.length} seleccionados.`}
-                  </Text>
-                </View>
-              </Pressable>
-
-              <Pressable
-                accessibilityLabel="Cancelar compartir"
-                onPress={handleCloseShareDialog}
-                style={styles.modalButtonSecondary}
-              >
-                <Text style={styles.modalButtonSecondaryText}>Cancelar</Text>
-              </Pressable>
             </View>
           </View>
-        </View>
-      ) : null}
+        ) : null}
 
-      {/* Pestaña flotante y drawer de búsqueda - Solo visible en modo lectura con libro seleccionado */}
-      {isReaderScreen && selectedBook && !isSelecting && (
-        <>
-          {/* Pestaña flotante en la esquina inferior derecha */}
-          {!isSearchDrawerExpanded && (
-            <Pressable
-              accessibilityLabel="Abrir búsqueda en libro"
-              onPress={toggleSearchDrawer}
-              style={[
-                styles.searchTab,
-                {
-                  bottom: insets.bottom + 20,
-                  backgroundColor: colors.accent,
-                  shadowColor: colors.accent,
-                },
-              ]}
-            >
-              <Search
-                size={18}
-                color={colors.accentText}
-                style={{ marginRight: 6 }}
-              />
-              <Text style={styles.searchTabText}>Buscar</Text>
-            </Pressable>
-          )}
-
-          {/* Backdrop invisible para cerrar al hacer click fuera */}
-          {isSearchDrawerExpanded && (
-            <Pressable
-              style={styles.searchBackdrop}
-              onPress={toggleSearchDrawer}
-              pointerEvents="auto"
-            />
-          )}
-
-          {/* Drawer de búsqueda inferior */}
-          <Animated.View
-            style={[
-              styles.searchDrawer,
-              {
-                height: searchDrawerHeight,
-                bottom: insets.bottom,
-                backgroundColor: colors.backgroundSecondary,
-                borderTopColor: colors.divider,
-              },
-            ]}
-            pointerEvents={isSearchDrawerExpanded ? 'auto' : 'none'}
-          >
-            {/* Handle para arrastrar */}
-            <Pressable onPress={toggleSearchDrawer} style={styles.drawerHandle}>
-              <View
-                style={[styles.handleBar, { backgroundColor: colors.divider }]}
-              />
-            </Pressable>
-
-            {/* Contenido del drawer */}
-            {isSearchDrawerExpanded && (
-              <BookSearchView
-                selectedBook={selectedBook}
-                chapters={chapters}
-                selectedChapterIndex={selectedChapterIndex}
-                searchQuery={bookSearchQuery}
-                onSearchQueryChange={setBookSearchQuery}
-                onSelectResult={handleBookSearchResultSelect}
-              />
-            )}
-          </Animated.View>
-        </>
-      )}
-
-      {/* ViewShot oculto para capturar solo los versículos seleccionados */}
-      {isCapturingImage &&
-      selectedBook &&
-      selectedChapter &&
-      selectedVerses.length > 0 ? (
-        <View
-          style={{ position: 'absolute', left: -9999, top: -9999, opacity: 0 }}
-        >
-          <ViewShot
-            ref={selectedVersesViewShotRef}
-            options={{ format: 'jpg', quality: 0.9, result: 'tmpfile' }}
-            style={{ width: 400, backgroundColor: colors.backgroundPrimary }}
-          >
-            <View
-              style={[
-                styles.shareableContent,
-                { backgroundColor: colors.backgroundPrimary, width: 400 },
-              ]}
-            >
-              <Text style={styles.chapterHeading}>
-                {selectedBook.label} {selectedChapter.name}
-              </Text>
-              {selectedChapter.verses.map(verse => {
-                const verseId = buildVerseId(
-                  selectedBook.id,
-                  selectedChapter.name,
-                  verse.name,
-                );
-                const isSelected = selectedVerses.includes(verseId);
-
-                // Solo mostrar versículos seleccionados
-                if (!isSelected) {
-                  return null;
-                }
-
-                return (
-                  <View
-                    key={verseId}
-                    style={[
-                      styles.verseRow,
-                      styles.verseRowSelected,
-                      { marginBottom: 8 },
-                    ]}
-                  >
-                    <Text
-                      style={[styles.verseNumber, styles.verseNumberSelected]}
-                    >
-                      {verse.name}
-                    </Text>
-                    <View style={styles.verseBody}>
-                      <Text
-                        style={[styles.verseText, styles.verseTextSelected]}
-                      >
-                        {verse.text}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
-              <View style={[styles.shareFooterContainer, { marginTop: 20 }]}>
-                <BookOpen
-                  size={14}
-                  color={colors.placeholderText}
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={styles.shareFooter}>Biblia Reina-Valera 1909</Text>
-              </View>
-            </View>
-          </ViewShot>
-        </View>
-      ) : null}
-
-      {/* Modal para seleccionar versión de la Biblia */}
-      {bibleVersionPickerVisible ? (
-        <View style={styles.modalWrapper} pointerEvents="box-none">
-          <Pressable
-            style={styles.modalBackdrop}
-            onPress={() => setBibleVersionPickerVisible(false)}
-          />
-          <View style={styles.modalContainer}>
-            <View
-              style={[
-                styles.modalCard,
-                {
-                  backgroundColor: colors.backgroundSecondary,
-                  borderColor: colors.divider,
-                },
-              ]}
-            >
-              <Text style={styles.modalTitle}>Seleccionar versión</Text>
-
+        {/* Pestaña flotante y drawer de búsqueda - Solo visible en modo lectura con libro seleccionado */}
+        {isReaderScreen && selectedBook && !isSelecting && (
+          <>
+            {/* Pestaña flotante en la esquina inferior derecha */}
+            {!isSearchDrawerExpanded && (
               <Pressable
-                accessibilityLabel="Biblia Reina-Valera 1909"
-                onPress={() => {
-                  setSelectedBibleVersion('Reina-Valera 1909');
-                  setBibleVersionPickerVisible(false);
-                }}
+                accessibilityLabel="Abrir búsqueda en libro"
+                onPress={toggleSearchDrawer}
                 style={[
-                  styles.versionOption,
-                  selectedBibleVersion === 'Reina-Valera 1909' && {
-                    backgroundColor: colors.accentSubtle,
+                  styles.searchTab,
+                  {
+                    bottom: insets.bottom + 20,
+                    backgroundColor: colors.accent,
+                    shadowColor: colors.accent,
                   },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.versionOptionText,
-                    selectedBibleVersion === 'Reina-Valera 1909' && {
-                      color: colors.accent,
-                      fontWeight: '700',
-                    },
-                  ]}
-                >
-                  Reina-Valera 1909
-                </Text>
-                {selectedBibleVersion === 'Reina-Valera 1909' && (
-                  <View
-                    style={[
-                      styles.versionCheckmark,
-                      { backgroundColor: colors.accent },
-                    ]}
-                  />
-                )}
+                <Search
+                  size={18}
+                  color={colors.accentText}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={styles.searchTabText}>Buscar</Text>
               </Pressable>
+            )}
 
+            {/* Backdrop invisible para cerrar al hacer click fuera */}
+            {isSearchDrawerExpanded && (
               <Pressable
-                accessibilityLabel="Cerrar selector de versiones"
-                onPress={() => setBibleVersionPickerVisible(false)}
-                style={styles.modalButtonSecondary}
-              >
-                <Text style={styles.modalButtonSecondaryText}>Cerrar</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      ) : null}
-
-      {/* Toast para notificaciones de ancla */}
-      <Toast
-        visible={toastVisible}
-        message={toastMessage}
-        onHide={() => setToastVisible(false)}
-      />
-
-      {/* Modal para fin de libro */}
-      {nextBookForPin && (
-        <EndOfBookModal
-          visible={endOfBookModalVisible}
-          bookName={selectedBook?.label || ''}
-          nextBookName={nextBookForPin.book}
-          onContinue={handleContinueToNextBook}
-          onRemovePin={handleRemovePin}
-        />
-      )}
-
-      {/* Modal de onboarding para rachas - solo se muestra la primera vez */}
-      <StreakOnboardingModal
-        visible={!streakSettings.hasCompletedOnboarding}
-        onComplete={completeOnboarding}
-      />
-
-      {/* Modal de resumen de racha - se muestra al abrir si hay alerta */}
-      <StreakSummaryModal
-        visible={showStreakSummary}
-        onClose={() => setShowStreakSummary(false)}
-        currentStreak={streakData.currentStreak}
-        longestStreak={streakData.longestStreak}
-        todayProgress={getTodayProgress()}
-        remainingMinutes={getRemainingMinutes()}
-        streakStatus={getStreakStatus()}
-        availableFreezes={streakData.availableFreezes}
-        currentGems={streakData.currentGems}
-      />
-
-      {/* Modal de celebración: día 1 (inicio de racha) O cuando hay gemas */}
-      {pendingReward &&
-        (pendingReward.totalGemsEarned > 0 ||
-          pendingReward.newStreak === 1) && (
-          <DailyCompletionModal
-            visible={true}
-            onClose={clearPendingReward}
-            reward={pendingReward}
-          />
-        )}
-
-      {/* Toast pequeño cuando completa el día SIN gemas (excepto día 1) */}
-      {pendingReward &&
-        pendingReward.totalGemsEarned === 0 &&
-        pendingReward.newStreak > 1 && (
-          <Toast
-            visible={true}
-            message={`🔥 ¡Día ${pendingReward.newStreak} completado! ${
-              pendingReward.daysToNextInterval > 0
-                ? `(${pendingReward.daysToNextInterval} días para +10 gemas)`
-                : ''
-            }`}
-            onHide={clearPendingReward}
-            duration={3000}
-            icon={<Flame size={16} color="#FF6B35" fill="#FF6B35" />}
-            borderColor="#FF6B35"
-          />
-        )}
-
-      {/* Toast cuando se usaron protectores automáticamente */}
-      {autoFreezesUsed > 0 && (
-        <Toast
-          visible={true}
-          message={`🛡️ ${
-            autoFreezesUsed === 1
-              ? 'Se usó 1 protector automáticamente'
-              : `Se usaron ${autoFreezesUsed} protectores automáticamente`
-          } para mantener tu racha`}
-          onHide={clearAutoFreezesUsed}
-          duration={4000}
-          icon={<Shield size={16} color="#87CEEB" />}
-          borderColor="#87CEEB"
-        />
-      )}
-
-      {/* DEBUG: Botón flotante para probar modales */}
-      {__DEV__ && (
-        <>
-          <Pressable
-            style={[
-              styles.debugButton,
-              { bottom: insets.bottom + 80, backgroundColor: colors.accent },
-            ]}
-            onPress={() => setDebugMenuVisible(true)}
-          >
-            <Bug size={20} color={colors.accentText} />
-          </Pressable>
-
-          {debugMenuVisible && (
-            <View style={styles.modalWrapper} pointerEvents="box-none">
-              <Pressable
-                style={styles.modalBackdrop}
-                onPress={() => setDebugMenuVisible(false)}
+                style={styles.searchBackdrop}
+                onPress={toggleSearchDrawer}
+                pointerEvents="auto"
               />
-              <View style={styles.modalContainer}>
+            )}
+
+            {/* Drawer de búsqueda inferior */}
+            <Animated.View
+              style={[
+                styles.searchDrawer,
+                {
+                  height: searchDrawerHeight,
+                  bottom: insets.bottom,
+                  backgroundColor: colors.backgroundSecondary,
+                  borderTopColor: colors.divider,
+                },
+              ]}
+              pointerEvents={isSearchDrawerExpanded ? 'auto' : 'none'}
+            >
+              {/* Handle para arrastrar */}
+              <Pressable
+                onPress={toggleSearchDrawer}
+                style={styles.drawerHandle}
+              >
                 <View
                   style={[
-                    styles.modalCard,
-                    {
-                      backgroundColor: colors.backgroundSecondary,
-                      borderColor: colors.divider,
+                    styles.handleBar,
+                    { backgroundColor: colors.divider },
+                  ]}
+                />
+              </Pressable>
+
+              {/* Contenido del drawer */}
+              {isSearchDrawerExpanded && (
+                <BookSearchView
+                  selectedBook={selectedBook}
+                  chapters={chapters}
+                  selectedChapterIndex={selectedChapterIndex}
+                  searchQuery={bookSearchQuery}
+                  onSearchQueryChange={setBookSearchQuery}
+                  onSelectResult={handleBookSearchResultSelect}
+                />
+              )}
+            </Animated.View>
+          </>
+        )}
+
+        {/* ViewShot oculto para capturar solo los versículos seleccionados */}
+        {isCapturingImage &&
+        selectedBook &&
+        selectedChapter &&
+        selectedVerses.length > 0 ? (
+          <View
+            style={{
+              position: 'absolute',
+              left: -9999,
+              top: -9999,
+              opacity: 0,
+            }}
+          >
+            <ViewShot
+              ref={selectedVersesViewShotRef}
+              options={{ format: 'jpg', quality: 0.9, result: 'tmpfile' }}
+              style={{ width: 400, backgroundColor: colors.backgroundPrimary }}
+            >
+              <View
+                style={[
+                  styles.shareableContent,
+                  { backgroundColor: colors.backgroundPrimary, width: 400 },
+                ]}
+              >
+                <Text style={styles.chapterHeading}>
+                  {selectedBook.label} {selectedChapter.name}
+                </Text>
+                {selectedChapter.verses.map(verse => {
+                  const verseId = buildVerseId(
+                    selectedBook.id,
+                    selectedChapter.name,
+                    verse.name,
+                  );
+                  const isSelected = selectedVerses.includes(verseId);
+
+                  // Solo mostrar versículos seleccionados
+                  if (!isSelected) {
+                    return null;
+                  }
+
+                  return (
+                    <View
+                      key={verseId}
+                      style={[
+                        styles.verseRow,
+                        styles.verseRowSelected,
+                        { marginBottom: 8 },
+                      ]}
+                    >
+                      <Text
+                        style={[styles.verseNumber, styles.verseNumberSelected]}
+                      >
+                        {verse.name}
+                      </Text>
+                      <View style={styles.verseBody}>
+                        <Text
+                          style={[styles.verseText, styles.verseTextSelected]}
+                        >
+                          {verse.text}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })}
+                <View style={[styles.shareFooterContainer, { marginTop: 20 }]}>
+                  <BookOpen
+                    size={14}
+                    color={colors.placeholderText}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={styles.shareFooter}>
+                    Biblia Reina-Valera 1909
+                  </Text>
+                </View>
+              </View>
+            </ViewShot>
+          </View>
+        ) : null}
+
+        {/* Modal para seleccionar versión de la Biblia */}
+        {bibleVersionPickerVisible ? (
+          <View style={styles.modalWrapper} pointerEvents="box-none">
+            <Pressable
+              style={styles.modalBackdrop}
+              onPress={() => setBibleVersionPickerVisible(false)}
+            />
+            <View style={styles.modalContainer}>
+              <View
+                style={[
+                  styles.modalCard,
+                  {
+                    backgroundColor: colors.backgroundSecondary,
+                    borderColor: colors.divider,
+                  },
+                ]}
+              >
+                <Text style={styles.modalTitle}>Seleccionar versión</Text>
+
+                <Pressable
+                  accessibilityLabel="Biblia Reina-Valera 1909"
+                  onPress={() => {
+                    setSelectedBibleVersion('Reina-Valera 1909');
+                    setBibleVersionPickerVisible(false);
+                  }}
+                  style={[
+                    styles.versionOption,
+                    selectedBibleVersion === 'Reina-Valera 1909' && {
+                      backgroundColor: colors.accentSubtle,
                     },
                   ]}
                 >
-                  <Text style={styles.modalTitle}>Debug: Probar Modales</Text>
-
-                  <Pressable
+                  <Text
                     style={[
-                      styles.debugMenuItem,
-                      { backgroundColor: colors.surfaceMuted },
+                      styles.versionOptionText,
+                      selectedBibleVersion === 'Reina-Valera 1909' && {
+                        color: colors.accent,
+                        fontWeight: '700',
+                      },
                     ]}
-                    onPress={() => {
-                      setDebugMenuVisible(false);
-                      setDebugStreakOnboarding(true);
-                    }}
                   >
-                    <Text style={styles.debugMenuItemText}>
-                      StreakOnboardingModal
-                    </Text>
-                  </Pressable>
+                    Reina-Valera 1909
+                  </Text>
+                  {selectedBibleVersion === 'Reina-Valera 1909' && (
+                    <View
+                      style={[
+                        styles.versionCheckmark,
+                        { backgroundColor: colors.accent },
+                      ]}
+                    />
+                  )}
+                </Pressable>
 
-                  <Pressable
-                    style={[
-                      styles.debugMenuItem,
-                      { backgroundColor: colors.surfaceMuted },
-                    ]}
-                    onPress={() => {
-                      setDebugMenuVisible(false);
-                      setDebugStreakSummary(true);
-                    }}
-                  >
-                    <Text style={styles.debugMenuItemText}>
-                      StreakSummaryModal
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    style={[
-                      styles.debugMenuItem,
-                      { backgroundColor: colors.surfaceMuted },
-                    ]}
-                    onPress={() => {
-                      setDebugMenuVisible(false);
-                      setDebugDailyCompletion(true);
-                    }}
-                  >
-                    <Text style={styles.debugMenuItemText}>
-                      DailyCompletionModal
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    style={[
-                      styles.debugMenuItem,
-                      { backgroundColor: colors.surfaceMuted },
-                    ]}
-                    onPress={() => {
-                      setDebugMenuVisible(false);
-                      setDebugEndOfBook(true);
-                    }}
-                  >
-                    <Text style={styles.debugMenuItemText}>EndOfBookModal</Text>
-                  </Pressable>
-
-                  <Pressable
-                    style={[
-                      styles.debugMenuItem,
-                      { backgroundColor: colors.surfaceMuted },
-                    ]}
-                    onPress={() => {
-                      setDebugMenuVisible(false);
-                      setShareModalVisible(true);
-                    }}
-                  >
-                    <Text style={styles.debugMenuItemText}>ShareModal</Text>
-                  </Pressable>
-
-                  <Pressable
-                    style={[
-                      styles.debugMenuItem,
-                      { backgroundColor: colors.surfaceMuted },
-                    ]}
-                    onPress={() => {
-                      setDebugMenuVisible(false);
-                      setBibleVersionPickerVisible(true);
-                    }}
-                  >
-                    <Text style={styles.debugMenuItemText}>
-                      VersionPickerModal
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    style={styles.modalButtonSecondary}
-                    onPress={() => setDebugMenuVisible(false)}
-                  >
-                    <Text style={styles.modalButtonSecondaryText}>Cerrar</Text>
-                  </Pressable>
-                </View>
+                <Pressable
+                  accessibilityLabel="Cerrar selector de versiones"
+                  onPress={() => setBibleVersionPickerVisible(false)}
+                  style={styles.modalButtonSecondary}
+                >
+                  <Text style={styles.modalButtonSecondaryText}>Cerrar</Text>
+                </Pressable>
               </View>
             </View>
-          )}
+          </View>
+        ) : null}
 
-          {/* Debug modals */}
-          <StreakOnboardingModal
-            visible={debugStreakOnboarding}
-            onComplete={() => setDebugStreakOnboarding(false)}
+        {/* Toast para notificaciones de ancla */}
+        <Toast
+          visible={toastVisible}
+          message={toastMessage}
+          onHide={() => setToastVisible(false)}
+        />
+
+        {/* Modal para fin de libro */}
+        {nextBookForPin && (
+          <EndOfBookModal
+            visible={endOfBookModalVisible}
+            bookName={selectedBook?.label || ''}
+            nextBookName={nextBookForPin.book}
+            onContinue={handleContinueToNextBook}
+            onRemovePin={handleRemovePin}
           />
+        )}
 
-          <StreakSummaryModal
-            visible={debugStreakSummary}
-            onClose={() => setDebugStreakSummary(false)}
-            currentStreak={7}
-            longestStreak={15}
-            todayProgress={65}
-            remainingMinutes={3}
-            streakStatus="active"
-            availableFreezes={2}
-            currentGems={150}
-          />
+        {/* Modal de onboarding para rachas - solo se muestra la primera vez */}
+        <StreakOnboardingModal
+          visible={!streakSettings.hasCompletedOnboarding}
+          onComplete={completeOnboarding}
+        />
 
-          {debugDailyCompletion && (
+        {/* Modal de resumen de racha - se muestra al abrir si hay alerta */}
+        <StreakSummaryModal
+          visible={showStreakSummary}
+          onClose={() => setShowStreakSummary(false)}
+          currentStreak={streakData.currentStreak}
+          longestStreak={streakData.longestStreak}
+          todayProgress={getTodayProgress()}
+          remainingMinutes={getRemainingMinutes()}
+          streakStatus={getStreakStatus()}
+          availableFreezes={streakData.availableFreezes}
+          currentGems={streakData.currentGems}
+        />
+
+        {/* Modal de celebración: día 1 (inicio de racha) O cuando hay gemas */}
+        {pendingReward &&
+          (pendingReward.totalGemsEarned > 0 ||
+            pendingReward.newStreak === 1) && (
             <DailyCompletionModal
               visible={true}
-              onClose={() => setDebugDailyCompletion(false)}
-              reward={{
-                newStreak: 7,
-                intervalGemsEarned: 10,
-                goalCompleted: true,
-                goalTitle: '7 días',
-                goalGemsEarned: 5,
-                totalGemsEarned: 15,
-                daysToNextGoal: 0,
-                daysToNextInterval: 0,
-              }}
+              onClose={clearPendingReward}
+              reward={pendingReward}
             />
           )}
 
-          <EndOfBookModal
-            visible={debugEndOfBook}
-            bookName="Génesis"
-            nextBookName="Éxodo"
-            onContinue={() => setDebugEndOfBook(false)}
-            onRemovePin={() => setDebugEndOfBook(false)}
+        {/* Toast pequeño cuando completa el día SIN gemas (excepto día 1) */}
+        {pendingReward &&
+          pendingReward.totalGemsEarned === 0 &&
+          pendingReward.newStreak > 1 && (
+            <Toast
+              visible={true}
+              message={`🔥 ¡Día ${pendingReward.newStreak} completado! ${
+                pendingReward.daysToNextInterval > 0
+                  ? `(${pendingReward.daysToNextInterval} días para +10 gemas)`
+                  : ''
+              }`}
+              onHide={clearPendingReward}
+              duration={3000}
+              icon={<Flame size={16} color="#FF6B35" fill="#FF6B35" />}
+              borderColor="#FF6B35"
+            />
+          )}
+
+        {/* Toast cuando se usaron protectores automáticamente */}
+        {autoFreezesUsed > 0 && (
+          <Toast
+            visible={true}
+            message={`🛡️ ${
+              autoFreezesUsed === 1
+                ? 'Se usó 1 protector automáticamente'
+                : `Se usaron ${autoFreezesUsed} protectores automáticamente`
+            } para mantener tu racha`}
+            onHide={clearAutoFreezesUsed}
+            duration={4000}
+            icon={<Shield size={16} color="#87CEEB" />}
+            borderColor="#87CEEB"
           />
-        </>
-      )}
+        )}
+
+        {/* DEBUG: Botón flotante para probar modales */}
+        {__DEV__ && (
+          <>
+            <Pressable
+              style={[
+                styles.debugButton,
+                { bottom: insets.bottom + 80, backgroundColor: colors.accent },
+              ]}
+              onPress={() => setDebugMenuVisible(true)}
+            >
+              <Bug size={20} color={colors.accentText} />
+            </Pressable>
+
+            {debugMenuVisible && (
+              <View style={styles.modalWrapper} pointerEvents="box-none">
+                <Pressable
+                  style={styles.modalBackdrop}
+                  onPress={() => setDebugMenuVisible(false)}
+                />
+                <View style={styles.modalContainer}>
+                  <View
+                    style={[
+                      styles.modalCard,
+                      {
+                        backgroundColor: colors.backgroundSecondary,
+                        borderColor: colors.divider,
+                      },
+                    ]}
+                  >
+                    <Text style={styles.modalTitle}>Debug: Probar Modales</Text>
+
+                    <Pressable
+                      style={[
+                        styles.debugMenuItem,
+                        { backgroundColor: colors.surfaceMuted },
+                      ]}
+                      onPress={() => {
+                        setDebugMenuVisible(false);
+                        setDebugStreakOnboarding(true);
+                      }}
+                    >
+                      <Text style={styles.debugMenuItemText}>
+                        StreakOnboardingModal
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={[
+                        styles.debugMenuItem,
+                        { backgroundColor: colors.surfaceMuted },
+                      ]}
+                      onPress={() => {
+                        setDebugMenuVisible(false);
+                        setDebugStreakSummary(true);
+                      }}
+                    >
+                      <Text style={styles.debugMenuItemText}>
+                        StreakSummaryModal
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={[
+                        styles.debugMenuItem,
+                        { backgroundColor: colors.surfaceMuted },
+                      ]}
+                      onPress={() => {
+                        setDebugMenuVisible(false);
+                        setDebugDailyCompletion(true);
+                      }}
+                    >
+                      <Text style={styles.debugMenuItemText}>
+                        DailyCompletionModal
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={[
+                        styles.debugMenuItem,
+                        { backgroundColor: colors.surfaceMuted },
+                      ]}
+                      onPress={() => {
+                        setDebugMenuVisible(false);
+                        setDebugEndOfBook(true);
+                      }}
+                    >
+                      <Text style={styles.debugMenuItemText}>
+                        EndOfBookModal
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={[
+                        styles.debugMenuItem,
+                        { backgroundColor: colors.surfaceMuted },
+                      ]}
+                      onPress={() => {
+                        setDebugMenuVisible(false);
+                        setShareModalVisible(true);
+                      }}
+                    >
+                      <Text style={styles.debugMenuItemText}>ShareModal</Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={[
+                        styles.debugMenuItem,
+                        { backgroundColor: colors.surfaceMuted },
+                      ]}
+                      onPress={() => {
+                        setDebugMenuVisible(false);
+                        setBibleVersionPickerVisible(true);
+                      }}
+                    >
+                      <Text style={styles.debugMenuItemText}>
+                        VersionPickerModal
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      style={styles.modalButtonSecondary}
+                      onPress={() => setDebugMenuVisible(false)}
+                    >
+                      <Text style={styles.modalButtonSecondaryText}>
+                        Cerrar
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Debug modals */}
+            <StreakOnboardingModal
+              visible={debugStreakOnboarding}
+              onComplete={() => setDebugStreakOnboarding(false)}
+            />
+
+            <StreakSummaryModal
+              visible={debugStreakSummary}
+              onClose={() => setDebugStreakSummary(false)}
+              currentStreak={7}
+              longestStreak={15}
+              todayProgress={65}
+              remainingMinutes={3}
+              streakStatus="active"
+              availableFreezes={2}
+              currentGems={150}
+            />
+
+            {debugDailyCompletion && (
+              <DailyCompletionModal
+                visible={true}
+                onClose={() => setDebugDailyCompletion(false)}
+                reward={{
+                  newStreak: 7,
+                  intervalGemsEarned: 10,
+                  goalCompleted: true,
+                  goalTitle: '7 días',
+                  goalGemsEarned: 5,
+                  totalGemsEarned: 15,
+                  daysToNextGoal: 0,
+                  daysToNextInterval: 0,
+                }}
+              />
+            )}
+
+            <EndOfBookModal
+              visible={debugEndOfBook}
+              bookName="Génesis"
+              nextBookName="Éxodo"
+              onContinue={() => setDebugEndOfBook(false)}
+              onRemovePin={() => setDebugEndOfBook(false)}
+            />
+          </>
+        )}
+      </View>
     </View>
   );
 }
 
+const MAX_APP_WIDTH = 500; // Ancho máximo como un teléfono
+
 const createStyles = (colors: ThemeColors, getFontSize: GetFontSize) =>
   StyleSheet.create({
+    tabletContainer: {
+      flex: 1,
+      backgroundColor: '#000000',
+      alignItems: 'center',
+    },
+    phoneContainer: {
+      width: '100%',
+      maxWidth: MAX_APP_WIDTH,
+    },
     screen: {
       flex: 1,
       backgroundColor: colors.backgroundPrimary,

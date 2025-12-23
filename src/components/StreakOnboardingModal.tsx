@@ -59,7 +59,11 @@ export function StreakOnboardingModal({
         <View style={styles.container}>
           {/* Pantalla 1: Introducción */}
           {step === 'intro' && (
-            <View style={styles.stepContainer}>
+            <ScrollView
+              style={styles.stepScrollView}
+              contentContainerStyle={styles.stepContainer}
+              showsVerticalScrollIndicator={false}
+            >
               <View style={styles.iconContainer}>
                 <Flame size={64} color={STREAK_COLORS.fire} />
               </View>
@@ -107,12 +111,16 @@ export function StreakOnboardingModal({
                 <Text style={styles.primaryButtonText}>Continuar</Text>
                 <ChevronRight size={20} color="white" />
               </Pressable>
-            </View>
+            </ScrollView>
           )}
 
           {/* Pantalla 2: Meta Diaria */}
           {step === 'daily-goal' && (
-            <View style={styles.stepContainer}>
+            <ScrollView
+              style={styles.stepScrollView}
+              contentContainerStyle={styles.stepContainer}
+              showsVerticalScrollIndicator={false}
+            >
               <View style={styles.iconContainer}>
                 <Clock size={48} color={colors.accent} />
               </View>
@@ -125,11 +133,7 @@ export function StreakOnboardingModal({
                 Elige un tiempo que puedas mantener consistentemente
               </Text>
 
-              <ScrollView
-                style={styles.optionsScrollView}
-                contentContainerStyle={styles.optionsGrid}
-                showsVerticalScrollIndicator={false}
-              >
+              <View style={styles.optionsGrid}>
                 {DAILY_GOAL_OPTIONS.map(minutes => (
                   <Pressable
                     key={minutes}
@@ -166,7 +170,7 @@ export function StreakOnboardingModal({
                     )}
                   </Pressable>
                 ))}
-              </ScrollView>
+              </View>
 
               <Pressable
                 style={({ pressed }) => [
@@ -178,12 +182,16 @@ export function StreakOnboardingModal({
                 <Text style={styles.primaryButtonText}>Siguiente</Text>
                 <ChevronRight size={20} color="white" />
               </Pressable>
-            </View>
+            </ScrollView>
           )}
 
           {/* Pantalla 3: Meta de Racha */}
           {step === 'streak-goal' && (
-            <View style={styles.stepContainer}>
+            <ScrollView
+              style={styles.stepScrollView}
+              contentContainerStyle={styles.stepContainer}
+              showsVerticalScrollIndicator={false}
+            >
               <View style={styles.iconContainer}>
                 <Target size={48} color={colors.accent} />
               </View>
@@ -200,12 +208,7 @@ export function StreakOnboardingModal({
                 transacciones.
               </Text>
 
-              <ScrollView
-                style={styles.goalScrollView}
-                contentContainerStyle={styles.goalOptionsContainer}
-                showsVerticalScrollIndicator={true}
-                persistentScrollbar={true}
-              >
+              <View style={styles.goalOptionsContainer}>
                 {STREAK_GOALS.map(goal => (
                   <Pressable
                     key={goal.id}
@@ -248,7 +251,7 @@ export function StreakOnboardingModal({
                     )}
                   </Pressable>
                 ))}
-              </ScrollView>
+              </View>
 
               <Pressable
                 style={({ pressed }) => [
@@ -261,7 +264,7 @@ export function StreakOnboardingModal({
                 <Flame size={20} color="white" />
                 <Text style={styles.primaryButtonText}>¡Empezar!</Text>
               </Pressable>
-            </View>
+            </ScrollView>
           )}
 
           {/* Indicadores de paso */}
@@ -308,6 +311,9 @@ const getStyles = (
       maxHeight: '85%',
       overflow: 'hidden',
     },
+    stepScrollView: {
+      flexGrow: 0,
+    },
     stepContainer: {
       padding: 24,
       alignItems: 'center',
@@ -349,11 +355,6 @@ const getStyles = (
       marginBottom: 12,
       paddingHorizontal: 16,
     },
-    goalScrollView: {
-      maxHeight: 240,
-      width: '100%',
-      paddingRight: 8,
-    },
     featureList: {
       width: '100%',
       marginBottom: 24,
@@ -373,16 +374,14 @@ const getStyles = (
       marginLeft: 12,
       flex: 1,
     },
-    optionsScrollView: {
-      maxHeight: 280,
-      width: '100%',
-    },
     optionsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'center',
       gap: 12,
       paddingBottom: 16,
+      width: '100%',
+      marginBottom: 8,
     },
     optionCard: {
       width: (SCREEN_WIDTH - 100) / 3,
@@ -428,6 +427,8 @@ const getStyles = (
     },
     goalOptionsContainer: {
       paddingBottom: 16,
+      width: '100%',
+      marginBottom: 8,
     },
     goalCard: {
       flexDirection: 'row',
