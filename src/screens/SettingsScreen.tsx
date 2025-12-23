@@ -350,157 +350,159 @@ export function SettingsScreen() {
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Administración</Text>
-        <Text style={styles.sectionSubtitle}>
-          Gestiona la lista de versículos del día
-        </Text>
-
-        {isAdmin && (
-          <View
-            style={[
-              styles.adminBadge,
-              { backgroundColor: colors.accentSubtle },
-            ]}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Check
-                size={16}
-                color={colors.accent}
-                style={{ marginRight: 6 }}
-              />
-              <Text style={[styles.adminBadgeText, { color: colors.accent }]}>
-                Modo Admin Activo
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {!isAdmin && (
-          <View style={styles.adminCodeContainer}>
-            <TextInput
-              style={[
-                styles.adminCodeInput,
-                {
-                  color: colors.bodyText,
-                  borderColor: colors.divider,
-                  backgroundColor: colors.backgroundSecondary,
-                },
-              ]}
-              placeholder="Código de administrador"
-              placeholderTextColor={colors.placeholderText}
-              value={adminCodeInput}
-              onChangeText={setAdminCodeInput}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <Pressable
-              onPress={handleCheckAdminCode}
-              style={[
-                styles.adminCodeButton,
-                { backgroundColor: colors.accent },
-              ]}
-              disabled={!adminCodeInput.trim()}
-            >
-              <Text
-                style={[
-                  styles.adminCodeButtonText,
-                  { color: colors.accentText },
-                ]}
-              >
-                Activar
-              </Text>
-            </Pressable>
-          </View>
-        )}
-
-        <View style={styles.statsContainer}>
-          <Text style={styles.statsText}>
-            Versículos curados:{' '}
-            <Text style={styles.statsValue}>{curatedVerses.length}</Text>
+      {__DEV__ && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Administración</Text>
+          <Text style={styles.sectionSubtitle}>
+            Gestiona la lista de versículos del día
           </Text>
-        </View>
 
-        <View style={styles.adminActions}>
-          <Pressable
-            onPress={exportCuratedList}
-            style={[
-              styles.adminButton,
-              {
-                backgroundColor: colors.surfaceMuted,
-                borderColor: colors.divider,
-              },
-            ]}
-            disabled={curatedVerses.length === 0}
-          >
-            <Upload
-              size={20}
-              color={colors.bodyText}
-              style={{
-                opacity: curatedVerses.length === 0 ? 0.3 : 1,
-                marginRight: 12,
-              }}
-            />
-            <Text
+          {isAdmin && (
+            <View
               style={[
-                styles.adminButtonText,
-                { opacity: curatedVerses.length === 0 ? 0.3 : 1 },
+                styles.adminBadge,
+                { backgroundColor: colors.accentSubtle },
               ]}
             >
-              Exportar Lista
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Check
+                  size={16}
+                  color={colors.accent}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.adminBadgeText, { color: colors.accent }]}>
+                  Modo Admin Activo
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {!isAdmin && (
+            <View style={styles.adminCodeContainer}>
+              <TextInput
+                style={[
+                  styles.adminCodeInput,
+                  {
+                    color: colors.bodyText,
+                    borderColor: colors.divider,
+                    backgroundColor: colors.backgroundSecondary,
+                  },
+                ]}
+                placeholder="Código de administrador"
+                placeholderTextColor={colors.placeholderText}
+                value={adminCodeInput}
+                onChangeText={setAdminCodeInput}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <Pressable
+                onPress={handleCheckAdminCode}
+                style={[
+                  styles.adminCodeButton,
+                  { backgroundColor: colors.accent },
+                ]}
+                disabled={!adminCodeInput.trim()}
+              >
+                <Text
+                  style={[
+                    styles.adminCodeButtonText,
+                    { color: colors.accentText },
+                  ]}
+                >
+                  Activar
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
+          <View style={styles.statsContainer}>
+            <Text style={styles.statsText}>
+              Versículos curados:{' '}
+              <Text style={styles.statsValue}>{curatedVerses.length}</Text>
             </Text>
-          </Pressable>
+          </View>
 
-          <Pressable
-            onPress={handleImport}
-            style={[
-              styles.adminButton,
-              {
-                backgroundColor: colors.surfaceMuted,
-                borderColor: colors.divider,
-              },
-            ]}
-          >
-            <Download
-              size={20}
-              color={colors.bodyText}
-              style={{ marginRight: 12 }}
-            />
-            <Text style={styles.adminButtonText}>Importar Lista</Text>
-          </Pressable>
-
-          {isAdmin && curatedVerses.length > 0 && (
+          <View style={styles.adminActions}>
             <Pressable
-              onPress={handleClearList}
+              onPress={exportCuratedList}
               style={[
                 styles.adminButton,
-                styles.adminButtonDanger,
                 {
-                  borderColor: '#ff4444',
+                  backgroundColor: colors.surfaceMuted,
+                  borderColor: colors.divider,
+                },
+              ]}
+              disabled={curatedVerses.length === 0}
+            >
+              <Upload
+                size={20}
+                color={colors.bodyText}
+                style={{
+                  opacity: curatedVerses.length === 0 ? 0.3 : 1,
+                  marginRight: 12,
+                }}
+              />
+              <Text
+                style={[
+                  styles.adminButtonText,
+                  { opacity: curatedVerses.length === 0 ? 0.3 : 1 },
+                ]}
+              >
+                Exportar Lista
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={handleImport}
+              style={[
+                styles.adminButton,
+                {
+                  backgroundColor: colors.surfaceMuted,
+                  borderColor: colors.divider,
                 },
               ]}
             >
-              <Trash2 size={20} color="#ff4444" style={{ marginRight: 12 }} />
-              <Text style={[styles.adminButtonText, { color: '#ff4444' }]}>
-                Limpiar Lista
-              </Text>
+              <Download
+                size={20}
+                color={colors.bodyText}
+                style={{ marginRight: 12 }}
+              />
+              <Text style={styles.adminButtonText}>Importar Lista</Text>
             </Pressable>
-          )}
-        </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-          <Lightbulb
-            size={16}
-            color={colors.placeholderText}
-            style={{ marginRight: 6, marginTop: 2 }}
-          />
-          <Text style={[styles.adminHint, { flex: 1 }]}>
-            En modo admin, al leer un versículo aparecerá un botón para
-            agregarlo a la lista curada del "Versículo del Día"
-          </Text>
+            {isAdmin && curatedVerses.length > 0 && (
+              <Pressable
+                onPress={handleClearList}
+                style={[
+                  styles.adminButton,
+                  styles.adminButtonDanger,
+                  {
+                    borderColor: '#ff4444',
+                  },
+                ]}
+              >
+                <Trash2 size={20} color="#ff4444" style={{ marginRight: 12 }} />
+                <Text style={[styles.adminButtonText, { color: '#ff4444' }]}>
+                  Limpiar Lista
+                </Text>
+              </Pressable>
+            )}
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+            <Lightbulb
+              size={16}
+              color={colors.placeholderText}
+              style={{ marginRight: 6, marginTop: 2 }}
+            />
+            <Text style={[styles.adminHint, { flex: 1 }]}>
+              En modo admin, al leer un versículo aparecerá un botón para
+              agregarlo a la lista curada del "Versículo del Día"
+            </Text>
+          </View>
         </View>
-      </View>
+      )}
     </ScrollView>
   );
 }
