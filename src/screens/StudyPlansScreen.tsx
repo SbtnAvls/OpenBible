@@ -1,5 +1,12 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React, { useEffect, useRef, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Animated,
+} from 'react-native';
 import {
   BookOpen,
   ChevronRight,
@@ -20,7 +27,35 @@ export const StudyPlansScreen: React.FC<StudyPlansScreenProps> = ({
 }) => {
   const { colors, getFontSize } = useTheme();
   const { plans } = useStudyPlan();
-  const styles = getStyles(colors, getFontSize);
+  const styles = useMemo(
+    () => getStyles(colors, getFontSize),
+    [colors, getFontSize],
+  );
+
+  // Animaciones
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const cardsAnim = useRef(plans.map(() => new Animated.Value(0))).current;
+
+  useEffect(() => {
+    // Header fade in con slide
+    Animated.timing(headerAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+
+    // Cards staggered animation con spring
+    const cardAnimations = cardsAnim.map((anim, index) =>
+      Animated.spring(anim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        delay: 200 + index * 100,
+        useNativeDriver: true,
+      }),
+    );
+    Animated.stagger(100, cardAnimations).start();
+  }, [headerAnim, cardsAnim]);
 
   const renderPlanCard = (item: StudyPlan) => {
     const completedSections = item.sections.filter(s => s.isCompleted).length;
@@ -101,8 +136,23 @@ export const StudyPlansScreen: React.FC<StudyPlansScreenProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section */}
-        <View style={styles.headerSection}>
+        {/* Header Section - animado */}
+        <Animated.View
+          style={[
+            styles.headerSection,
+            {
+              opacity: headerAnim,
+              transform: [
+                {
+                  translateY: headerAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-30, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
           <View style={styles.headerIconContainer}>
             <BookOpen size={32} color={colors.accent} />
           </View>
@@ -111,11 +161,37 @@ export const StudyPlansScreen: React.FC<StudyPlansScreenProps> = ({
             Profundiza en la Palabra con guías estructuradas que te llevan paso
             a paso
           </Text>
-        </View>
+        </Animated.View>
 
-        {/* Plans List */}
+        {/* Plans List - animado con stagger */}
         <View style={styles.plansContainer}>
-          {plans.map(plan => renderPlanCard(plan))}
+          {plans.map((plan, index) => {
+            const cardAnim = cardsAnim[index] || new Animated.Value(1);
+            return (
+              <Animated.View
+                key={plan.id}
+                style={{
+                  opacity: cardAnim,
+                  transform: [
+                    {
+                      translateY: cardAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [50, 0],
+                      }),
+                    },
+                    {
+                      scale: cardAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.9, 1],
+                      }),
+                    },
+                  ],
+                }}
+              >
+                {renderPlanCard(plan)}
+              </Animated.View>
+            );
+          })}
         </View>
       </ScrollView>
     </View>

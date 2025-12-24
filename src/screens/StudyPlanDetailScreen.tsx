@@ -1,5 +1,12 @@
-import React, { useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React, { useRef, useEffect, useCallback, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Animated,
+} from 'react-native';
 import {
   ChevronLeft,
   Lock,
@@ -26,7 +33,10 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
 }) => {
   const { colors, getFontSize } = useTheme();
   const { plans } = useStudyPlan();
-  const styles = getStyles(colors, getFontSize);
+  const styles = useMemo(
+    () => getStyles(colors, getFontSize),
+    [colors, getFontSize],
+  );
   const scrollViewRef = useRef<ScrollView>(null);
   const sectionYPositions = useRef<{ [key: string]: number }>({});
   const hasScrolled = useRef(false);
@@ -34,12 +44,60 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
 
   const plan = plans.find(p => p.id === planId);
 
+  // Animaciones
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const progressBarAnim = useRef(new Animated.Value(0)).current;
+  const sectionsAnim = useRef(
+    plan ? plan.sections.map(() => new Animated.Value(0)) : [],
+  ).current;
+
   // Reset scroll state when planId changes
   useEffect(() => {
     hasScrolled.current = false;
     layoutCompleteCount.current = 0;
     sectionYPositions.current = {};
   }, [planId]);
+
+  // Animaciones de entrada
+  useEffect(() => {
+    // Secuencia de entrada
+    Animated.sequence([
+      // Header fade in
+      Animated.timing(headerAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      // Progress card spring
+      Animated.spring(progressAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Progress bar fill animation
+    Animated.timing(progressBarAnim, {
+      toValue: plan?.progress ?? 0,
+      duration: 800,
+      delay: 400,
+      useNativeDriver: false,
+    }).start();
+
+    // Sections staggered animation
+    const sectionAnimations = sectionsAnim.map((anim, index) =>
+      Animated.spring(anim, {
+        toValue: 1,
+        tension: 40,
+        friction: 8,
+        delay: 300 + index * 80,
+        useNativeDriver: true,
+      }),
+    );
+    Animated.stagger(80, sectionAnimations).start();
+  }, [headerAnim, progressAnim, progressBarAnim, sectionsAnim, plan?.progress]);
 
   // Función para hacer scroll a la siguiente sección no completada
   const scrollToNextSection = useCallback(() => {
@@ -289,8 +347,23 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Header - animado */}
+      <Animated.View
+        style={[
+          styles.header,
+          {
+            opacity: headerAnim,
+            transform: [
+              {
+                translateY: headerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-20, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <Pressable
           style={styles.backButton}
           onPress={onBack}
@@ -303,10 +376,31 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
           <Text style={styles.headerTitle}>{plan.title}</Text>
           <Text style={styles.headerSubtitle}>{plan.description}</Text>
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Progress Card */}
-      <View style={styles.progressCard}>
+      {/* Progress Card - animado con spring */}
+      <Animated.View
+        style={[
+          styles.progressCard,
+          {
+            opacity: progressAnim,
+            transform: [
+              {
+                translateY: progressAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [30, 0],
+                }),
+              },
+              {
+                scale: progressAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.95, 1],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <View style={styles.progressHeader}>
           <Text style={styles.progressTitle}>Tu progreso</Text>
           <Text style={styles.progressStats}>
@@ -315,26 +409,58 @@ export const StudyPlanDetailScreen: React.FC<StudyPlanDetailScreenProps> = ({
         </View>
         <View style={styles.progressBarContainer}>
           <View style={styles.progressBar}>
-            <View
-              style={[styles.progressFill, { width: `${plan.progress ?? 0}%` }]}
+            <Animated.View
+              style={[
+                styles.progressFill,
+                {
+                  width: progressBarAnim.interpolate({
+                    inputRange: [0, 100],
+                    outputRange: ['0%', '100%'],
+                  }),
+                },
+              ]}
             />
           </View>
           <Text style={styles.progressPercentage}>
             {Math.round(plan.progress ?? 0)}%
           </Text>
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Sections List */}
+      {/* Sections List - animado con stagger */}
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {plan.sections.map(section => (
-          <View key={section.id}>{renderSection(section)}</View>
-        ))}
+        {plan.sections.map((section, index) => {
+          const sectionAnim = sectionsAnim[index] || new Animated.Value(1);
+          return (
+            <Animated.View
+              key={section.id}
+              style={{
+                opacity: sectionAnim,
+                transform: [
+                  {
+                    translateX: sectionAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [index % 2 === 0 ? -40 : 40, 0],
+                    }),
+                  },
+                  {
+                    scale: sectionAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.95, 1],
+                    }),
+                  },
+                ],
+              }}
+            >
+              {renderSection(section)}
+            </Animated.View>
+          );
+        })}
       </ScrollView>
     </View>
   );

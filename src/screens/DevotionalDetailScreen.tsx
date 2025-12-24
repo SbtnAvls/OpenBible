@@ -1,5 +1,12 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React, { useMemo, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Animated,
+} from 'react-native';
 import {
   BookOpen,
   MessageCircle,
@@ -30,6 +37,55 @@ export function DevotionalDetailScreen({
     [colors, getFontSize],
   );
 
+  // Animaciones
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const verseAnim = useRef(new Animated.Value(0)).current;
+  const sectionsAnim = useRef([
+    new Animated.Value(0), // Reading
+    new Animated.Value(0), // Reflection
+    new Animated.Value(0), // Prayer
+    new Animated.Value(0), // Action
+  ]).current;
+  const buttonAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Secuencia de entrada espectacular
+    Animated.sequence([
+      // Header y título fade in
+      Animated.timing(headerAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      // Verse card spring con bounce
+      Animated.spring(verseAnim, {
+        toValue: 1,
+        tension: 40,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Secciones staggered
+    const sectionAnimations = sectionsAnim.map((anim, index) =>
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 400,
+        delay: 200 + index * 120,
+        useNativeDriver: true,
+      }),
+    );
+    Animated.stagger(120, sectionAnimations).start(() => {
+      // Botón slide up al final
+      Animated.spring(buttonAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [headerAnim, verseAnim, sectionsAnim, buttonAnim]);
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('es-ES', {
       weekday: 'long',
@@ -45,22 +101,69 @@ export function DevotionalDetailScreen({
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header with date */}
-      <View style={styles.dateContainer}>
+      {/* Header with date - animado */}
+      <Animated.View
+        style={[
+          styles.dateContainer,
+          {
+            opacity: headerAnim,
+            transform: [
+              {
+                translateY: headerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-20, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <Calendar size={16} color={colors.placeholderText} />
         <Text style={styles.dateText}>{formatDate(devotional.date)}</Text>
-      </View>
+      </Animated.View>
 
-      {/* Title */}
-      <Text style={styles.title}>{devotional.title}</Text>
+      {/* Title - animado */}
+      <Animated.Text
+        style={[
+          styles.title,
+          {
+            opacity: headerAnim,
+            transform: [
+              {
+                translateY: headerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-15, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
+        {devotional.title}
+      </Animated.Text>
 
-      {/* Bible Verse Section */}
-      <View
+      {/* Bible Verse Section - animado con spring */}
+      <Animated.View
         style={[
           styles.verseCard,
           {
             backgroundColor: colors.accentSubtle,
             borderColor: colors.accent,
+            opacity: verseAnim,
+            transform: [
+              {
+                translateY: verseAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [50, 0],
+                }),
+              },
+              {
+                scale: verseAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.9, 1],
+                }),
+              },
+            ],
           },
         ]}
       >
@@ -77,10 +180,25 @@ export function DevotionalDetailScreen({
           <Quote size={24} color={colors.accent} style={styles.quoteIcon} />
           <Text style={styles.verseText}>"{devotional.bibleVerse.text}"</Text>
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Reading Section */}
-      <View style={styles.section}>
+      {/* Reading Section - animado */}
+      <Animated.View
+        style={[
+          styles.section,
+          {
+            opacity: sectionsAnim[0],
+            transform: [
+              {
+                translateX: sectionsAnim[0].interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-30, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <View style={styles.sectionHeader}>
           <View
             style={[
@@ -93,10 +211,25 @@ export function DevotionalDetailScreen({
           <Text style={styles.sectionTitle}>Lectura</Text>
         </View>
         <Text style={styles.readingText}>{devotional.reading}</Text>
-      </View>
+      </Animated.View>
 
-      {/* Reflection Questions */}
-      <View style={styles.section}>
+      {/* Reflection Questions - animado */}
+      <Animated.View
+        style={[
+          styles.section,
+          {
+            opacity: sectionsAnim[1],
+            transform: [
+              {
+                translateX: sectionsAnim[1].interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [30, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <View style={styles.sectionHeader}>
           <View
             style={[
@@ -141,10 +274,25 @@ export function DevotionalDetailScreen({
             </View>
           ))}
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Prayer Section */}
-      <View style={styles.section}>
+      {/* Prayer Section - animado */}
+      <Animated.View
+        style={[
+          styles.section,
+          {
+            opacity: sectionsAnim[2],
+            transform: [
+              {
+                translateX: sectionsAnim[2].interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-30, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <View style={styles.sectionHeader}>
           <View
             style={[
@@ -167,10 +315,25 @@ export function DevotionalDetailScreen({
         >
           <Text style={styles.prayerText}>{devotional.prayer}</Text>
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Daily Action */}
-      <View style={styles.section}>
+      {/* Daily Action - animado */}
+      <Animated.View
+        style={[
+          styles.section,
+          {
+            opacity: sectionsAnim[3],
+            transform: [
+              {
+                translateX: sectionsAnim[3].interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [30, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <View style={styles.sectionHeader}>
           <View
             style={[
@@ -193,31 +356,53 @@ export function DevotionalDetailScreen({
         >
           <Text style={styles.actionText}>{devotional.dailyAction}</Text>
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Complete Button */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.completeButton,
-          {
-            backgroundColor: isCompleted ? '#4CAF50' : colors.accent,
-          },
-          pressed &&
-            !isCompleted && { opacity: 0.8, transform: [{ scale: 0.98 }] },
-          isCompleted && { opacity: 0.9 },
-        ]}
-        onPress={isCompleted ? undefined : onComplete}
-        disabled={isCompleted}
+      {/* Complete Button - animado con spring */}
+      <Animated.View
+        style={{
+          opacity: buttonAnim,
+          transform: [
+            {
+              translateY: buttonAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [40, 0],
+              }),
+            },
+            {
+              scale: buttonAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.9, 1],
+              }),
+            },
+          ],
+        }}
       >
-        {isCompleted ? (
-          <Check size={20} color={colors.accentText} />
-        ) : (
-          <CheckCircle2 size={20} color={colors.accentText} />
-        )}
-        <Text style={[styles.completeButtonText, { color: colors.accentText }]}>
-          {isCompleted ? 'Completado' : 'Marcar como completado'}
-        </Text>
-      </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.completeButton,
+            {
+              backgroundColor: isCompleted ? '#4CAF50' : colors.accent,
+            },
+            pressed &&
+              !isCompleted && { opacity: 0.8, transform: [{ scale: 0.98 }] },
+            isCompleted && { opacity: 0.9 },
+          ]}
+          onPress={isCompleted ? undefined : onComplete}
+          disabled={isCompleted}
+        >
+          {isCompleted ? (
+            <Check size={20} color={colors.accentText} />
+          ) : (
+            <CheckCircle2 size={20} color={colors.accentText} />
+          )}
+          <Text
+            style={[styles.completeButtonText, { color: colors.accentText }]}
+          >
+            {isCompleted ? 'Completado' : 'Marcar como completado'}
+          </Text>
+        </Pressable>
+      </Animated.View>
     </ScrollView>
   );
 }

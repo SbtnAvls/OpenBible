@@ -18,6 +18,7 @@ import {
   STREAK_GOALS,
   STREAK_INTERVAL_DAYS,
   formatLocalDate,
+  getDaysDifference,
   getTodayDateString,
   getYesterdayDateString,
   isAfterNoon,
@@ -164,12 +165,8 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Calcular días perdidos desde la última vez que completó/protegió
-      const lastActiveDate = new Date(prev.lastCompletedDate);
-      const todayDate = new Date(today);
-      const daysDiff = Math.floor(
-        (todayDate.getTime() - lastActiveDate.getTime()) /
-          (1000 * 60 * 60 * 24),
-      );
+      // Usamos getDaysDifference para evitar problemas de zona horaria
+      const daysDiff = getDaysDifference(prev.lastCompletedDate, today);
 
       // Si es el día siguiente (daysDiff === 1), la racha continúa normalmente
       if (daysDiff <= 1) {
@@ -187,6 +184,12 @@ export function StreakProvider({ children }: { children: React.ReactNode }) {
       let freezesUsed = 0;
       let streakSurvived = true;
       let lastProtectedDate: string | null = null;
+
+      // Parsear lastCompletedDate manualmente para evitar problemas de zona horaria
+      const [lastYear, lastMonth, lastDay] = prev.lastCompletedDate
+        .split('-')
+        .map(Number);
+      const lastActiveDate = new Date(lastYear, lastMonth - 1, lastDay);
 
       // Clonar el historial correctamente (deep clone de los objetos)
       const newHistory = prev.streakHistory.map(entry => ({ ...entry }));

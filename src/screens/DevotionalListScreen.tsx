@@ -1,5 +1,12 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React, { useMemo, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Animated,
+} from 'react-native';
 import { Heart, Calendar, ArrowRight } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import type { ThemeColors, GetFontSize } from '../context/ThemeContext';
@@ -19,6 +26,51 @@ export function DevotionalListScreen({
     [colors, getFontSize],
   );
 
+  // Animaciones
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const statsAnim = useRef(new Animated.Value(0)).current;
+  const cardsAnim = useRef(
+    devotionals.map(() => new Animated.Value(0)),
+  ).current;
+  const comingSoonAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Secuencia de animaciones de entrada
+    Animated.sequence([
+      // Header fade in con slide
+      Animated.timing(headerAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      // Stats card spring
+      Animated.spring(statsAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Cards staggered animation
+    const cardAnimations = cardsAnim.map((anim, index) =>
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 350,
+        delay: index * 80,
+        useNativeDriver: true,
+      }),
+    );
+    Animated.stagger(80, cardAnimations).start(() => {
+      // Coming soon fade in después de las cards
+      Animated.timing(comingSoonAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [headerAnim, statsAnim, cardsAnim, comingSoonAnim]);
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('es-ES', {
       day: 'numeric',
@@ -33,8 +85,23 @@ export function DevotionalListScreen({
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Header con animación */}
+      <Animated.View
+        style={[
+          styles.header,
+          {
+            opacity: headerAnim,
+            transform: [
+              {
+                translateY: headerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-30, 0],
+                }),
+              },
+            ],
+          },
+        ]}
+      >
         <View style={styles.headerIconContainer}>
           <Heart size={32} color={colors.accent} />
         </View>
@@ -42,15 +109,30 @@ export function DevotionalListScreen({
         <Text style={styles.headerSubtitle}>
           Reflexiones diarias para fortalecer tu fe
         </Text>
-      </View>
+      </Animated.View>
 
-      {/* Stats Card */}
-      <View
+      {/* Stats Card con animación spring */}
+      <Animated.View
         style={[
           styles.statsCard,
           {
             backgroundColor: colors.accentSubtle,
             borderColor: colors.accent,
+            opacity: statsAnim,
+            transform: [
+              {
+                translateY: statsAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [40, 0],
+                }),
+              },
+              {
+                scale: statsAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.9, 1],
+                }),
+              },
+            ],
           },
         ]}
       >
@@ -67,67 +149,101 @@ export function DevotionalListScreen({
           <Text style={[styles.statValue, { color: colors.accent }]}>0</Text>
           <Text style={styles.statLabel}>Completados</Text>
         </View>
-      </View>
+      </Animated.View>
 
-      {/* Devotionals List */}
+      {/* Devotionals List con animación staggered */}
       <View style={styles.devotionalsList}>
         <Text style={styles.sectionTitle}>Últimos devocionales</Text>
-        {devotionals.map((devotional, index) => (
-          <Pressable
-            key={devotional.id}
-            onPress={() => onSelectDevotional(devotional)}
-            style={({ pressed }) => [
-              styles.devotionalCard,
-              {
-                backgroundColor: colors.surfaceElevated,
-                borderColor: colors.divider,
-              },
-              pressed && { opacity: 0.7, transform: [{ scale: 0.98 }] },
-            ]}
-          >
-            {/* Number Badge */}
-            <View
-              style={[
-                styles.numberBadge,
-                { backgroundColor: colors.accentSubtle },
-              ]}
+        {devotionals.map((devotional, index) => {
+          const cardAnim = cardsAnim[index] || new Animated.Value(1);
+          return (
+            <Animated.View
+              key={devotional.id}
+              style={{
+                opacity: cardAnim,
+                transform: [
+                  {
+                    translateX: cardAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [50, 0],
+                    }),
+                  },
+                  {
+                    scale: cardAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.95, 1],
+                    }),
+                  },
+                ],
+              }}
             >
-              <Text style={[styles.numberBadgeText, { color: colors.accent }]}>
-                {String(index + 1).padStart(2, '0')}
-              </Text>
-            </View>
+              <Pressable
+                onPress={() => onSelectDevotional(devotional)}
+                style={({ pressed }) => [
+                  styles.devotionalCard,
+                  {
+                    backgroundColor: colors.surfaceElevated,
+                    borderColor: colors.divider,
+                  },
+                  pressed && { opacity: 0.7, transform: [{ scale: 0.98 }] },
+                ]}
+              >
+                {/* Number Badge */}
+                <View
+                  style={[
+                    styles.numberBadge,
+                    { backgroundColor: colors.accentSubtle },
+                  ]}
+                >
+                  <Text
+                    style={[styles.numberBadgeText, { color: colors.accent }]}
+                  >
+                    {String(index + 1).padStart(2, '0')}
+                  </Text>
+                </View>
 
-            {/* Content */}
-            <View style={styles.devotionalContent}>
-              <Text style={styles.devotionalTitle} numberOfLines={2}>
-                {devotional.title}
-              </Text>
-              <View style={styles.devotionalMeta}>
-                <Calendar size={14} color={colors.placeholderText} />
-                <Text style={styles.devotionalDate}>
-                  {formatDate(devotional.date)}
-                </Text>
-              </View>
-              <Text style={styles.devotionalVerse} numberOfLines={1}>
-                {devotional.bibleVerse.reference}
-              </Text>
-            </View>
+                {/* Content */}
+                <View style={styles.devotionalContent}>
+                  <Text style={styles.devotionalTitle} numberOfLines={2}>
+                    {devotional.title}
+                  </Text>
+                  <View style={styles.devotionalMeta}>
+                    <Calendar size={14} color={colors.placeholderText} />
+                    <Text style={styles.devotionalDate}>
+                      {formatDate(devotional.date)}
+                    </Text>
+                  </View>
+                  <Text style={styles.devotionalVerse} numberOfLines={1}>
+                    {devotional.bibleVerse.reference}
+                  </Text>
+                </View>
 
-            {/* Arrow */}
-            <View style={styles.arrowContainer}>
-              <ArrowRight size={20} color={colors.accent} />
-            </View>
-          </Pressable>
-        ))}
+                {/* Arrow */}
+                <View style={styles.arrowContainer}>
+                  <ArrowRight size={20} color={colors.accent} />
+                </View>
+              </Pressable>
+            </Animated.View>
+          );
+        })}
       </View>
 
-      {/* Coming Soon Card */}
-      <View
+      {/* Coming Soon Card con animación */}
+      <Animated.View
         style={[
           styles.comingSoonCard,
           {
             backgroundColor: colors.surfaceMuted,
             borderColor: colors.divider,
+            opacity: comingSoonAnim,
+            transform: [
+              {
+                translateY: comingSoonAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [20, 0],
+                }),
+              },
+            ],
           },
         ]}
       >
@@ -135,7 +251,7 @@ export function DevotionalListScreen({
         <Text style={styles.comingSoonText}>
           Estamos trabajando en nuevos devocionales para ti. ¡Vuelve pronto!
         </Text>
-      </View>
+      </Animated.View>
     </ScrollView>
   );
 }

@@ -185,3 +185,22 @@ export function getYesterdayDateString(): string {
 export function isAfterNoon(): boolean {
   return new Date().getHours() >= 12;
 }
+
+/**
+ * Calcula la diferencia en días entre dos fechas en formato YYYY-MM-DD.
+ * Evita problemas de zona horaria parseando las fechas manualmente.
+ * @returns Número de días entre dateStr1 y dateStr2 (positivo si dateStr2 es posterior)
+ */
+export function getDaysDifference(dateStr1: string, dateStr2: string): number {
+  // Parsear las fechas manualmente para evitar problemas de UTC
+  const [year1, month1, day1] = dateStr1.split('-').map(Number);
+  const [year2, month2, day2] = dateStr2.split('-').map(Number);
+
+  // Crear fechas a medianoche local
+  const date1 = new Date(year1, month1 - 1, day1);
+  const date2 = new Date(year2, month2 - 1, day2);
+
+  // Calcular diferencia en días
+  const diffTime = date2.getTime() - date1.getTime();
+  return Math.round(diffTime / (1000 * 60 * 60 * 24));
+}
